@@ -1,7 +1,8 @@
 'use client'
 
-// Seela — Landing page. Ported verbatim from `Seela - Landing.html`;
-// only the `Seela.html` links were remapped to `/auth`.
+// Seela — Landing page. Ported from the designer's `landing-v2.html`;
+// the `Seela.html` links were remapped to `/auth`, and the nav keeps an
+// authenticated pill (user email → /app/dashboard) when connected.
 import React from 'react'
 import Link from 'next/link'
 import {
@@ -28,12 +29,6 @@ function Nav({ userEmail }: { userEmail?: string | null }) {
     <nav className="lp-nav">
       <div className="lp-wrap lp-nav__inner">
         <Logo size={20} />
-        <div className="lp-nav__links">
-          <a href="#how">Comment ça marche</a>
-          <a href="#product">Plateforme</a>
-          <a href="#accounting">Comptabilité</a>
-          <a href="#">Tarifs</a>
-        </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           {userEmail ? (
             <Link className="lp-user" href="/app/dashboard">
@@ -56,22 +51,22 @@ function Nav({ userEmail }: { userEmail?: string | null }) {
 }
 
 /* ---------------- BLOCK 1 — HERO ---------------- */
-function Hero() {
+function Hero({ onOpenExpert }: { onOpenExpert: () => void }) {
   return (
     <header className="lp-hero">
       <div className="lp-hero__bg"></div>
       <div className="lp-hero__grid"></div>
       <div className="lp-wrap" style={{ position: "relative", textAlign: "center", maxWidth: 860 }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-          <span className="lp-eyebrow" style={{ whiteSpace: "nowrap" }}><SparkleGlyph size={12} /> La location d&apos;équipement propulsée à l&apos;IA</span>
+          <span className="lp-eyebrow" style={{ whiteSpace: "nowrap" }}><SparkleGlyph size={12} /> La location d&apos;équipement des entreprises en croissance</span>
         </div>
         <h1 className="lp-h1">Une nouvelle façon de<br/>financer vos équipements.</h1>
         <p className="lp-lede" style={{ margin: "22px auto 0", maxWidth: 600 }}>
-          Seela finance vos actifs matériels en quelques minutes, dans les meilleures conditions. Déposez un devis, laissez l&apos;IA consulter les leasers, choisissez votre offre, signez.
+          Seela vous conseille dans le financement de vos actifs matériels en quelques minutes, dans les meilleures conditions. Déposez un devis, choisissez votre offre, signez.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 32 }}>
           <a className="btn btn--accent btn--lg" href="#try">Estimer mon financement <IconArrowRight /></a>
-          <Link className="btn btn--secondary btn--lg" href="/auth">Voir la plateforme</Link>
+          <button className="btn btn--secondary btn--lg" type="button" onClick={onOpenExpert}>Parler à un expert</button>
         </div>
         <div className="lp-steps" style={{ justifyContent: "center", marginTop: 28 }}>
           {["Leasing", "LLD", "LOA", "Crédit-bail", "Lease-back"].map((s, i, arr) => (
@@ -135,7 +130,7 @@ function TryBlock() {
         <span className="lp-eyebrow"><SparkleGlyph size={12} /> Essayez maintenant — sans créer de compte</span>
         <h2 className="lp-h2" style={{ marginTop: 18 }}>Déposez un devis. Voyez si c&apos;est finançable.</h2>
         <p className="lp-lede" style={{ margin: "16px auto 0", maxWidth: 540 }}>
-          En 30 secondes, l&apos;IA Seela lit votre document, isole le matériel et vous dit s&apos;il existe une solution de financement. Aucune donnée bancaire requise.
+          Seela utilise l&apos;intelligence artificielle pour analyser vos besoins en financement d&apos;équipements et vous proposer les offres adaptées. Aucune donnée bancaire requise.
         </p>
 
         <div style={{ marginTop: 36, textAlign: "left" }}>
@@ -244,7 +239,7 @@ function EquipmentCategories() {
     <section className="lp-section" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
       <div className="lp-wrap">
         <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 48px" }}>
-          <span className="lp-eyebrow">Un marché immense</span>
+          <span className="lp-eyebrow">Les secteurs d&apos;activité</span>
           <h2 className="lp-h2" style={{ marginTop: 18 }}>Si c&apos;est un actif physique, ça se finance.</h2>
           <p className="lp-lede" style={{ margin: "16px auto 0", maxWidth: 520 }}>
             Du parc informatique à la machine-outil, Seela finance tout équipement professionnel — neuf ou déjà acquis.
@@ -324,9 +319,9 @@ function Reassurance() {
           num="01"
           eyebrow="Liberté de choix"
           title="Vous choisissez votre fournisseur. On trouve le bon financement."
-          body="Seela ne vous impose ni matériel, ni vendeur. Vous achetez où vous voulez — Seela met en concurrence 14 leasers et fait remonter l'offre la mieux notée pour votre dossier."
+          body="Seela ne vous impose ni matériel, ni vendeur. Vous achetez où vous voulez — Seela interroge ses partenaires financiers et vous conseille sur l'offre la plus adaptée à vos besoins."
           bullets={[
-            "Consultation simultanée de tous nos partenaires en moins d'une minute",
+            "Consultation simultanée de tous nos partenaires",
             "Offres classées par le score Seela : coût, flexibilité, rapidité",
             "Aucun engagement tant que vous n'avez pas signé",
           ]}
@@ -351,7 +346,7 @@ function Reassurance() {
           num="03"
           eyebrow="Scoring augmenté par l'IA"
           title="Un financement qui évolue au rythme de votre entreprise."
-          body="Branchez votre open banking : Seela réévalue en continu la santé réelle de votre entreprise et fait grandir votre capacité de financement à mesure que vous performez. Votre enveloppe n'est plus figée une fois par an — elle vit avec vous."
+          body="Seela réévalue en continu la santé réelle de votre entreprise et fait grandir votre capacité de financement à mesure que vous performez. Votre enveloppe n'est plus figée une fois par an, elle vit avec vous."
           bullets={[
             "Score Seela recalculé chaque jour à partir de données réelles",
             "Capacité d'engagement qui augmente avec votre activité",
@@ -365,13 +360,29 @@ function Reassurance() {
 }
 
 /* ---------------- BLOCK 4 — INTEGRATIONS (Hyperline-style) ---------------- */
-// Logo grid: 7 cols × 5 rows. Edges intentionally empty so the populated
-// center "floats". Each filled cell = an accounting/banking integration.
-const INT_GRID: ({ l: string; bg: string; n: string } | null)[][] = [
+// Logo grid: 7 cols × 5 rows. Edges empty → impression of many more integrations.
+// Filled cells: real logo image on brand-color background.
+type IntCell = { img: string; n: string; bg: string; fill?: boolean } | null
+const INT_GRID: IntCell[][] = [
   [null, null, null, null, null, null, null],
-  [null, { l: "P", bg: "#0066FF", n: "Pennylane" }, { l: "Q", bg: "#1D1D1B", n: "Qonto" }, { l: "C", bg: "#005F9E", n: "Cegid" }, { l: "N", bg: "#C8202F", n: "NetSuite" }, { l: "Sa", bg: "#00A341", n: "Sage" }, null],
-  [null, { l: "E", bg: "#E60023", n: "EBP" }, { l: "Sy", bg: "#1F2937", n: "Sellsy" }, { l: "Sp", bg: "#7C3AED", n: "Spendesk" }, { l: "Ib", bg: "#0E7C5F", n: "Ibiza" }, { l: "St", bg: "#635BFF", n: "Stripe" }, null],
-  [null, { l: "BN", bg: "#0F7B6C", n: "BNP" }, { l: "SG", bg: "#C8102E", n: "Société Générale" }, { l: "CA", bg: "#2D8A4E", n: "Crédit Agricole" }, { l: "Rv", bg: "#0A1F44", n: "Revolut" }, { l: "BP", bg: "#E40D2D", n: "BPCE" }, null],
+  [null,
+    { img: "/landing/pennylane.png", n: "Pennylane", bg: "#FFFFFF" },
+    { img: "/landing/qonto.png", n: "Qonto", bg: "#1D1D1B", fill: true },
+    { img: "/landing/sage.svg", n: "Sage", bg: "#00A341", fill: true },
+    { img: "/landing/quickbooks.avif", n: "QuickBooks", bg: "#2CA01C", fill: true },
+    { img: "/landing/xero.svg", n: "Xero", bg: "#13B5EA", fill: true },
+  null],
+  [null,
+    { img: "/landing/netsuite.svg", n: "NetSuite", bg: "#FFFFFF" },
+    { img: "/landing/intuit.png", n: "Intuit", bg: "#FFFFFF" },
+    { img: "/landing/freshbooks.png", n: "FreshBooks", bg: "#0F85FF", fill: true },
+    { img: "/landing/sellsy.png", n: "Sellsy", bg: "#1A56FF" },
+    { img: "/landing/spendesk.png", n: "Spendesk", bg: "#6B21A8", fill: true },
+  null],
+  [null, null,
+    { img: "/landing/expensify.webp", n: "Expensify", bg: "#00C244", fill: true },
+    { img: "/landing/zoho-books.png", n: "Zoho Books", bg: "#1A73E8", fill: true },
+  null, null, null],
   [null, null, null, null, null, null, null],
 ]
 
@@ -386,7 +397,7 @@ function IntegrationsBlock() {
 
           <div style={{ position: "relative", padding: "56px 56px 8px", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
             <span className="lp-eyebrow" style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.12)", color: "#C8C8E8" }}>
-              <SparkleGlyph size={12} color="#C8C8E8" /> Intégrations
+              <SparkleGlyph size={12} color="#C8C8E8" /> Intégrations - coming soon
             </span>
             <h2 className="lp-h2" style={{ marginTop: 20, color: "#FAFAF9" }}>Le financement vient à vous.<br/>Plus l&apos;inverse.</h2>
             <p className="lp-lede" style={{ marginTop: 16, color: "rgba(255,255,255,0.66)", maxWidth: 540, margin: "16px auto 0" }}>
@@ -398,7 +409,7 @@ function IntegrationsBlock() {
           </div>
 
           {/* Logo grid */}
-          <div style={{ position: "relative", padding: "32px 24px 8px", maskImage: "linear-gradient(to bottom, transparent, black 22%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 22%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskComposite: "source-in", maskComposite: "intersect" }}>
+          <div style={{ position: "relative", padding: "32px 24px 8px", maskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskComposite: "source-in", maskComposite: "intersect" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720, margin: "0 auto" }}>
               {INT_GRID.map((row, ri) => (
                 <div key={ri} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 14 }}>
@@ -406,11 +417,16 @@ function IntegrationsBlock() {
                     <div key={ci} style={{
                       aspectRatio: "1", borderRadius: 14,
                       border: "1px solid rgba(255,255,255,0.07)",
-                      background: cell ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.015)",
-                      display: "grid", placeItems: "center",
-                    }}>
+                      background: cell ? cell.bg : "rgba(255,255,255,0.015)",
+                      display: "grid", placeItems: "center", overflow: "hidden",
+                      boxShadow: cell ? "0 6px 18px rgba(0,0,0,0.35)" : "none",
+                    }} title={cell ? cell.n : ""}>
                       {cell && (
-                        <div className="logo-placeholder" style={{ background: cell.bg, width: "62%", height: "62%", fontSize: 17, borderRadius: 11, boxShadow: "0 6px 16px rgba(0,0,0,0.3)" }} title={cell.n}>{cell.l}</div>
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={cell.img} alt={cell.n} style={cell.fill
+                          ? { width: "100%", height: "100%", objectFit: "cover", display: "block" }
+                          : { width: "62%", height: "62%", objectFit: "contain", display: "block" }
+                        } />
                       )}
                     </div>
                   ))}
@@ -420,7 +436,7 @@ function IntegrationsBlock() {
           </div>
 
           <div style={{ position: "relative", textAlign: "center", padding: "8px 0 48px", fontSize: 12.5, color: "rgba(255,255,255,0.5)" }}>
-            Pennylane · Qonto · Cegid · NetSuite · Sage · Spendesk · open banking — et 20+ autres
+            Pennylane · QuickBooks · Sage · Xero · NetSuite · Qonto · Spendesk — et bien d&apos;autres
           </div>
         </div>
       </div>
@@ -429,7 +445,7 @@ function IntegrationsBlock() {
 }
 
 /* ---------------- FINAL CTA + FOOTER ---------------- */
-function FinalCta() {
+function FinalCta({ onOpenExpert }: { onOpenExpert: () => void }) {
   return (
     <section className="lp-section--tight" style={{ borderTop: "1px solid var(--border)" }}>
       <div className="lp-wrap" style={{ textAlign: "center", maxWidth: 640 }}>
@@ -439,7 +455,7 @@ function FinalCta() {
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 28 }}>
           <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
-          <a className="btn btn--secondary btn--lg" href="#">Parler à un expert</a>
+          <button className="btn btn--secondary btn--lg" type="button" onClick={onOpenExpert}>Parler à un expert</button>
         </div>
       </div>
     </section>
@@ -447,33 +463,13 @@ function FinalCta() {
 }
 
 function Footer() {
-  const cols = [
-    { h: "Produit", links: ["Financement locatif", "Lease-back", "Marketplace de leasers", "Scoring Seela", "Comptabilité"] },
-    { h: "Entreprise", links: ["À propos", "Carrières", "Blog", "Presse"] },
-    { h: "Ressources", links: ["Centre d'aide", "Guide du leasing", "API", "Statut"] },
-    { h: "Légal", links: ["CGU", "Confidentialité", "Mentions légales", "Cookies"] },
-  ]
   return (
     <footer className="lp-footer">
       <div className="lp-wrap">
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr repeat(4, 1fr)", gap: 32 }}>
-          <div>
-            <Logo size={20} />
-            <p style={{ fontSize: 13, color: "var(--text-3)", marginTop: 14, maxWidth: 220, lineHeight: 1.5 }}>
-              The new way of financing your equipment.
-            </p>
-          </div>
-          {cols.map(c => (
-            <div key={c.h}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 12 }}>{c.h}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {c.links.map(l => <a key={l} href="#" style={{ fontSize: 13, color: "var(--text-2)" }}>{l}</a>)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 40, paddingTop: 20, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-3)" }}>
-          <span>© 2026 Seela SAS — Intermédiaire en financement. Tous droits réservés.</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", fontSize: 12, color: "var(--text-3)" }}>
+          <Logo size={20} />
+          <span>The new way of financing your equipment.</span>
+          <span style={{ marginLeft: "auto" }}>© 2026 Seela SAS — Tous droits réservés.</span>
           <span>Conçu et hébergé en France 🇫🇷</span>
         </div>
       </div>
@@ -481,17 +477,119 @@ function Footer() {
   )
 }
 
+/* ---------------- EXPERT MODAL ---------------- */
+// Mounted only while open, so the form state is fresh on each opening.
+function ExpertModal({ onClose }: { onClose: () => void }) {
+  const [sent, setSent] = React.useState(false)
+  const [qualif, setQualif] = React.useState<'oui' | 'non' | null>(null)
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
+
+  const submit = (e: React.FormEvent) => { e.preventDefault(); setSent(true) }
+
+  return (
+    <div className="lp-modal__scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="lp-modal" role="dialog" aria-modal="true">
+        {!sent ? (
+          <React.Fragment>
+            <div className="lp-modal__head">
+              <div>
+                <div className="lp-modal__title">Parler à un expert Seela</div>
+                <div className="lp-modal__sub">Un conseiller vous rappelle sous 24h ouvrées pour étudier votre projet de financement.</div>
+              </div>
+              <button className="lp-modal__close" onClick={onClose} aria-label="Fermer"><IconClose size={16} /></button>
+            </div>
+
+            <form className="lp-form" onSubmit={submit}>
+              <div className="lp-field">
+                <label>Entreprise</label>
+                <input required placeholder="Nom de votre société" />
+              </div>
+
+              <div className="lp-form__row">
+                <div className="lp-field">
+                  <label>Prénom</label>
+                  <input required placeholder="Camille" />
+                </div>
+                <div className="lp-field">
+                  <label>Nom</label>
+                  <input required placeholder="Verdier" />
+                </div>
+              </div>
+
+              <div className="lp-field">
+                <label>Rôle dans l&apos;entreprise</label>
+                <select required defaultValue="">
+                  <option value="" disabled>Sélectionnez votre rôle</option>
+                  <option>Dirigeant / Gérant</option>
+                  <option>Directeur Financier (DAF)</option>
+                  <option>Directeur Général</option>
+                  <option>Office Manager</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+
+              <div className="lp-field">
+                <label>Avez-vous une première demande de financement à soumettre&nbsp;?</label>
+                <div className="lp-seg">
+                  <button type="button" aria-pressed={qualif === "oui"} onClick={() => setQualif("oui")}>Oui, j&apos;ai un devis</button>
+                  <button type="button" aria-pressed={qualif === "non"} onClick={() => setQualif("non")}>Pas encore</button>
+                </div>
+              </div>
+
+              <div className="lp-field">
+                <label>Email professionnel</label>
+                <input required type="email" placeholder="camille@entreprise.fr" />
+              </div>
+
+              <div className="lp-field">
+                <label>Téléphone</label>
+                <input required type="tel" placeholder="06 12 34 56 78" />
+              </div>
+
+              <button className="btn btn--accent btn--lg" type="submit">Demander à être rappelé <IconArrowRight /></button>
+              <div className="lp-modal__legal">En soumettant, vous acceptez d&apos;être contacté par Seela. Aucune donnée n&apos;est partagée sans votre accord.</div>
+            </form>
+          </React.Fragment>
+        ) : (
+          <div className="lp-modal__done">
+            <div className="lp-modal__done-check"><IconCheck size={26} /></div>
+            <div className="lp-modal__title">Demande envoyée&nbsp;!</div>
+            <div className="lp-modal__sub" style={{ maxWidth: 340, margin: "8px auto 0" }}>
+              Un expert Seela vous recontacte sous 24h ouvrées. Vous pouvez déjà préparer votre devis fournisseur.
+            </div>
+            <button className="btn btn--accent btn--lg" style={{ width: "100%", justifyContent: "center", marginTop: 22 }} onClick={onClose}>Fermer</button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage({ className, userEmail }: { className?: string; userEmail?: string | null }) {
+  const [expertOpen, setExpertOpen] = React.useState(false)
+  const openExpert = React.useCallback(() => setExpertOpen(true), [])
+  const closeExpert = React.useCallback(() => setExpertOpen(false), [])
+
   return (
     <div className={"lp" + (className ? " " + className : "")}>
       <Nav userEmail={userEmail} />
-      <Hero />
+      <Hero onOpenExpert={openExpert} />
       <TryBlock />
       <EquipmentCategories />
       <Reassurance />
       <IntegrationsBlock />
-      <FinalCta />
+      <FinalCta onOpenExpert={openExpert} />
       <Footer />
+      {expertOpen && <ExpertModal onClose={closeExpert} />}
     </div>
   )
 }

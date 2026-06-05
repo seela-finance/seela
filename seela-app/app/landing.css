@@ -1,4 +1,4 @@
-/* Landing page CSS — extracted verbatim from `Seela - Landing.html`.
+/* Landing page CSS — rewritten from the designer's `landing-v2.html`.
    Everything is scoped under `.lp` so it neither leaks into nor inherits
    from the rest of the app's styles. */
 
@@ -47,7 +47,7 @@
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "cv11";
 
-  /* landing root (was .lp layered on the app shell) */
+  /* landing root */
   height: auto;
   overflow-y: auto;
 }
@@ -55,7 +55,7 @@
 .lp *, .lp *::before, .lp *::after { box-sizing: border-box; }
 
 .lp button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; padding: 0; }
-.lp input, .lp textarea { font-family: inherit; color: inherit; }
+.lp input, .lp textarea, .lp select { font-family: inherit; color: inherit; }
 .lp a { color: inherit; text-decoration: none; }
 
 .lp .mono { font-family: var(--font-mono); font-feature-settings: "ss01"; }
@@ -140,18 +140,6 @@
   color: white;
 }
 
-/* Placeholder logo squares for partner leasers */
-.lp .logo-placeholder {
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  display: grid; place-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: white;
-  flex-shrink: 0;
-}
-
 /* Animations */
 @keyframes pulseDot {
   0%, 100% { opacity: 0.3; }
@@ -215,9 +203,6 @@
   border-bottom: 1px solid var(--border);
 }
 .lp .lp-nav__inner { height: 60px; display: flex; align-items: center; gap: 28px; }
-.lp .lp-nav__links { display: flex; gap: 24px; margin-left: 12px; }
-.lp .lp-nav__links a { font-size: 13.5px; color: var(--text-2); font-weight: 500; }
-.lp .lp-nav__links a:hover { color: var(--text); }
 
 /* Section rhythm */
 .lp .lp-section { padding: 96px 0; }
@@ -304,13 +289,22 @@
 
 /* Mini cards inside visuals */
 .lp .mini { font-size: 11px; }
-.lp .mini-row {
-  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
-  border-bottom: 1px solid var(--border);
-}
 .lp .mini-logo {
   width: 26px; height: 26px; border-radius: 6px; color: #fff;
   display: grid; place-items: center; font-size: 10px; font-weight: 600; flex-shrink: 0;
+  overflow: hidden;
+}
+.lp .mini-logo img {
+  width: 100%; height: 100%; object-fit: contain;
+  padding: 18%;
+  display: block;
+}
+/* For logos that already include their own colored background (full-bleed square) */
+.lp .mini-logo--fill img { padding: 0; object-fit: cover; }
+/* When a logo sits on a white tile instead of a brand-color square */
+.lp .mini-logo--tile {
+  background: #fff !important;
+  border: 1px solid var(--border);
 }
 
 /* Big + accounting feature card */
@@ -342,4 +336,105 @@
   .lp .lp-h2 { font-size: 30px; }
   .lp .lp-row { grid-template-columns: 1fr; gap: 32px; }
   .lp .lp-row--rev .lp-row__text { order: 0; }
+}
+
+/* ---------------- Expert modal ---------------- */
+.lp .lp-modal__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(20, 20, 24, 0.42);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: lpScrim 0.18s ease;
+}
+@keyframes lpScrim { from { opacity: 0; } to { opacity: 1; } }
+.lp .lp-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl, 18px);
+  box-shadow: 0 24px 60px -12px rgba(20, 20, 24, 0.4);
+  padding: 28px;
+  animation: lpModalIn 0.22s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes lpModalIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lp .lp-modal__head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 22px; }
+.lp .lp-modal__title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.lp .lp-modal__sub { font-size: 13.5px; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+.lp .lp-modal__close {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  color: var(--text-3);
+  background: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.lp .lp-modal__close:hover { background: var(--elevated); color: var(--text); }
+
+.lp .lp-form { display: flex; flex-direction: column; gap: 14px; }
+.lp .lp-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lp .lp-field { display: flex; flex-direction: column; gap: 6px; }
+.lp .lp-field > label {
+  font-size: 12.5px; font-weight: 500; color: var(--text-2);
+}
+.lp .lp-form input, .lp .lp-form select {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius, 10px);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border 0.12s, box-shadow 0.12s;
+}
+.lp .lp-form input::placeholder { color: var(--text-3); }
+.lp .lp-form input:focus, .lp .lp-form select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.lp .lp-form select { appearance: none; cursor: pointer; background-image: none; }
+
+/* Qualification: segmented yes/no */
+.lp .lp-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lp .lp-seg button {
+  padding: 11px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius, 10px);
+  background: var(--surface);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border 0.12s, background 0.12s, color 0.12s;
+}
+.lp .lp-seg button:hover { border-color: var(--text-3); }
+.lp .lp-seg button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.lp .lp-modal .btn--accent { width: 100%; justify-content: center; margin-top: 6px; }
+.lp .lp-modal__legal { font-size: 11.5px; color: var(--text-3); text-align: center; margin-top: 2px; line-height: 1.5; }
+
+/* Success state */
+.lp .lp-modal__done { text-align: center; padding: 14px 0 8px; }
+.lp .lp-modal__done-check {
+  width: 56px; height: 56px; border-radius: 999px;
+  background: var(--success-soft); color: var(--success);
+  display: grid; place-items: center;
+  margin: 0 auto 18px;
 }

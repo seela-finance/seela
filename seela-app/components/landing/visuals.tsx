@@ -1,6 +1,6 @@
 // Compact platform mockups used as illustrations on the landing page.
 // Each is wrapped in a browser frame and echoes a real Seela screen.
-// Ported verbatim from `Seela - Landing.html`.
+// Ported from the designer's `landing-v2.html`.
 import type { CSSProperties, ReactNode } from 'react'
 import {
   SparkleGlyph, IconRefresh, IconCalendar, IconClock, IconClose,
@@ -28,12 +28,16 @@ export function BrowserFrame({ url = 'app.seela.fr', children, bodyStyle, barDar
 
 // ---- Visual 1: Marketplace (you choose supplier, we find financing) ----
 export function VisualMarketplace() {
+  // Real partner logos served from /public/landing.
+  // - White/monochrome logo on transparent bg → keep `bg` (brand color), logo centers inside.
+  // - Logo that already includes its own colored square → `fill: true` (edge-to-edge).
+  // - Wide/wordmark logo on white → `tile: true` (white tile, logo contained).
   const offers = [
-    { logo: "BL", bg: "#0F7B6C", name: "BNP Lease", m: "1 284 €", score: 94, best: true },
-    { logo: "SG", bg: "#C8102E", name: "SG Equipment", m: "1 296 €", score: 91 },
-    { logo: "CA", bg: "#2D8A4E", name: "CA Leasing", m: "1 312 €", score: 88 },
-    { logo: "GR", bg: "#F47B20", name: "Grenke", m: "982 €", score: 82 },
-  ]
+    { logo: "BL", bg: "#0F7B6C", img: "/landing/bnp-lease.png", fill: true, name: "BNP Lease", m: "1 284 €", score: 94, best: true },
+    { logo: "FF", bg: "#E2001A", img: "/landing/franfinance.jpg", fill: true, name: "Franfinance", m: "1 296 €", score: 91 },
+    { logo: "CA", bg: "#0E7C5F", img: "/landing/ca-leasing.jpg", tile: true, name: "CA Leasing", m: "1 312 €", score: 88 },
+    { logo: "GR", bg: "#1A1A18", img: "/landing/grenke.png", fill: true, name: "Grenke", m: "982 €", score: 82 },
+  ] as { logo: string; bg: string; img?: string; fill?: boolean; tile?: boolean; name: string; m: string; score: number; best?: boolean }[]
   return (
     <BrowserFrame url="app.seela.fr/offres" bodyStyle={{ padding: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 12, color: "var(--accent)", fontWeight: 500 }}>
@@ -41,7 +45,10 @@ export function VisualMarketplace() {
       </div>
       {/* Hero offer */}
       <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "linear-gradient(135deg, #1A1A18 0%, #2A2A8C 100%)", color: "#FAFAF9", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div className="mini-logo" style={{ background: "#0F7B6C", width: 30, height: 30, fontSize: 11 }}>BL</div>
+        <div className={"mini-logo" + (offers[0].fill ? " mini-logo--fill" : "")} style={{ background: "#0F7B6C", width: 30, height: 30, fontSize: 11 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {offers[0].img ? <img src={offers[0].img} alt="BNP Lease" /> : "BL"}
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600 }}>BNP Lease</div>
           <div style={{ fontSize: 10.5, color: "#C8C8E8" }}>Recommandée · Score Seela 94</div>
@@ -53,7 +60,10 @@ export function VisualMarketplace() {
       </div>
       {offers.slice(1).map((o, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 8, marginBottom: 6, background: "var(--surface)" }}>
-          <div className="mini-logo" style={{ background: o.bg }}>{o.logo}</div>
+          <div className={"mini-logo" + (o.fill ? " mini-logo--fill" : "") + (o.tile ? " mini-logo--tile" : "")} style={{ background: o.bg }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {o.img ? <img src={o.img} alt={o.name} /> : o.logo}
+          </div>
           <div style={{ flex: 1, fontSize: 12, fontWeight: 500 }}>{o.name}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 36, height: 3, background: "var(--elevated)", borderRadius: 99, overflow: "hidden" }}>
@@ -152,7 +162,7 @@ export function VisualScoring() {
 // ---- Hero visual: conversational devis (split view) ----
 export function VisualConversation() {
   const lines = [
-    { ref: "MBP14-M4", label: "MacBook Pro 14\" M4 Pro", cat: "Informatique", catColor: "#5B5BD6", total: "23 120 €", checked: true },
+    { ref: "MBP14-M4", label: "Logitech Rally Bar - Salle de réunion", cat: "Audiovisuel", catColor: "#5B5BD6", total: "23 120 €", checked: true },
     { ref: "PE-R760", label: "Serveur Dell PowerEdge R760", cat: "Infrastructure IT", catColor: "#0E7C5F", total: "11 200 €", checked: true },
     { ref: "AERON-B", label: "Fauteuil Herman Miller Aeron", cat: "Mobilier", catColor: "#B45309", total: "5 560 €", checked: true },
     { ref: "DELONGHI", label: "Machine à café De'Longhi Pro", cat: "CHR · pause café", catColor: "#C026A3", total: "1 890 €", checked: false },
@@ -218,7 +228,7 @@ export function VisualConversation() {
             <div style={{ display: "flex", gap: 7 }}>
               <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center", flexShrink: 0 }}><SparkleGlyph size={8} color="#FAFAF9" /></div>
               <div>
-                <div style={{ fontSize: 10.5, lineHeight: 1.5, color: "var(--text)", marginBottom: 7 }}>Parfait. Sur combien de temps voulez-vous étaler les loyers ?</div>
+                <div style={{ fontSize: 10.5, lineHeight: 1.5, color: "var(--text)", marginBottom: 7 }}>Parfait. Quelle est la durée de location souhaitée ?</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {["24 mois", "36 mois", "48 mois"].map((d, i) => (
                     <span key={d} style={{ padding: "4px 9px", borderRadius: 99, border: "1px solid " + (i === 1 ? "var(--accent)" : "var(--border-strong)"), background: i === 1 ? "var(--accent-soft)" : "var(--surface)", color: i === 1 ? "var(--accent-strong)" : "var(--text-2)", fontSize: 9.5, fontWeight: 500 }}>{d}</span>

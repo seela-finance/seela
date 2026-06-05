@@ -1,5 +1,5 @@
 // Minimal icon set — line icons, 16px viewBox. Custom set, matches Linear/Claude vibe.
-// Ported verbatim from `Seela - Landing.html` (only the icons the landing uses).
+// Ported from the designer's `landing-v2.html` (only the icons the landing uses).
 import type { CSSProperties, ReactNode } from 'react'
 
 export type IconProps = {
