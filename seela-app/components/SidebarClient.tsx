@@ -14,8 +14,8 @@ interface Props {
 
 const NAV_MAIN = [
   {
-    href: '/dashboard',
-    activeOn: '/dashboard',
+    href: '/app/dashboard',
+    activeOn: '/app/dashboard',
     label: 'Tableau de bord',
     icon: (
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
@@ -27,8 +27,8 @@ const NAV_MAIN = [
     ),
   },
   {
-    href: '/nouveau',
-    activeOn: '/nouveau',
+    href: '/app/nouveau',
+    activeOn: '/app/nouveau',
     label: 'Nouveau financement',
     plus: true,
     icon: (
@@ -38,8 +38,8 @@ const NAV_MAIN = [
     ),
   },
   {
-    href: '/offres',
-    activeOn: '/offres',
+    href: '/app/offres',
+    activeOn: '/app/offres',
     label: 'Offres',
     badge: true,
     icon: (
@@ -51,8 +51,8 @@ const NAV_MAIN = [
     ),
   },
   {
-    href: '/contrats',
-    activeOn: '/contrats',
+    href: '/app/contrats',
+    activeOn: '/app/contrats',
     label: 'Contrats',
     badge: true,
     icon: (
@@ -90,7 +90,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
     >
       {/* Logo */}
       <div className="px-4 h-12 flex items-center shrink-0" style={{ borderBottom: '1px solid #E5E5E3' }}>
-        <Link href="/dashboard">
+        <Link href="/app/dashboard">
           <Logo size="sm" />
         </Link>
       </div>
@@ -117,7 +117,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
               </span>
               <span className="flex-1 truncate">{item.label}</span>
               {item.badge && (() => {
-                const count = item.href === '/offres' ? offresCount : contratsCount
+                const count = item.href === '/app/offres' ? offresCount : contratsCount
                 return count > 0 ? (
                   <span
                     className="shrink-0 text-xs font-medium"
