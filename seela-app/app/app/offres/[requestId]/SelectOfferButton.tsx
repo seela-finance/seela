@@ -24,7 +24,7 @@ export default function SelectOfferButton({ offerId, requestId, allOfferIds, fea
     await supabase.from('offers').update({ selected: true }).eq('id', offerId)
     await supabase.from('financing_requests').update({ status: 'active' }).eq('id', requestId)
 
-    router.push(`/contrats/${requestId}`)
+    router.push(`/app/contrats/${requestId}`)
     router.refresh()
   }
 

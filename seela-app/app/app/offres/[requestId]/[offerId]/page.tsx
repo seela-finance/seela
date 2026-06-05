@@ -149,9 +149,9 @@ export default async function OfferDetailPage({
     <div>
       {/* Breadcrumb */}
       <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>Offres</Link>
+        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>Offres</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <Link href={`/offres/${requestId}`} className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>{reqRef}</Link>
+        <Link href={`/app/offres/${requestId}`} className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>{reqRef}</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
         <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>{offer.leaser_name}</span>
         <TopActions />
@@ -160,7 +160,7 @@ export default async function OfferDetailPage({
       <div className="px-8 py-8">
         {/* Back link */}
         <Link
-          href={`/offres/${requestId}`}
+          href={`/app/offres/${requestId}`}
           className="inline-flex items-center gap-1.5 text-sm mb-6 transition-opacity hover:opacity-70"
           style={{ color: '#9A9A93' }}
         >

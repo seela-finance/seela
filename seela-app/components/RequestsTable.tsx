@@ -52,8 +52,8 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
 
         const offerCount = r.offers?.length ?? 0
         const destination = ['offers_available', 'offer_selected', 'seela_validated', 'submitted'].includes(r.status)
-          ? `/offres/${r.id}`
-          : `/contrats/${r.id}`
+          ? `/app/offres/${r.id}`
+          : `/app/contrats/${r.id}`
 
         return (
           <tr
@@ -83,7 +83,7 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
             <td className="px-4 py-3.5">
               {r.status === 'offers_available' ? (
                 <button
-                  onClick={e => { e.stopPropagation(); router.push(`/offres/${r.id}`) }}
+                  onClick={e => { e.stopPropagation(); router.push(`/app/offres/${r.id}`) }}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-80"
                   style={{ background: '#EEF2FF', color: '#3730A3' }}
                 >

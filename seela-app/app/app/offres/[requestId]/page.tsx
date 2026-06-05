@@ -70,7 +70,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
     <div>
       {/* Breadcrumb */}
       <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
+        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
           Offres
         </Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -211,7 +211,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                               <p className="font-medium text-white text-sm">{(meta?.rate ?? 4.85).toFixed(2)} %</p>
                             </div>
                             <Link
-                              href={`/offres/${requestId}/${offer.id}`}
+                              href={`/app/offres/${requestId}/${offer.id}`}
                               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
                               style={{ background: '#fff', color: '#1A1A18', borderRadius: 8 }}
                             >
@@ -266,7 +266,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                         </p>
                       </div>
                       <Link
-                        href={`/offres/${requestId}/${offer.id}`}
+                        href={`/app/offres/${requestId}/${offer.id}`}
                         className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-[#1A1A18]"
                         style={{ borderColor: '#E5E5E3', color: '#1A1A18', background: 'transparent', borderRadius: 8 }}
                       >

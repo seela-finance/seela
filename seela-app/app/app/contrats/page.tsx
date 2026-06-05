@@ -40,7 +40,7 @@ export default async function ContratsPage() {
               </p>
             </div>
             <Link
-              href="/nouveau"
+              href="/app/nouveau"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
               style={{ background: '#4F46E5', color: '#fff', borderRadius: 8 }}
             >
@@ -58,7 +58,7 @@ export default async function ContratsPage() {
             >
               <p className="text-sm mb-4" style={{ color: '#9A9A93' }}>Aucun contrat actif pour l&apos;instant.</p>
               <Link
-                href="/nouveau"
+                href="/app/nouveau"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
                 style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
               >

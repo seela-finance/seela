@@ -146,7 +146,7 @@ function RequestTable({
 }
 
 function AvailableSection({ requests }: { requests: RequestRow[] }) {
-  return <RequestTable requests={requests} ctaLabel="Voir les offres" href={r => `/offres/${r.id}`} />
+  return <RequestTable requests={requests} ctaLabel="Voir les offres" href={r => `/app/offres/${r.id}`} />
 }
 
 function StepDot({ state }: { state: 'done' | 'active' | 'pending' }) {
@@ -205,7 +205,7 @@ function ProcessingSection({ requests }: { requests: RequestRow[] }) {
         return (
           <Link
             key={r.id}
-            href={`/offres/${r.id}`}
+            href={`/app/offres/${r.id}`}
             className="flex items-center gap-6 px-5 py-4 transition-colors hover:bg-[#FAFAF9]"
             style={{ background: '#fff', borderBottom: isLast ? 'none' : '1px solid #F5F5F4', display: 'flex' }}
           >
@@ -251,7 +251,7 @@ function SubmittedSection({ requests }: { requests: RequestRow[] }) {
     <RequestTable
       requests={requests}
       ctaLabel="Voir le dossier"
-      href={r => `/offres/${r.id}`}
+      href={r => `/app/offres/${r.id}`}
     />
   )
 }
@@ -305,7 +305,7 @@ export default async function OffresPage() {
             <p className="text-sm font-medium mb-1" style={{ color: '#1A1A18' }}>Aucune demande en cours</p>
             <p className="text-xs mb-5" style={{ color: '#9A9A93' }}>Les offres apparaissent ici dès qu&apos;un leaser partenaire répond à votre dossier.</p>
             <Link
-              href="/nouveau"
+              href="/app/nouveau"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
               style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
             >

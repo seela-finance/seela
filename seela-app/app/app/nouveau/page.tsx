@@ -835,7 +835,7 @@ function Step4Confirmation({
         </p>
         <p className="text-xs mb-8" style={{ color: '#9A9A93' }}>Délai estimé : 24 à 48h ouvrées</p>
         <button
-          onClick={() => router.push('/offres')}
+          onClick={() => router.push('/app/offres')}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           style={{ background: '#1A1A18', color: '#FAFAF9' }}
         >
@@ -907,7 +907,7 @@ export default function NouveauPage() {
   return (
     <div className="flex flex-col flex-1">
       <div className="border-b h-12 flex items-center px-6 shrink-0" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/dashboard" className="text-sm transition-colors" style={{ color: '#9A9A93' }}>Tableau de bord</Link>
+        <Link href="/app/dashboard" className="text-sm transition-colors" style={{ color: '#9A9A93' }}>Tableau de bord</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="mx-1.5">
           <path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

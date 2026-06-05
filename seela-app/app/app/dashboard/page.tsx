@@ -62,7 +62,7 @@ export default async function DashboardPage() {
             {' '}· Uploadez vos bilans pour accéder à plus d&apos;offres
           </p>
           <a
-            href="/onboarding"
+            href="/app/onboarding"
             className="shrink-0 ml-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
             style={{ background: '#4F46E5', color: '#fff', borderRadius: 8 }}
           >
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link
-            href="/nouveau"
+            href="/app/nouveau"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
             style={{ background: '#4F46E5', color: '#fff', borderRadius: 8 }}
           >
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
               Aucune demande de financement pour l&apos;instant.
             </p>
             <Link
-              href="/nouveau"
+              href="/app/nouveau"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
               style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
             >

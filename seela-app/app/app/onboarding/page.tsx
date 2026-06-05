@@ -919,12 +919,12 @@ export default function OnboardingPage() {
 
   async function handleComplete() {
     await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
-    router.push('/dashboard')
+    router.push('/app/dashboard')
   }
 
   async function handleSkip() {
     await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
-    router.push('/dashboard')
+    router.push('/app/dashboard')
   }
 
   if (!initialized) {

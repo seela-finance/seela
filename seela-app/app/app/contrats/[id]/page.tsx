@@ -122,7 +122,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
       <main className="flex-1 overflow-y-auto" style={{ marginLeft: 220 }}>
         {/* Breadcrumb */}
         <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <Link href="/contrats" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
+          <Link href="/app/contrats" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
             Contrats
           </Link>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -133,7 +133,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
         <div className="px-8 py-8">
           {/* Header row */}
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/contrats" className="flex items-center transition-opacity hover:opacity-70" style={{ color: '#9A9A93' }}>
+            <Link href="/app/contrats" className="flex items-center transition-opacity hover:opacity-70" style={{ color: '#9A9A93' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

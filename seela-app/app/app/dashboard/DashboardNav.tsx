@@ -18,7 +18,7 @@ export default function DashboardNav({ companyName }: { companyName: string }) {
   return (
     <header className="border-b" style={{ background: '#FAFAF9', borderColor: '#E5E5E2' }}>
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/dashboard"><Logo size="sm" /></Link>
+        <Link href="/app/dashboard"><Logo size="sm" /></Link>
         <div className="flex items-center gap-6">
           <span className="text-sm" style={{ color: '#9A9A93' }}>{companyName}</span>
           <button

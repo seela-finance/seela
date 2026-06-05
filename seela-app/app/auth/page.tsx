@@ -48,7 +48,7 @@ export default function AuthPage() {
             .select('onboarding_completed')
             .eq('id', loginData.user.id)
             .single()
-          router.push(profile?.onboarding_completed ? '/dashboard' : '/onboarding')
+          router.push(profile?.onboarding_completed ? '/app/dashboard' : '/app/onboarding')
           router.refresh()
         }
       } else {
@@ -63,7 +63,7 @@ export default function AuthPage() {
         }
 
         if (data.session) {
-          router.push('/onboarding')
+          router.push('/app/onboarding')
           router.refresh()
         } else {
           setMessage('Vérifiez votre email pour confirmer votre compte.')

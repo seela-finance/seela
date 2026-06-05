@@ -149,7 +149,7 @@ export default function SouscrireCard({
             {leaserName} n&apos;a pas pu donner suite.
           </p>
           <Link
-            href={`/offres/${requestId}`}
+            href={`/app/offres/${requestId}`}
             className="text-sm font-medium transition-opacity hover:opacity-70"
             style={{ color: '#4F46E5' }}
           >
@@ -171,7 +171,7 @@ export default function SouscrireCard({
             Votre contrat est en préparation.
           </p>
           <Link
-            href={`/contrats/${requestId}`}
+            href={`/app/contrats/${requestId}`}
             className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-opacity hover:opacity-70"
             style={{ color: '#166534' }}
           >
