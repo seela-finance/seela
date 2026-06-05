@@ -8,7 +8,7 @@ import {
   SparkleGlyph, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
   IconClose, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
   IconMedical, IconFactory, IconChair, IconTruck, IconCamera, IconTool,
-  IconServerStack, IconSolar, IconResto, type IconProps,
+  IconServerStack, IconSolar, IconResto, IconUser, type IconProps,
 } from './icons'
 import { VisualConversation, VisualMarketplace, VisualContract, VisualScoring } from './visuals'
 
@@ -23,7 +23,7 @@ function Logo({ size = 22, dark }: { size?: number; dark?: boolean }) {
   )
 }
 
-function Nav() {
+function Nav({ userEmail }: { userEmail?: string | null }) {
   return (
     <nav className="lp-nav">
       <div className="lp-wrap lp-nav__inner">
@@ -35,8 +35,20 @@ function Nav() {
           <a href="#">Tarifs</a>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <Link className="btn btn--ghost" href="/auth">Se connecter</Link>
-          <Link className="btn btn--accent" href="/auth">Financer un équipement</Link>
+          {userEmail ? (
+            <Link className="lp-user" href="/app/dashboard">
+              <span className="lp-user__avatar"><IconUser size={15} /></span>
+              <span>
+                <span className="lp-user__action">Go to app <IconArrowRight size={13} /></span>
+                <span className="lp-user__email" style={{ display: "block" }}>{userEmail}</span>
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link className="btn btn--ghost" href="/auth">Se connecter</Link>
+              <Link className="btn btn--accent" href="/auth">Financer un équipement</Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
@@ -469,10 +481,10 @@ function Footer() {
   )
 }
 
-export default function LandingPage({ className }: { className?: string }) {
+export default function LandingPage({ className, userEmail }: { className?: string; userEmail?: string | null }) {
   return (
     <div className={"lp" + (className ? " " + className : "")}>
-      <Nav />
+      <Nav userEmail={userEmail} />
       <Hero />
       <TryBlock />
       <EquipmentCategories />

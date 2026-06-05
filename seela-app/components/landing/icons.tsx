@@ -31,6 +31,7 @@ export const IconPdf = (p: IconProps) => <Icon {...p} d={<><path d="M9 2H4a1 1 0
 export const IconRefresh = (p: IconProps) => <Icon {...p} d={<><path d="M2 3v3.5h3.5M14 13V9.5h-3.5M3 6.5a5.5 5.5 0 019.5-1.5M13 9.5a5.5 5.5 0 01-9.5 1.5"/></>} />
 export const IconSend = (p: IconProps) => <Icon {...p} d={<><path d="M14 2L7 9M14 2l-4.5 12-2.5-5L2 6l12-4z"/></>} />
 export const IconAttach = (p: IconProps) => <Icon {...p} d={<path d="M11 6.5l-4.5 4.5a2 2 0 002.8 2.8L13.5 9a3.5 3.5 0 00-5-5L3 9.5a5 5 0 007 7l3-3"/>} />
+export const IconUser = (p: IconProps) => <Icon {...p} d={<><circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c0-2.5 2.2-4 5-4s5 1.5 5 4"/></>} />
 
 // Equipment category icons
 export const IconLaptop = (p: IconProps) => <Icon {...p} d={<><rect x="3" y="3.5" width="10" height="7" rx="1"/><path d="M1.5 13h13l-1-2.5h-11L1.5 13z"/></>} />
