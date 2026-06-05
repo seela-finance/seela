@@ -19,9 +19,41 @@ Le front client est complet et fonctionnel. Le traitement côté leasers est man
 
 ---
 
+## Structure du projet
+
+Tout le code applicatif vit dans `seela-app/` (projet Next.js App Router). La landing n'est **plus un fichier standalone** : elle est intégrée à l'app Next.js.
+
+```
+seela-app/
+├── app/
+│   ├── page.tsx          # Landing page (route `/`, publique)
+│   ├── landing.css       # CSS de la landing, scopé sous `.lp`
+│   ├── globals.css       # CSS du reste de l'app
+│   ├── layout.tsx        # Layout racine
+│   ├── auth/             # Authentification (publique)
+│   ├── api/              # Routes API (analyse IA, scoring, matching leasers…)
+│   └── app/              # ⚠️ Partie AUTHENTIFIÉE de l'application
+│       ├── layout.tsx    # Layout authentifié (sidebar, etc.)
+│       ├── dashboard/    # Tableau de bord
+│       ├── nouveau/      # Flow de financement
+│       ├── contrats/[id] # Détail d'une demande
+│       ├── offres/       # Offres
+│       └── onboarding/   # Onboarding
+├── components/
+│   └── landing/          # Composants de la landing (LandingPage, icons, visuals)
+├── lib/
+└── supabase/
+```
+
+Les routes authentifiées sont donc préfixées par `/app` : `/app/dashboard`, `/app/nouveau`, `/app/contrats/[id]`, etc.
+
+> **Note temporaire (amélioration future)** : le CSS de la landing (`app/landing.css`, scopé sous `.lp`) et le CSS du reste de l'app (`app/globals.css` + Tailwind) sont **volontairement séparés et ne doivent pas être partagés**. Ne pas mutualiser les styles entre la landing et le reste de l'app pour l'instant — une unification est prévue plus tard.
+
+---
+
 ## Design system
 
-Extraire le style visuel du fichier `Seela - Landing.html` présent dans le projet.
+Le style visuel de référence vit désormais dans le code : `seela-app/app/landing.css` (landing) et `seela-app/app/globals.css` (reste de l'app).
 
 Tokens principaux :
 - Background général : `#FAFAF9` (warm off-white)
@@ -31,14 +63,14 @@ Tokens principaux :
 - Logo : "seela" en lowercase, font-weight 600
 - Style général : minimaliste, professionnel, épuré — zéro fioriture
 
-Le dashboard prototype (`Seela - MVP.html`) est la référence visuelle pour les pages internes.
+Les pages internes existantes (`seela-app/app/app/`) sont la référence visuelle pour toute nouvelle page authentifiée.
 
 ---
 
 ## Pages à construire
 
 ### 1. `/` — Landing page
-Reproduire fidèlement le design de `Seela - Landing.html`.
+Intégrée à l'app Next.js (`app/page.tsx` + `components/landing/`), CSS dédié scopé `.lp` (`app/landing.css`).
 CTA principal "Démarrer un financement" → redirige vers `/auth`.
 
 ---
@@ -52,11 +84,11 @@ Provider : Supabase Auth.
 
 ---
 
-### 3. `/dashboard` — Tableau de bord
+### 3. `/app/dashboard` — Tableau de bord
 
 Affiche la liste des demandes de financement du client connecté avec :
 - Référence, actif financé, montant mensuel, statut, date de la prochaine échéance
-- CTA "Nouveau financement" (→ `/nouveau`)
+- CTA "Nouveau financement" (→ `/app/nouveau`)
 - Encours total et résumé financier en haut de page (comme dans le prototype)
 
 Statuts possibles :
@@ -67,7 +99,7 @@ Statuts possibles :
 
 ---
 
-### 4. `/nouveau` — Flow de financement (multi-étapes avec barre de progression)
+### 4. `/app/nouveau` — Flow de financement (multi-étapes avec barre de progression)
 
 **Étape 1 — Upload du document**
 - Zone drag & drop + bouton pour uploader devis ou facture (PDF ou image JPG/PNG)
@@ -116,7 +148,7 @@ Coefficients pour l'estimation :
 
 ---
 
-### 5. `/contrats/[id]` — Détail d'une demande
+### 5. `/app/contrats/[id]` — Détail d'une demande
 
 - Document uploadé (lien de téléchargement)
 - Tableau des lignes sélectionnées
@@ -182,7 +214,7 @@ CREATE TABLE offers (
 
 ## Règles de développement
 
-- Toutes les routes `/dashboard`, `/nouveau`, `/contrats/[id]` sont protégées — redirection vers `/auth` si non connecté
+- Toutes les routes sous `/app` (`/app/dashboard`, `/app/nouveau`, `/app/contrats/[id]`, …) sont protégées — redirection vers `/auth` si non connecté
 - États de chargement (`loading`) sur toutes les actions async (upload, analyse IA, soumission)
 - Gestion d'erreur explicite : upload échoué, analyse IA sans résultat, erreur réseau
 - Responsive — le flow doit fonctionner sur mobile
