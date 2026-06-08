@@ -21,6 +21,11 @@ Le front client est complet et fonctionnel. Le traitement côté leasers est man
 
 ## Structure du projet
 
+Le repo contient deux espaces distincts :
+
+- `seela-app/` — le code applicatif (projet Next.js App Router). C'est le sujet principal de ce brief.
+- `seela-bos/` — BOS (Business Operating System) : un workspace IA "associé business" pour piloter le business Seela. **Ce n'est pas du code applicatif** — c'est un système de fichiers markdown (`Core/` état du business, `Knowledge/` patterns, `Output/` livrables) avec ses propres skills (`.claude/skills/`) et son propre `seela-bos/CLAUDE.md`. Pour tout travail dans `seela-bos/`, suivre les instructions de ce CLAUDE.md-là, pas celles de ce brief.
+
 Tout le code applicatif vit dans `seela-app/` (projet Next.js App Router). La landing n'est **plus un fichier standalone** : elle est intégrée à l'app Next.js.
 
 ```
