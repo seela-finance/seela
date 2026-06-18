@@ -331,11 +331,72 @@
   font-size: 13px; color: var(--text-2); font-weight: 500;
 }
 
+/* ---------- Responsive helpers (extracted from inline styles so media
+   queries can override them — inline styles otherwise win over the cascade) ---------- */
+
+/* Equipment categories grid */
+.lp .lp-eqgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+/* CTA button rows (hero + final CTA) */
+.lp .lp-cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* "C'est finançable" result row inside the try block */
+.lp .lp-try-result { display: flex; align-items: center; gap: 14px; }
+
+/* Integrations dark card — header text & logo grid wrappers */
+.lp .lp-bigplus__head { padding: 56px 56px 8px; }
+.lp .lp-bigplus__logos { padding: 32px 24px 8px; }
+
+/* Hero eyebrow stays on one line on desktop, wraps on small screens */
+.lp .lp-hero .lp-eyebrow { white-space: nowrap; }
+
+/* Hero split-view mockup (document | chat) */
+.lp .lp-hero-visual { display: grid; grid-template-columns: 1.25fr 1fr; height: 432px; }
+.lp .lp-hero-visual__chat { border-left: 1px solid var(--border); }
+
+/* ---------- Tablet ---------- */
 @media (max-width: 920px) {
   .lp .lp-h1 { font-size: 42px; }
   .lp .lp-h2 { font-size: 30px; }
   .lp .lp-row { grid-template-columns: 1fr; gap: 32px; }
   .lp .lp-row--rev .lp-row__text { order: 0; }
+  .lp .lp-eqgrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+  .lp .lp-wrap { padding: 0 20px; }
+  .lp .lp-section { padding: 64px 0; }
+  .lp .lp-section--tight { padding: 56px 0; }
+  .lp .lp-hero { padding: 56px 0 48px; }
+  .lp .lp-h1 { font-size: 34px; }
+  .lp .lp-h2 { font-size: 26px; }
+  .lp .lp-lede { font-size: 16px; }
+
+  /* Long hero eyebrow may wrap rather than overflow the viewport */
+  .lp .lp-hero .lp-eyebrow { white-space: normal; }
+
+  /* Equipment cards stack one per row */
+  .lp .lp-eqgrid { grid-template-columns: 1fr; }
+
+  /* CTA buttons stack full-width */
+  .lp .lp-cta-row { flex-direction: column; }
+  .lp .lp-cta-row > .btn { width: 100%; justify-content: center; }
+
+  /* Finançable result: text over a full-width button */
+  .lp .lp-try-result { flex-direction: column; align-items: stretch; gap: 16px; }
+  .lp .lp-try-result .btn { width: 100%; justify-content: center; }
+
+  /* Integrations card: tighter padding so it breathes on small screens */
+  .lp .lp-bigplus__head { padding: 40px 22px 8px; }
+  .lp .lp-bigplus__logos { padding: 24px 10px 8px; }
+
+  /* Free up nav space — the accent CTA already leads to /auth */
+  .lp .lp-nav__login { display: none; }
+
+  /* Hero mockup stacks: document above, chat below */
+  .lp .lp-hero-visual { grid-template-columns: 1fr; height: auto; }
+  .lp .lp-hero-visual__chat { border-left: 0; border-top: 1px solid var(--border); }
 }
 
 /* ---------------- Expert modal ---------------- */

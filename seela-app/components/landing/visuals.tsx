@@ -170,7 +170,7 @@ export function VisualConversation() {
   ]
   return (
     <BrowserFrame url="app.seela.fr/financement">
-      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr", height: 432, textAlign: "left" }}>
+      <div className="lp-hero-visual" style={{ textAlign: "left" }}>
         {/* LEFT — document canvas */}
         <div style={{ background: "var(--elevated)", padding: 16, overflow: "hidden" }}>
           {/* file header */}
@@ -206,7 +206,7 @@ export function VisualConversation() {
         </div>
 
         {/* RIGHT — chat */}
-        <div style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+        <div className="lp-hero-visual__chat" style={{ background: "var(--surface)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 22, height: 22, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center" }}><SparkleGlyph size={10} color="#FAFAF9" /></div>
             <div>

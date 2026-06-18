@@ -40,7 +40,7 @@ function Nav({ userEmail }: { userEmail?: string | null }) {
             </Link>
           ) : (
             <>
-              <Link className="btn btn--ghost" href="/auth">Se connecter</Link>
+              <Link className="btn btn--ghost lp-nav__login" href="/auth">Se connecter</Link>
               <Link className="btn btn--accent" href="/auth">Financer un équipement</Link>
             </>
           )}
@@ -58,13 +58,13 @@ function Hero({ onOpenExpert }: { onOpenExpert: () => void }) {
       <div className="lp-hero__grid"></div>
       <div className="lp-wrap" style={{ position: "relative", textAlign: "center", maxWidth: 860 }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-          <span className="lp-eyebrow" style={{ whiteSpace: "nowrap" }}><SparkleGlyph size={12} /> La location d&apos;équipement des entreprises en croissance</span>
+          <span className="lp-eyebrow"><SparkleGlyph size={12} /> La location d&apos;équipement des entreprises en croissance</span>
         </div>
         <h1 className="lp-h1">Une nouvelle façon de<br/>financer vos équipements.</h1>
         <p className="lp-lede" style={{ margin: "22px auto 0", maxWidth: 600 }}>
           Seela vous conseille dans le financement de vos actifs matériels en quelques minutes, dans les meilleures conditions. Déposez un devis, choisissez votre offre, signez.
         </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 32 }}>
+        <div className="lp-cta-row" style={{ marginTop: 32 }}>
           <a className="btn btn--accent btn--lg" href="#try">Estimer mon financement <IconArrowRight /></a>
           <button className="btn btn--secondary btn--lg" type="button" onClick={onOpenExpert}>Parler à un expert</button>
         </div>
@@ -180,7 +180,7 @@ function TryBlock() {
                         {shown && !l.ok && <IconClose size={10} style={{ color: "var(--text-3)" }} />}
                       </div>
                       <span className="mono" style={{ fontSize: 10.5, color: "var(--text-3)", width: 64 }}>{l.ref}</span>
-                      <span style={{ flex: 1, fontSize: 13 }}>{l.label}</span>
+                      <span style={{ flex: 1, fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.label}</span>
                       {shown && !l.ok && <span className="badge badge--outline" style={{ fontSize: 10.5, whiteSpace: "nowrap" }}>Service · non finançable</span>}
                       <span className="num" style={{ fontSize: 13, fontWeight: 500, width: 80, textAlign: "right" }}>{l.total}</span>
                     </div>
@@ -191,7 +191,7 @@ function TryBlock() {
               {/* Result */}
               {stage === "done" && (
                 <div style={{ padding: 18, background: "linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%)", borderTop: "1px solid var(--accent-soft-2)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div className="lp-try-result">
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
                         <SparkleGlyph size={15} color="var(--accent)" /> Bonne nouvelle — c&apos;est finançable.
@@ -210,7 +210,7 @@ function TryBlock() {
           )}
         </div>
         <div style={{ marginTop: 14, fontSize: 12, color: "var(--text-3)", display: "flex", justifyContent: "center", gap: 14 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconLock size={11} /> Données chiffrées, hébergées en France</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconLock size={11} /> Vos données sont sécurisées et restent en Europe</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconShield size={11} /> Aucune carte ni RIB demandé</span>
         </div>
       </div>
@@ -245,7 +245,7 @@ function EquipmentCategories() {
             Du parc informatique à la machine-outil, Seela finance tout équipement professionnel — neuf ou déjà acquis.
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div className="lp-eqgrid">
           {EQUIPMENT_CATS.map((c, i) => {
             const I = c.icon
             return (
@@ -395,7 +395,7 @@ function IntegrationsBlock() {
           {/* grid texture */}
           <div style={{ position: "absolute", inset: 0, opacity: 0.4, backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "48px 48px", pointerEvents: "none" }}></div>
 
-          <div style={{ position: "relative", padding: "56px 56px 8px", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
+          <div className="lp-bigplus__head" style={{ position: "relative", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
             <span className="lp-eyebrow" style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.12)", color: "#C8C8E8" }}>
               <SparkleGlyph size={12} color="#C8C8E8" /> Intégrations - coming soon
             </span>
@@ -409,7 +409,7 @@ function IntegrationsBlock() {
           </div>
 
           {/* Logo grid */}
-          <div style={{ position: "relative", padding: "32px 24px 8px", maskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskComposite: "source-in", maskComposite: "intersect" }}>
+          <div className="lp-bigplus__logos" style={{ position: "relative", maskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 18%, black 100%), linear-gradient(to right, transparent, black 14%, black 86%, transparent)", WebkitMaskComposite: "source-in", maskComposite: "intersect" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720, margin: "0 auto" }}>
               {INT_GRID.map((row, ri) => (
                 <div key={ri} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 14 }}>
@@ -453,7 +453,7 @@ function FinalCta({ onOpenExpert }: { onOpenExpert: () => void }) {
         <p className="lp-lede" style={{ margin: "14px auto 0", maxWidth: 480 }}>
           Déposez un devis, on s&apos;occupe du reste. Mise en place en quelques minutes, fonds débloqués sous 48h.
         </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 28 }}>
+        <div className="lp-cta-row" style={{ marginTop: 28 }}>
           <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
           <button className="btn btn--secondary btn--lg" type="button" onClick={onOpenExpert}>Parler à un expert</button>
         </div>
