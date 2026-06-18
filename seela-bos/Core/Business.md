@@ -31,8 +31,13 @@ SaaS :
 
 > Note BOS : ces idées vont du plus rapide-à-monétiser (services manuels) au plus lourd (ERP). Service-first puis SaaS = séquence classique et saine pour un studio. À NE PAS lancer tant que le 1er wedge n'a pas de revenue.
 
+## Go-to-market actuel
+Modèle = **apport d'affaires aux leasers**. Seela qualifie/agrège des dossiers de financement côté entreprises et les apporte aux leasers partenaires, qui instruisent et financent. Étape go-to-market immédiate : **signer des partenariats apporteur d'affaires avec des leasers**.
+- Ce qu'un leaser achète : du **deal flow qualifié** (baisse son coût d'instruction) + de la **confiance** (atout : exit Cleaq, maison déjà connue du milieu).
+- Levier de vente le plus fort : 2-3 **vrais dossiers qualifiés** posés sur la table > UI léchée.
+
 ## Finances
-À documenter — pas encore de revenue connu. Modèle de revenue Seela à clarifier (commission sur dossier transmis aux leasers ?).
+À documenter — pas encore de revenue connu. Modèle de revenue = commission sur dossiers apportés/financés via les leasers partenaires (% à clarifier).
 
 ## À clarifier (ouvert)
 - Modèle de revenue exact de Seela.
