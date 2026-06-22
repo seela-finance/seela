@@ -3,7 +3,7 @@
 // Ported from the designer's `landing-v2.html`.
 import type { CSSProperties, ReactNode } from 'react'
 import {
-  SparkleGlyph, IconRefresh, IconCalendar, IconClock, IconClose,
+  SparkleGlyph, EverleaseMark, IconRefresh, IconCalendar, IconClock, IconClose,
   IconLink, IconPdf, IconCheckSm, IconSend,
 } from './icons'
 
@@ -208,7 +208,7 @@ export function VisualConversation() {
         {/* RIGHT — chat */}
         <div className="lp-hero-visual__chat" style={{ background: "var(--surface)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 22, height: 22, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center" }}><SparkleGlyph size={10} color="#FAFAF9" /></div>
+            <div style={{ width: 22, height: 22, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center" }}><EverleaseMark size={22} color="#FAFAF9" /></div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 500 }}>Assistant Everlease</div>
               <div style={{ fontSize: 9, color: "var(--text-3)" }}>En conversation · 3 lignes sélectionnées</div>
@@ -217,7 +217,7 @@ export function VisualConversation() {
           <div style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
             {/* AI bubble */}
             <div style={{ display: "flex", gap: 7 }}>
-              <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center", flexShrink: 0 }}><SparkleGlyph size={8} color="#FAFAF9" /></div>
+              <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center", flexShrink: 0 }}><EverleaseMark size={18} color="#FAFAF9" /></div>
               <div style={{ fontSize: 10.5, lineHeight: 1.5, color: "var(--text)" }}>J&apos;ai analysé votre devis : 8 lignes, 5 finançables. Cochez celles à inclure.</div>
             </div>
             {/* user bubble */}
@@ -226,7 +226,7 @@ export function VisualConversation() {
             </div>
             {/* AI bubble + chips */}
             <div style={{ display: "flex", gap: 7 }}>
-              <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center", flexShrink: 0 }}><SparkleGlyph size={8} color="#FAFAF9" /></div>
+              <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center", flexShrink: 0 }}><EverleaseMark size={18} color="#FAFAF9" /></div>
               <div>
                 <div style={{ fontSize: 10.5, lineHeight: 1.5, color: "var(--text)", marginBottom: 7 }}>Parfait. Quelle est la durée de location souhaitée ?</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
