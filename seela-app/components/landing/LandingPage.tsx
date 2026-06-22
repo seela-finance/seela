@@ -7,7 +7,7 @@ import React from 'react'
 import Link from 'next/link'
 import {
   SparkleGlyph, EverleaseMark, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
-  IconClose, IconClock, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
+  IconClose, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
   IconMedical, IconFactory, IconChair, IconTruck, IconCamera, IconTool,
   IconServerStack, IconSolar, IconResto, IconUser, type IconProps,
 } from './icons'
@@ -577,9 +577,9 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
 /* ---------------- BLOCK — THE PAIN (problem agitation) ---------------- */
 const PAINS: { icon: (p: IconProps) => React.JSX.Element; title: string; body: string }[] = [
   {
-    icon: IconClock,
-    title: "La banque traîne, puis exige.",
-    body: "Dossier en comité, allers-retours pendant des semaines — et au bout, un refus ou une caution personnelle. Pendant ce temps, l'équipement attend, et l'activité aussi.",
+    icon: IconStore,
+    title: "Une seule offre, rarement la bonne.",
+    body: "Banque ou fournisseur : vous n'avez qu'une proposition sur la table, sans mise en concurrence. Impossible de savoir si vous payez le juste prix — ni si la durée et la structure collent vraiment à vos besoins.",
   },
   {
     icon: IconLock,
@@ -595,7 +595,7 @@ const PAINS: { icon: (p: IconProps) => React.JSX.Element; title: string; body: s
 
 function PainBlock() {
   return (
-    <section className="lp-section">
+    <section className="lp-section" style={{ paddingTop: 56 }}>
       <div className="lp-wrap">
         <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto" }}>
           <span className="lp-eyebrow">Le problème</span>
