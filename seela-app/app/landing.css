@@ -373,6 +373,8 @@
   .lp .lp-row { grid-template-columns: 1fr; gap: 32px; }
   .lp .lp-row--rev .lp-row__text { order: 0; }
   .lp .lp-eqgrid { grid-template-columns: repeat(2, 1fr); }
+  /* Pain cards stack vertically from tablet down */
+  .lp .lp-painrow { grid-template-columns: 1fr; }
 }
 
 /* ---------- Mobile ---------- */
