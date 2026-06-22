@@ -122,11 +122,11 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
       <main className="flex-1 overflow-y-auto" style={{ marginLeft: 220 }}>
         {/* Breadcrumb */}
         <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <Link href="/app/contrats" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
+          <Link href="/app/contrats" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
             Contrats
           </Link>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>{ref}</span>
+          <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{ref}</span>
           <TopActions />
         </div>
 
@@ -163,7 +163,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
-                style={{ background: '#fff', color: '#1A1A18', borderColor: '#E5E5E3', borderRadius: 8 }}
+                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5M1 11h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -175,7 +175,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               <a
                 href={`mailto:leasing@${leaserName.toLowerCase().replace(/\s+/g, '')}.fr`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
-                style={{ background: '#fff', color: '#1A1A18', borderColor: '#E5E5E3', borderRadius: 8 }}
+                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
               >
                 Contacter le leaser
               </a>
@@ -192,11 +192,11 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Title */}
-          <h1 className="font-semibold mt-3 mb-0.5" style={{ fontSize: 26, color: '#1A1A18', letterSpacing: '-0.5px' }}>
+          <h1 className="font-semibold mt-3 mb-0.5" style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px' }}>
             {assetTitle}{assetSuffix}
           </h1>
           <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
-            Financé par <strong style={{ color: '#1A1A18' }}>{leaserName}</strong>
+            Financé par <strong style={{ color: '#0E0E0C' }}>{leaserName}</strong>
             {' · '}Crédit-bail mobilier · Option d&apos;achat 1 €
           </p>
 
@@ -220,14 +220,14 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                 <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
                   <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Nouvelle mensualité</p>
-                  <p className="font-semibold text-sm" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(counterOffer.monthly_payment)}
                     <span className="font-normal text-xs ml-1" style={{ color: '#9A9A93' }}>HT</span>
                   </p>
                 </div>
                 <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
                   <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Durée proposée</p>
-                  <p className="font-semibold text-sm" style={{ color: '#1A1A18' }}>{counterOffer.duration_months} mois</p>
+                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{counterOffer.duration_months} mois</p>
                 </div>
               </div>
               <CounterOfferActions offerId={counterOffer.id} requestId={id} allOfferIds={allOfferIds} />
@@ -245,7 +245,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
             ].map((kpi) => (
               <div key={kpi.label} className="p-4 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                 <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>{kpi.label}</p>
-                <p className="font-semibold text-sm leading-tight" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                <p className="font-semibold text-sm leading-tight" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                   {kpi.value}
                 </p>
                 {kpi.sub && <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>{kpi.sub}</p>}
@@ -260,13 +260,13 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
                 <div className="px-5 py-4 border-b flex items-center justify-between" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                   <div>
-                    <h2 className="text-sm font-semibold" style={{ color: '#1A1A18' }}>Échéancier</h2>
+                    <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>Échéancier</h2>
                     <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                       Prélèvement SEPA le {startDate.getDate()} de chaque mois
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: '#1A1A18', color: '#fff', borderRadius: 6 }}>Liste</button>
+                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: '#0E0E0C', color: '#fff', borderRadius: 6 }}>Liste</button>
                     <button className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={{ background: '#fff', color: '#9A9A93', borderColor: '#E5E5E3', borderRadius: 6 }}>Calendrier</button>
                   </div>
                 </div>
@@ -290,12 +290,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                           #{payment.n}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm" style={{ color: '#1A1A18' }}>{payment.date}</p>
+                          <p className="text-sm" style={{ color: '#0E0E0C' }}>{payment.date}</p>
                           <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                             Prélèvement SEPA · IBAN •••• {sepaIban}
                           </p>
                         </div>
-                        <p className="font-medium text-sm" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                        <p className="font-medium text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(payment.montant)}
                         </p>
                         <span
@@ -332,12 +332,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                           #{payment.n}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm" style={{ color: '#1A1A18' }}>{payment.date}</p>
+                          <p className="text-sm" style={{ color: '#0E0E0C' }}>{payment.date}</p>
                           <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                             Prélèvement effectué · {payment.ref}
                           </p>
                         </div>
-                        <p className="font-medium text-sm" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                        <p className="font-medium text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(payment.montant)}
                         </p>
                         <span
@@ -378,7 +378,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate capitalize" style={{ color: '#1A1A18' }}>
+                        <p className="text-xs font-medium truncate capitalize" style={{ color: '#0E0E0C' }}>
                           {request.document_type ?? 'Document'} original
                         </p>
                         <p className="text-xs" style={{ color: '#9A9A93' }}>
@@ -407,7 +407,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium" style={{ color: '#1A1A18' }}>Contrat de location</p>
+                      <p className="text-xs font-medium" style={{ color: '#0E0E0C' }}>Contrat de location</p>
                       <p className="text-xs" style={{ color: '#9A9A93' }}>À venir</p>
                     </div>
                   </div>
@@ -430,7 +430,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                   ].map(row => (
                     <div key={row.label} className="px-4 py-2.5 flex items-center justify-between">
                       <span className="text-xs" style={{ color: '#9A9A93' }}>{row.label}</span>
-                      <span className="text-xs font-medium" style={{ color: '#1A1A18' }}>{row.value}</span>
+                      <span className="text-xs font-medium" style={{ color: '#0E0E0C' }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
@@ -444,8 +444,8 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <div className="divide-y" style={{ background: '#fff' }}>
                   {[
                     {
-                      label: 'Contacter Seela',
-                      href: 'mailto:contact@seela.io',
+                      label: 'Contacter Everlease',
+                      href: 'mailto:contact@everlease.fr',
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                           <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -455,7 +455,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     },
                     {
                       label: "Demander un report d'échéance",
-                      href: `mailto:contact@seela.io?subject=Report%20d%27%C3%A9ch%C3%A9ance%20${ref}`,
+                      href: `mailto:contact@everlease.fr?subject=Report%20d%27%C3%A9ch%C3%A9ance%20${ref}`,
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                           <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
@@ -465,7 +465,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     },
                     {
                       label: 'Demander une résiliation anticipée',
-                      href: `mailto:contact@seela.io?subject=R%C3%A9siliation%20anticip%C3%A9e%20${ref}`,
+                      href: `mailto:contact@everlease.fr?subject=R%C3%A9siliation%20anticip%C3%A9e%20${ref}`,
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                           <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -478,7 +478,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                       key={action.label}
                       href={action.href}
                       className="px-4 py-3 flex items-center gap-2.5 text-sm transition-colors hover:bg-[#FAFAF9]"
-                      style={{ color: action.danger ? '#DC2626' : '#1A1A18' }}
+                      style={{ color: action.danger ? '#DC2626' : '#0E0E0C' }}
                     >
                       <span style={{ color: action.danger ? '#DC2626' : '#9A9A93' }}>{action.icon}</span>
                       {action.label}

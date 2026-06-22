@@ -1,5 +1,5 @@
 // Compact platform mockups used as illustrations on the landing page.
-// Each is wrapped in a browser frame and echoes a real Seela screen.
+// Each is wrapped in a browser frame and echoes a real Everlease screen.
 // Ported from the designer's `landing-v2.html`.
 import type { CSSProperties, ReactNode } from 'react'
 import {
@@ -7,7 +7,7 @@ import {
   IconLink, IconPdf, IconCheckSm, IconSend,
 } from './icons'
 
-export function BrowserFrame({ url = 'app.seela.fr', children, bodyStyle, barDark }: {
+export function BrowserFrame({ url = 'app.everlease.fr', children, bodyStyle, barDark }: {
   url?: string
   children: ReactNode
   bodyStyle?: CSSProperties
@@ -36,22 +36,22 @@ export function VisualMarketplace() {
     { logo: "BL", bg: "#0F7B6C", img: "/landing/bnp-lease.png", fill: true, name: "BNP Lease", m: "1 284 €", score: 94, best: true },
     { logo: "FF", bg: "#E2001A", img: "/landing/franfinance.jpg", fill: true, name: "Franfinance", m: "1 296 €", score: 91 },
     { logo: "CA", bg: "#0E7C5F", img: "/landing/ca-leasing.jpg", tile: true, name: "CA Leasing", m: "1 312 €", score: 88 },
-    { logo: "GR", bg: "#1A1A18", img: "/landing/grenke.png", fill: true, name: "Grenke", m: "982 €", score: 82 },
+    { logo: "GR", bg: "#0E0E0C", img: "/landing/grenke.png", fill: true, name: "Grenke", m: "982 €", score: 82 },
   ] as { logo: string; bg: string; img?: string; fill?: boolean; tile?: boolean; name: string; m: string; score: number; best?: boolean }[]
   return (
-    <BrowserFrame url="app.seela.fr/offres" bodyStyle={{ padding: 18 }}>
+    <BrowserFrame url="app.everlease.fr/offres" bodyStyle={{ padding: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 12, color: "var(--accent)", fontWeight: 500 }}>
         <SparkleGlyph size={12} /> 8 offres consolidées en 47 secondes
       </div>
       {/* Hero offer */}
-      <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "linear-gradient(135deg, #1A1A18 0%, #2A2A8C 100%)", color: "#FAFAF9", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "linear-gradient(135deg, #0E0E0C 0%, #2A2A8C 100%)", color: "#FAFAF9", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <div className={"mini-logo" + (offers[0].fill ? " mini-logo--fill" : "")} style={{ background: "#0F7B6C", width: 30, height: 30, fontSize: 11 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {offers[0].img ? <img src={offers[0].img} alt="BNP Lease" /> : "BL"}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600 }}>BNP Lease</div>
-          <div style={{ fontSize: 10.5, color: "#C8C8E8" }}>Recommandée · Score Seela 94</div>
+          <div style={{ fontSize: 10.5, color: "#C8C8E8" }}>Recommandée · Score Everlease 94</div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div className="num" style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em" }}>1 284 €</div>
@@ -81,7 +81,7 @@ export function VisualMarketplace() {
 // ---- Visual 2: Contract management (transparent & flexible) ----
 export function VisualContract() {
   return (
-    <BrowserFrame url="app.seela.fr/contrats/C-2026-0142" bodyStyle={{ padding: 18 }}>
+    <BrowserFrame url="app.everlease.fr/contrats/C-2026-0142" bodyStyle={{ padding: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
         <span className="mono" style={{ fontSize: 11, color: "var(--text-3)" }}>C-2026-0142</span>
         <span className="badge badge--success" style={{ fontSize: 10.5 }}><span className="dot"></span>Actif</span>
@@ -124,7 +124,7 @@ export function VisualContract() {
 export function VisualScoring() {
   const bars = [38, 44, 41, 52, 58, 64, 72, 78, 86]
   return (
-    <BrowserFrame url="app.seela.fr/scoring" bodyStyle={{ padding: 18 }}>
+    <BrowserFrame url="app.everlease.fr/scoring" bodyStyle={{ padding: 18 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 11.5, color: "var(--text-3)", marginBottom: 3 }}>Capacité d&apos;engagement</div>
@@ -169,7 +169,7 @@ export function VisualConversation() {
     { ref: "INSTALL", label: "Installation sur site", cat: "Service · non finançable", catColor: "#9A9A93", total: "1 200 €", checked: false, dis: true },
   ]
   return (
-    <BrowserFrame url="app.seela.fr/financement">
+    <BrowserFrame url="app.everlease.fr/financement">
       <div className="lp-hero-visual" style={{ textAlign: "left" }}>
         {/* LEFT — document canvas */}
         <div style={{ background: "var(--elevated)", padding: 16, overflow: "hidden" }}>
@@ -185,7 +185,7 @@ export function VisualConversation() {
               <div style={{ fontSize: 9, color: "var(--text-3)" }} className="mono">DEV-2026-1452</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 9.5, color: "var(--accent)", fontWeight: 500 }}>
-              <SparkleGlyph size={9} /> Lignes détectées par Seela
+              <SparkleGlyph size={9} /> Lignes détectées par Everlease
             </div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 7px", borderRadius: 5, marginBottom: 2, background: l.checked ? "var(--accent-soft)" : "transparent", border: "1px solid " + (l.checked ? "var(--accent-soft-2)" : "transparent"), opacity: l.dis ? 0.5 : 1 }}>
@@ -210,7 +210,7 @@ export function VisualConversation() {
           <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 22, height: 22, borderRadius: 5, background: "var(--text)", color: "var(--bg)", display: "grid", placeItems: "center" }}><SparkleGlyph size={10} color="#FAFAF9" /></div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 500 }}>Assistant Seela</div>
+              <div style={{ fontSize: 11, fontWeight: 500 }}>Assistant Everlease</div>
               <div style={{ fontSize: 9, color: "var(--text-3)" }}>En conversation · 3 lignes sélectionnées</div>
             </div>
           </div>

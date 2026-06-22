@@ -74,7 +74,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
         <div
           className="absolute top-3.5 h-px transition-all duration-500"
           style={{
-            background: '#1A1A18',
+            background: '#0E0E0C',
             left: '14px',
             width: `calc(${((step - 1) / (total - 1)) * 100}% - 28px * ${(step - 1) / (total - 1)})`,
             zIndex: 1,
@@ -88,7 +88,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
                 style={{
-                  background: done || active ? '#1A1A18' : '#F5F5F4',
+                  background: done || active ? '#0E0E0C' : '#F5F5F4',
                   color: done || active ? '#FAFAF9' : '#9A9A93',
                   border: !done && !active ? '1px solid #E5E5E3' : 'none',
                 }}
@@ -101,7 +101,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
               </div>
               <span
                 className="text-xs hidden sm:block text-center"
-                style={{ color: active ? '#1A1A18' : '#9A9A93', fontWeight: active ? 500 : 400 }}
+                style={{ color: active ? '#0E0E0C' : '#9A9A93', fontWeight: active ? 500 : 400 }}
               >
                 {label}
               </span>
@@ -131,7 +131,7 @@ function NavButtons({
   return (
     <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: '#E5E5E2' }}>
       {!hideBack && onBack ? (
-        <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -223,14 +223,14 @@ function Step1Upload({
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="#4F46E5" />
         </svg>
-        <span style={{ color: '#4F46E5', fontSize: 13, fontWeight: 500 }}>Assistant Seela</span>
+        <span style={{ color: '#4F46E5', fontSize: 13, fontWeight: 500 }}>Assistant Everlease</span>
       </div>
 
-      <h2 style={{ fontSize: 28, fontWeight: 600, color: '#1A1A18', letterSpacing: '-0.6px', marginBottom: 10 }}>
+      <h2 style={{ fontSize: 28, fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.6px', marginBottom: 10 }}>
         Démarrez un nouveau financement.
       </h2>
       <p style={{ fontSize: 15, color: '#9A9A93', lineHeight: 1.6, marginBottom: 28 }}>
-        Déposez un devis ou une facture. Seela en extrait les lignes financables,
+        Déposez un devis ou une facture. Everlease en extrait les lignes financables,
         vous pose quelques questions, puis consulte ses partenaires leasers.
       </p>
 
@@ -249,7 +249,7 @@ function Step1Upload({
               onClick={() => setDocumentType(t.key)}
               className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
-                background: documentType === t.key ? '#1A1A18' : 'transparent',
+                background: documentType === t.key ? '#0E0E0C' : 'transparent',
                 color: documentType === t.key ? '#fff' : '#9A9A93',
               }}
             >
@@ -282,7 +282,7 @@ function Step1Upload({
                 <path d="M17 4v6h6M10 14l3 3 5-5" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <p className="font-medium text-sm" style={{ color: '#1A1A18' }}>{file.name}</p>
+            <p className="font-medium text-sm" style={{ color: '#0E0E0C' }}>{file.name}</p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>{(file.size / 1024 / 1024).toFixed(1)} Mo · Prêt à analyser</p>
           </div>
         ) : (
@@ -293,7 +293,7 @@ function Step1Upload({
                 <path d="M4 20v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="#9A9A93" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>Glissez votre devis ici</p>
+            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Glissez votre devis ici</p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>
               ou cliquez pour parcourir — PDF, JPG, PNG jusqu&apos;à 25 Mo
             </p>
@@ -301,7 +301,7 @@ function Step1Upload({
               <button
                 onClick={() => fileRef.current?.click()}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors"
-                style={{ background: '#fff', color: '#1A1A18', borderColor: '#E5E5E3', borderRadius: 8 }}
+                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
               >
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M7 9V2M4 5l3-3 3 3M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -459,7 +459,7 @@ function Step2Lines({
 
   return (
     <div>
-      <h2 className="font-semibold text-xl mb-1" style={{ color: '#1A1A18', letterSpacing: '-0.3px' }}>
+      <h2 className="font-semibold text-xl mb-1" style={{ color: '#0E0E0C', letterSpacing: '-0.3px' }}>
         Lignes à financer
       </h2>
       <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
@@ -468,13 +468,13 @@ function Step2Lines({
 
       {analyzing ? (
         <div className="py-16 flex flex-col items-center gap-4">
-          <div className="w-8 h-8 rounded-full border-2 border-t-[#1A1A18] animate-spin" style={{ borderColor: '#E5E5E2', borderTopColor: '#1A1A18' }} />
+          <div className="w-8 h-8 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E2', borderTopColor: '#0E0E0C' }} />
           <p className="text-sm" style={{ color: '#9A9A93' }}>Analyse IA en cours…</p>
         </div>
       ) : error ? (
         <div>
           <div className="text-sm px-4 py-3 rounded-xl mb-4" style={{ background: '#FEF2F2', color: '#DC2626' }}>{error}</div>
-          <button onClick={() => { analyzed.current = false; setAnalyzing(true); setError(null); analyze() }} className="text-sm underline" style={{ color: '#1A1A18' }}>
+          <button onClick={() => { analyzed.current = false; setAnalyzing(true); setError(null); analyze() }} className="text-sm underline" style={{ color: '#0E0E0C' }}>
             Réessayer
           </button>
         </div>
@@ -490,7 +490,7 @@ function Step2Lines({
               </div>
               <div className="flex-1 min-w-0">
                 {meta.supplier_name && (
-                  <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>{meta.supplier_name}</p>
+                  <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{meta.supplier_name}</p>
                 )}
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
                   {meta.document_number && (
@@ -506,7 +506,7 @@ function Step2Lines({
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Montant total</p>
-                <p className="text-sm font-semibold" style={{ color: '#1A1A18' }}>
+                <p className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
                   {fmt(items.reduce((s, i) => s + (i.total_price ?? 0), 0))}
                 </p>
               </div>
@@ -537,12 +537,12 @@ function Step2Lines({
                         checked={selected.has(item.id)}
                         onChange={() => toggle(item.id)}
                         className="w-4 h-4 rounded"
-                        style={{ accentColor: '#1A1A18' }}
+                        style={{ accentColor: '#0E0E0C' }}
                         onClick={e => e.stopPropagation()}
                       />
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="text-sm" style={{ color: '#1A1A18' }}>{item.description ?? '—'}</div>
+                      <div className="text-sm" style={{ color: '#0E0E0C' }}>{item.description ?? '—'}</div>
                       {item.category && (() => {
                         const c = CATEGORY_COLORS[item.category] ?? CATEGORY_COLORS['Autre']
                         return (
@@ -552,11 +552,11 @@ function Step2Lines({
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#1A1A18' }}>{item.quantity ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#1A1A18' }}>
+                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.quantity ?? '—'}</td>
+                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>
                       {item.unit_price != null ? fmt(item.unit_price) : '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#1A1A18' }}>
+                    <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C' }}>
                       {item.total_price != null ? fmt(item.total_price) : '—'}
                     </td>
                   </tr>
@@ -567,7 +567,7 @@ function Step2Lines({
 
           {selected.size > 0 && (
             <div className="mt-4 flex justify-end">
-              <div className="text-sm font-semibold" style={{ color: '#1A1A18' }}>
+              <div className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
                 Total sélectionné&nbsp;: <span className="text-base">{fmt(total)}</span>
               </div>
             </div>
@@ -612,15 +612,15 @@ function Step3Config({
 
   return (
     <div>
-      <h2 className="font-semibold text-xl mb-1" style={{ color: '#1A1A18', letterSpacing: '-0.3px' }}>
+      <h2 className="font-semibold text-xl mb-1" style={{ color: '#0E0E0C', letterSpacing: '-0.3px' }}>
         Configuration du financement
       </h2>
       <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
-        Montant total sélectionné : <strong style={{ color: '#1A1A18' }}>{fmt(totalAmount)}</strong>
+        Montant total sélectionné : <strong style={{ color: '#0E0E0C' }}>{fmt(totalAmount)}</strong>
       </p>
 
       <div className="mb-8">
-        <p className="text-sm font-medium mb-3" style={{ color: '#1A1A18' }}>Durée souhaitée</p>
+        <p className="text-sm font-medium mb-3" style={{ color: '#0E0E0C' }}>Durée souhaitée</p>
         <div className="flex gap-3 flex-wrap">
           {([24, 36, 48, 60] as Duration[]).map(d => (
             <button
@@ -628,9 +628,9 @@ function Step3Config({
               onClick={() => setDuration(d)}
               className="px-5 py-2.5 rounded-xl border text-sm font-medium transition-all"
               style={{
-                background: duration === d ? '#1A1A18' : '#fff',
-                color: duration === d ? '#FAFAF9' : '#1A1A18',
-                borderColor: duration === d ? '#1A1A18' : '#E5E5E2',
+                background: duration === d ? '#0E0E0C' : '#fff',
+                color: duration === d ? '#FAFAF9' : '#0E0E0C',
+                borderColor: duration === d ? '#0E0E0C' : '#E5E5E2',
               }}
             >
               {d} mois
@@ -640,14 +640,14 @@ function Step3Config({
       </div>
 
       <div className="mb-8">
-        <p className="text-sm font-medium mb-3" style={{ color: '#1A1A18' }}>Périodicité de paiement</p>
+        <p className="text-sm font-medium mb-3" style={{ color: '#0E0E0C' }}>Périodicité de paiement</p>
         <div className="flex flex-col gap-2">
           {PERIODICITE_OPTIONS.map(o => (
             <label
               key={o.key}
               className="flex items-start gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all"
               style={{
-                borderColor: periodicite === o.key ? '#1A1A18' : '#E5E5E2',
+                borderColor: periodicite === o.key ? '#0E0E0C' : '#E5E5E2',
                 background: periodicite === o.key ? '#F5F5F4' : '#fff',
               }}
             >
@@ -658,10 +658,10 @@ function Step3Config({
                 checked={periodicite === o.key}
                 onChange={() => setPeriodicite(o.key)}
                 className="mt-0.5 shrink-0"
-                style={{ accentColor: '#1A1A18' }}
+                style={{ accentColor: '#0E0E0C' }}
               />
               <div>
-                <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>{o.label}</p>
+                <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{o.label}</p>
                 <p className="text-xs" style={{ color: '#9A9A93' }}>{o.sub}</p>
               </div>
             </label>
@@ -672,7 +672,7 @@ function Step3Config({
       {/* Estimate */}
       <div className="p-6 rounded-2xl border mb-8" style={{ background: '#F0F0EE', borderColor: '#E5E5E2' }}>
         <p className="text-xs font-medium mb-1" style={{ color: '#9A9A93' }}>Loyer estimé</p>
-        <p className="font-semibold" style={{ fontSize: '2rem', color: '#1A1A18', letterSpacing: '-1px' }}>
+        <p className="font-semibold" style={{ fontSize: '2rem', color: '#0E0E0C', letterSpacing: '-1px' }}>
           {fmt(periodAmount)}
           <span className="text-base font-normal ml-1" style={{ color: '#9A9A93' }}>{periodLabel}</span>
         </p>
@@ -687,16 +687,16 @@ function Step3Config({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#1A1A18' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: '#0E0E0C' }}>
           Remarques <span style={{ color: '#9A9A93', fontWeight: 400 }}>(optionnel)</span>
         </label>
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="Informations complémentaires pour votre conseiller Seela…"
+          placeholder="Informations complémentaires pour votre conseiller Everlease…"
           rows={3}
-          className="w-full px-4 py-3 rounded-xl border text-sm outline-none focus:border-[#1A1A18] resize-none transition-colors"
-          style={{ background: '#fff', borderColor: '#E5E5E2', color: '#1A1A18' }}
+          className="w-full px-4 py-3 rounded-xl border text-sm outline-none focus:border-[#0E0E0C] resize-none transition-colors"
+          style={{ background: '#fff', borderColor: '#E5E5E2', color: '#0E0E0C' }}
         />
       </div>
 
@@ -805,12 +805,12 @@ function Step4Confirmation({
             <path d="M12 8v4M12 16h.01" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </div>
-        <h2 className="font-semibold text-xl mb-3" style={{ color: '#1A1A18' }}>Erreur lors de la soumission</h2>
+        <h2 className="font-semibold text-xl mb-3" style={{ color: '#0E0E0C' }}>Erreur lors de la soumission</h2>
         <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: '#DC2626' }}>{error}</p>
         <button
           onClick={() => { submitted_ref.current = false; setError(null); submit() }}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          style={{ background: '#1A1A18', color: '#FAFAF9' }}
+          style={{ background: '#0E0E0C', color: '#FAFAF9' }}
         >
           Réessayer
         </button>
@@ -826,18 +826,18 @@ function Step4Confirmation({
             <path d="M5 12l5 5L20 7" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h2 className="font-semibold mb-3" style={{ fontSize: 22, color: '#1A1A18', letterSpacing: '-0.4px' }}>
+        <h2 className="font-semibold mb-3" style={{ fontSize: 22, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
           Votre demande est transmise
         </h2>
         <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: '#9A9A93', lineHeight: 1.7 }}>
-          Seela est en train d&apos;obtenir des offres de financement pour votre {documentType}.
+          Everlease est en train d&apos;obtenir des offres de financement pour votre {documentType}.
           Vous serez notifié dès que les offres sont disponibles.
         </p>
         <p className="text-xs mb-8" style={{ color: '#9A9A93' }}>Délai estimé : 24 à 48h ouvrées</p>
         <button
           onClick={() => router.push('/app/offres')}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          style={{ background: '#1A1A18', color: '#FAFAF9' }}
+          style={{ background: '#0E0E0C', color: '#FAFAF9' }}
         >
           Voir mes demandes de financement
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -850,8 +850,8 @@ function Step4Confirmation({
 
   return (
     <div className="text-center py-12">
-      <div className="w-10 h-10 rounded-full border-2 border-t-[#1A1A18] animate-spin mx-auto mb-6" style={{ borderColor: '#E5E5E2', borderTopColor: '#1A1A18' }} />
-      <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>Transmission de votre dossier…</p>
+      <div className="w-10 h-10 rounded-full border-2 border-t-[#0E0E0C] animate-spin mx-auto mb-6" style={{ borderColor: '#E5E5E2', borderTopColor: '#0E0E0C' }} />
+      <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Transmission de votre dossier…</p>
       <p className="text-xs mt-1" style={{ color: '#9A9A93' }}>Quelques secondes</p>
     </div>
   )
@@ -911,7 +911,7 @@ export default function NouveauPage() {
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="mx-1.5">
           <path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>Nouveau financement</span>
+        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Nouveau financement</span>
         <TopActions />
       </div>
 

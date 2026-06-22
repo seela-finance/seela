@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     <div>
       {/* Top nav */}
       <div className="h-12 flex items-center px-6 border-b shrink-0" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>Tableau de bord</span>
+        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Tableau de bord</span>
         <TopActions />
       </div>
 
@@ -55,9 +55,9 @@ export default async function DashboardPage() {
           className="flex items-center justify-between px-6 py-3"
           style={{ background: '#F5F5F4', borderLeft: '3px solid #4F46E5', borderBottom: '1px solid #E5E5E3' }}
         >
-          <p className="text-sm" style={{ color: '#1A1A18' }}>
+          <p className="text-sm" style={{ color: '#0E0E0C' }}>
             <span className="font-medium">
-              Score Seela{profile?.seela_score_grade ? ` : ${profile.seela_score_grade}` : ''}
+              Score Everlease{profile?.seela_score_grade ? ` : ${profile.seela_score_grade}` : ''}
             </span>
             {' '}· Uploadez vos bilans pour accéder à plus d&apos;offres
           </p>
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#1A1A18', letterSpacing: '-0.4px' }}>
+            <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
               {greeting}
             </h1>
             <p className="text-sm" style={{ color: '#9A9A93' }}>
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
             <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Encours total</p>
-            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
               {fmt(totalEncours)}
             </p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
 
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
             <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Loyers du mois</p>
-            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
               {totalMonthly > 0 ? fmt(totalMonthly) : '—'}
             </p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>Mensualité totale</p>
@@ -122,15 +122,15 @@ export default async function DashboardPage() {
               <p className="text-xs font-medium" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Capacité d&apos;engagement</p>
               <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: '#DCFCE7', color: '#166534', fontSize: 10 }}>Live</span>
             </div>
-            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
               —
             </p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>Score Seela en attente</p>
+            <p className="text-xs" style={{ color: '#9A9A93' }}>Score Everlease en attente</p>
           </div>
 
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
             <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Économie fiscale 2026</p>
-            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
               —
             </p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>vs. achat comptant</p>
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
             <Link
               href="/app/nouveau"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
+              style={{ background: '#0E0E0C', color: '#FAFAF9', borderRadius: 8 }}
             >
               Créer ma première demande
             </Link>
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
         ) : (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-sm" style={{ color: '#1A1A18' }}>Mes financements</h2>
+              <h2 className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>Mes financements</h2>
               <span className="text-xs" style={{ color: '#9A9A93' }}>
                 {allRequests.length} dossier{allRequests.length !== 1 ? 's' : ''}
               </span>

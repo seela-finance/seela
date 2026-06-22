@@ -64,16 +64,16 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
             onMouseEnter={e => (e.currentTarget.style.background = '#FAFAF9')}
             onMouseLeave={e => (e.currentTarget.style.background = '')}
           >
-            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
               {ref}
             </td>
-            <td className="px-4 py-3.5 text-sm max-w-xs" style={{ color: '#1A1A18' }}>
+            <td className="px-4 py-3.5 text-sm max-w-xs" style={{ color: '#0E0E0C' }}>
               <span className="block truncate">{assetLabel}</span>
             </td>
             <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
               {selOffer?.leaser_name ?? '—'}
             </td>
-            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
               {selOffer ? fmt(selOffer.monthly_payment) : '—'}
             </td>
             <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>

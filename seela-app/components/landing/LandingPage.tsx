@@ -1,13 +1,13 @@
 'use client'
 
-// Seela — Landing page. Ported from the designer's `landing-v2.html`;
-// the `Seela.html` links were remapped to `/auth`, and the nav keeps an
+// Everlease — Landing page. Ported from the designer's `landing-v2.html`;
+// the `Everlease.html` links were remapped to `/auth`, and the nav keeps an
 // authenticated pill (user email → /app/dashboard) when connected.
 import React from 'react'
 import Link from 'next/link'
 import {
-  SparkleGlyph, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
-  IconClose, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
+  SparkleGlyph, EverleaseMark, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
+  IconClose, IconClock, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
   IconMedical, IconFactory, IconChair, IconTruck, IconCamera, IconTool,
   IconServerStack, IconSolar, IconResto, IconUser, type IconProps,
 } from './icons'
@@ -17,9 +17,9 @@ function Logo({ size = 22, dark }: { size?: number; dark?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: dark ? "#FAFAF9" : "var(--text)", display: "grid", placeItems: "center" }}>
-        <SparkleGlyph size={size * 0.62} color={dark ? "#15152F" : "#FAFAF9"} />
+        <EverleaseMark size={(size + 4) * 0.66} color={dark ? "#0E0E0C" : "#FAFAF9"} />
       </div>
-      <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: "-0.02em", color: dark ? "#FAFAF9" : "var(--text)" }}>seela</div>
+      <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: "-0.03em", color: dark ? "#FAFAF9" : "var(--text)" }}>everlease</div>
     </div>
   )
 }
@@ -62,7 +62,7 @@ function Hero({ onOpenExpert }: { onOpenExpert: () => void }) {
         </div>
         <h1 className="lp-h1">Une nouvelle façon de<br/>financer vos équipements.</h1>
         <p className="lp-lede" style={{ margin: "22px auto 0", maxWidth: 600 }}>
-          Seela vous conseille dans le financement de vos actifs matériels en quelques minutes, dans les meilleures conditions. Déposez un devis, choisissez votre offre, signez.
+          Everlease vous conseille dans le financement de vos actifs matériels en quelques minutes, dans les meilleures conditions. Déposez un devis, choisissez votre offre, signez.
         </p>
         <div className="lp-cta-row" style={{ marginTop: 32 }}>
           <a className="btn btn--accent btn--lg" href="#try">Estimer mon financement <IconArrowRight /></a>
@@ -130,7 +130,7 @@ function TryBlock() {
         <span className="lp-eyebrow"><SparkleGlyph size={12} /> Essayez maintenant — sans créer de compte</span>
         <h2 className="lp-h2" style={{ marginTop: 18 }}>Déposez un devis. Voyez si c&apos;est finançable.</h2>
         <p className="lp-lede" style={{ margin: "16px auto 0", maxWidth: 540 }}>
-          Seela utilise l&apos;intelligence artificielle pour analyser vos besoins en financement d&apos;équipements et vous proposer les offres adaptées. Aucune donnée bancaire requise.
+          Everlease utilise l&apos;intelligence artificielle pour analyser vos besoins en financement d&apos;équipements et vous proposer les offres adaptées. Aucune donnée bancaire requise.
         </p>
 
         <div style={{ marginTop: 36, textAlign: "left" }}>
@@ -242,7 +242,7 @@ function EquipmentCategories() {
           <span className="lp-eyebrow">Les secteurs d&apos;activité</span>
           <h2 className="lp-h2" style={{ marginTop: 18 }}>Si c&apos;est un actif physique, ça se finance.</h2>
           <p className="lp-lede" style={{ margin: "16px auto 0", maxWidth: 520 }}>
-            Du parc informatique à la machine-outil, Seela finance tout équipement professionnel — neuf ou déjà acquis.
+            Du parc informatique à la machine-outil, Everlease finance tout équipement professionnel — neuf ou déjà acquis.
           </p>
         </div>
         <div className="lp-eqgrid">
@@ -319,10 +319,10 @@ function Reassurance() {
           num="01"
           eyebrow="Liberté de choix"
           title="Vous choisissez votre fournisseur. On trouve le bon financement."
-          body="Seela ne vous impose ni matériel, ni vendeur. Vous achetez où vous voulez — Seela interroge ses partenaires financiers et vous conseille sur l'offre la plus adaptée à vos besoins."
+          body="Everlease ne vous impose ni matériel, ni vendeur. Vous achetez où vous voulez — Everlease interroge ses partenaires financiers et vous conseille sur l'offre la plus adaptée à vos besoins."
           bullets={[
             "Consultation simultanée de tous nos partenaires",
-            "Offres classées par le score Seela : coût, flexibilité, rapidité",
+            "Offres classées par le score Everlease : coût, flexibilité, rapidité",
             "Aucun engagement tant que vous n'avez pas signé",
           ]}
           visual={<VisualMarketplace />}
@@ -335,7 +335,7 @@ function Reassurance() {
           body="Fini les e-mails au gestionnaire et les avenants papier. Suivez chaque loyer, chaque échéance, et pilotez vos contrats en autonomie : refinancement, report, suspension ou résiliation anticipée en quelques clics."
           bullets={[
             "Échéanciers, capital restant dû et documents centralisés",
-            "Refinancez quand les taux baissent — Seela vous alerte",
+            "Refinancez quand les taux baissent — Everlease vous alerte",
             "Demandes de report ou de résiliation traitées dans l'app",
           ]}
           visual={<VisualContract />}
@@ -346,9 +346,9 @@ function Reassurance() {
           num="03"
           eyebrow="Scoring augmenté par l'IA"
           title="Un financement qui évolue au rythme de votre entreprise."
-          body="Seela réévalue en continu la santé réelle de votre entreprise et fait grandir votre capacité de financement à mesure que vous performez. Votre enveloppe n'est plus figée une fois par an, elle vit avec vous."
+          body="Everlease réévalue en continu la santé réelle de votre entreprise et fait grandir votre capacité de financement à mesure que vous performez. Votre enveloppe n'est plus figée une fois par an, elle vit avec vous."
           bullets={[
-            "Score Seela recalculé chaque jour à partir de données réelles",
+            "Score Everlease recalculé chaque jour à partir de données réelles",
             "Capacité d'engagement qui augmente avec votre activité",
             "Des conditions qui s'améliorent à mesure que vous prouvez votre solidité",
           ]}
@@ -401,7 +401,7 @@ function IntegrationsBlock() {
             </span>
             <h2 className="lp-h2" style={{ marginTop: 20, color: "#FAFAF9" }}>Le financement vient à vous.<br/>Plus l&apos;inverse.</h2>
             <p className="lp-lede" style={{ marginTop: 16, color: "rgba(255,255,255,0.66)", maxWidth: 540, margin: "16px auto 0" }}>
-              Connectez votre comptabilité et vos comptes bancaires. Seela détecte les actifs déjà achetés encore éligibles et vous propose le financement — sans que vous ayez à le chercher.
+              Connectez votre comptabilité et vos comptes bancaires. Everlease détecte les actifs déjà achetés encore éligibles et vous propose le financement — sans que vous ayez à le chercher.
             </p>
             <Link href="/auth" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 22, fontSize: 14, fontWeight: 500, color: "#FAFAF9" }}>
               Découvrir les intégrations <IconArrowRight size={14} />
@@ -469,7 +469,7 @@ function Footer() {
         <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", fontSize: 12, color: "var(--text-3)" }}>
           <Logo size={20} />
           <span>The new way of financing your equipment.</span>
-          <span style={{ marginLeft: "auto" }}>© 2026 Seela SAS — Tous droits réservés.</span>
+          <span style={{ marginLeft: "auto" }}>© 2026 Everlease SAS — Tous droits réservés.</span>
           <span>Conçu et hébergé en France 🇫🇷</span>
         </div>
       </div>
@@ -502,7 +502,7 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
           <React.Fragment>
             <div className="lp-modal__head">
               <div>
-                <div className="lp-modal__title">Parler à un expert Seela</div>
+                <div className="lp-modal__title">Parler à un expert Everlease</div>
                 <div className="lp-modal__sub">Un conseiller vous rappelle sous 24h ouvrées pour étudier votre projet de financement.</div>
               </div>
               <button className="lp-modal__close" onClick={onClose} aria-label="Fermer"><IconClose size={16} /></button>
@@ -556,7 +556,7 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <button className="btn btn--accent btn--lg" type="submit">Demander à être rappelé <IconArrowRight /></button>
-              <div className="lp-modal__legal">En soumettant, vous acceptez d&apos;être contacté par Seela. Aucune donnée n&apos;est partagée sans votre accord.</div>
+              <div className="lp-modal__legal">En soumettant, vous acceptez d&apos;être contacté par Everlease. Aucune donnée n&apos;est partagée sans votre accord.</div>
             </form>
           </React.Fragment>
         ) : (
@@ -564,13 +564,60 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
             <div className="lp-modal__done-check"><IconCheck size={26} /></div>
             <div className="lp-modal__title">Demande envoyée&nbsp;!</div>
             <div className="lp-modal__sub" style={{ maxWidth: 340, margin: "8px auto 0" }}>
-              Un expert Seela vous recontacte sous 24h ouvrées. Vous pouvez déjà préparer votre devis fournisseur.
+              Un expert Everlease vous recontacte sous 24h ouvrées. Vous pouvez déjà préparer votre devis fournisseur.
             </div>
             <button className="btn btn--accent btn--lg" style={{ width: "100%", justifyContent: "center", marginTop: 22 }} onClick={onClose}>Fermer</button>
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+/* ---------------- BLOCK — THE PAIN (problem agitation) ---------------- */
+const PAINS: { icon: (p: IconProps) => React.JSX.Element; title: string; body: string }[] = [
+  {
+    icon: IconClock,
+    title: "La banque traîne, puis exige.",
+    body: "Dossier en comité, allers-retours pendant des semaines — et au bout, un refus ou une caution personnelle. Pendant ce temps, l'équipement attend, et l'activité aussi.",
+  },
+  {
+    icon: IconLock,
+    title: "Votre trésorerie reste bloquée.",
+    body: "Payer comptant 20, 50 ou 100 k€ de matériel, c'est autant de cash en moins pour les salaires, les stocks et les imprévus du quotidien.",
+  },
+  {
+    icon: IconRefresh,
+    title: "Des contrats figés.",
+    body: "Impossible de reporter une échéance ou d'ajuster vos loyers quand l'activité ralentit. Vos contrats devraient suivre votre saisonnalité, pas l'inverse.",
+  },
+]
+
+function PainBlock() {
+  return (
+    <section className="lp-section">
+      <div className="lp-wrap">
+        <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto" }}>
+          <span className="lp-eyebrow">Le problème</span>
+          <h2 className="lp-h2" style={{ marginTop: 18 }}>Financer un équipement ne devrait pas être un parcours du combattant.</h2>
+          <p className="lp-lede" style={{ margin: "16px auto 0", maxWidth: 540 }}>
+            Aujourd&apos;hui, équiper son entreprise impose un choix coûteux : vider sa trésorerie, ou affronter le circuit bancaire. Everlease supprime ce dilemme.
+          </p>
+        </div>
+        <div className="lp-painrow">
+          {PAINS.map((p, i) => {
+            const Ic = p.icon
+            return (
+              <div key={i} className="lp-paincard">
+                <span className="lp-paincard__ic"><Ic size={18} /></span>
+                <h3>{p.title}</h3>
+                <p>{p.body}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -583,6 +630,7 @@ export default function LandingPage({ className, userEmail }: { className?: stri
     <div className={"lp" + (className ? " " + className : "")}>
       <Nav userEmail={userEmail} />
       <Hero onOpenExpert={openExpert} />
+      <PainBlock />
       <TryBlock />
       <EquipmentCategories />
       <Reassurance />

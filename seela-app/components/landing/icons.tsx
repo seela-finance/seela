@@ -52,3 +52,10 @@ export const SparkleGlyph = ({ size = 14, color = 'currentColor' }: { size?: num
     <path d="M8 1.5l1.3 4.2 4.2 1.3a1 1 0 010 2l-4.2 1.3-1.3 4.2a1 1 0 01-2 0L4.7 10.3.5 9a1 1 0 010-2L4.7 5.7 6 1.5a1 1 0 012 0z" transform="translate(0.5 0.5) scale(0.95)"/>
   </svg>
 )
+
+// Everlease brand mark — the arch icon (geometry from the official brand export).
+export const EverleaseMark = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="8 26 104 104" fill={color}>
+    <path d="M16 100 A44 44 0 0 1 104 100 L67.86 100 L78.29 86.72 Q82 82 77.15 78.47 L64.85 69.53 Q60 66 55.15 69.53 L42.85 78.47 Q38 82 41.71 86.72 L52.14 100 Z"/>
+  </svg>
+)

@@ -23,7 +23,7 @@ export default function DashboardNav({ companyName }: { companyName: string }) {
           <span className="text-sm" style={{ color: '#9A9A93' }}>{companyName}</span>
           <button
             onClick={signOut}
-            className="text-sm transition-colors hover:text-[#1A1A18]"
+            className="text-sm transition-colors hover:text-[#0E0E0C]"
             style={{ color: '#9A9A93' }}
           >
             Se déconnecter

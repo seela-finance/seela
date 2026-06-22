@@ -77,7 +77,7 @@ export default function AuthPage() {
   }
 
   const inputClass = "w-full px-3.5 py-2.5 border text-sm outline-none transition-colors rounded-lg"
-  const inputStyle = { background: '#fff', borderColor: '#E5E5E3', color: '#1A1A18', border: '1px solid #E5E5E3' }
+  const inputStyle = { background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C', border: '1px solid #E5E5E3' }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#FAFAF9' }}>
@@ -95,7 +95,7 @@ export default function AuthPage() {
               className="flex-1 py-2 text-sm font-medium transition-all"
               style={{
                 background: mode === m ? '#fff' : 'transparent',
-                color: mode === m ? '#1A1A18' : '#9A9A93',
+                color: mode === m ? '#0E0E0C' : '#9A9A93',
                 borderRadius: 8,
                 boxShadow: mode === m ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}
@@ -170,7 +170,7 @@ export default function AuthPage() {
             type="submit"
             disabled={loading}
             className="w-full py-2.5 font-medium text-sm transition-opacity hover:opacity-90 disabled:opacity-40 mt-1 rounded-lg"
-            style={{ background: '#1A1A18', color: '#fff' }}
+            style={{ background: '#0E0E0C', color: '#fff' }}
           >
             {loading ? 'Chargement…' : mode === 'login' ? 'Se connecter' : 'Créer mon compte →'}
           </button>

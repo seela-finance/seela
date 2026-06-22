@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import {
   sendEmail,
   emailLeaserValidation,
-  emailClientSeelaValidated,
+  emailClientEverleaseValidated,
 } from '@/lib/email'
 
 export async function POST(req: Request) {
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   await sendEmail(leaserEmailData)
 
   // Send client email
-  const clientEmailData = emailClientSeelaValidated({
+  const clientEmailData = emailClientEverleaseValidated({
     userEmail,
     companyName,
     leaserName: offer.leaser_name,
