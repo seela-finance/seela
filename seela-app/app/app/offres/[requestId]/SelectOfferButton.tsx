@@ -35,8 +35,8 @@ export default function SelectOfferButton({ offerId, requestId, allOfferIds, fea
       className="px-5 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
       style={
         featured
-          ? { background: '#fff', color: '#1A1A18', borderRadius: 8 }
-          : { background: '#1A1A18', color: '#fff', borderRadius: 8 }
+          ? { background: '#fff', color: '#0E0E0C', borderRadius: 8 }
+          : { background: '#0E0E0C', color: '#fff', borderRadius: 8 }
       }
     >
       {loading ? 'Confirmation…' : 'Sélectionner →'}

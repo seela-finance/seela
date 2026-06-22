@@ -51,7 +51,7 @@ function EquipName({ line_items }: { line_items: LineItem[] }) {
     : '—'
   return (
     <div>
-      <span className="text-sm truncate block" style={{ color: '#1A1A18' }}>{label}</span>
+      <span className="text-sm truncate block" style={{ color: '#0E0E0C' }}>{label}</span>
       {extraCount > 0 && (
         <span className="text-xs" style={{ color: '#9A9A93' }}>+{extraCount} autre{extraCount > 1 ? 's' : ''}</span>
       )}
@@ -108,7 +108,7 @@ function RequestTable({
                 className="transition-colors hover:bg-[#FAFAF9]"
                 style={{ borderBottom: '1px solid #F5F5F4' }}
               >
-                <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>{ref}</td>
+                <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{ref}</td>
                 <td className="px-4 py-3.5 text-sm max-w-[120px]" style={{ color: '#9A9A93' }}>
                   <span className="truncate block">{r.supplier_name ?? '—'}</span>
                 </td>
@@ -121,7 +121,7 @@ function RequestTable({
                 <td className="px-4 py-3.5">
                   <CategoryBadge line_items={r.line_items} />
                 </td>
-                <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.total_amount)}</td>
+                <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.total_amount)}</td>
                 <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>{r.duration_months ? `${r.duration_months} mois` : '—'}</td>
                 <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>{fmtDate(r.created_at)}</td>
                 <td className="px-4 py-3.5 text-right">
@@ -178,7 +178,7 @@ function MiniProgress({ status }: { status: string }) {
 
   const label = status === 'seela_validated'
     ? 'Décision du leaser en cours'
-    : 'Validation Seela en cours'
+    : 'Validation Everlease en cours'
 
   return (
     <div className="flex flex-col gap-2">
@@ -211,7 +211,7 @@ function ProcessingSection({ requests }: { requests: RequestRow[] }) {
           >
             {/* Ref + date */}
             <div className="shrink-0 w-32">
-              <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>{ref}</p>
+              <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{ref}</p>
               <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>{fmtDate(r.created_at)}</p>
             </div>
 
@@ -222,7 +222,7 @@ function ProcessingSection({ requests }: { requests: RequestRow[] }) {
 
             {/* Leaser + amount */}
             <div className="shrink-0 text-right w-44">
-              <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>
+              <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>
                 {selectedOffer?.leaser_name ?? '—'}
               </p>
               <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
@@ -278,14 +278,14 @@ export default async function OffresPage() {
   return (
     <div>
       <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>Offres</span>
+        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Offres</span>
         <TopActions />
       </div>
 
       <div className="px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#1A1A18', letterSpacing: '-0.4px' }}>
+            <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
               Mes demandes
             </h1>
             <p className="text-sm" style={{ color: '#9A9A93' }}>
@@ -302,12 +302,12 @@ export default async function OffresPage() {
                 <path d="M10 6v5M10 13h.01" stroke="#9A9A93" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium mb-1" style={{ color: '#1A1A18' }}>Aucune demande en cours</p>
+            <p className="text-sm font-medium mb-1" style={{ color: '#0E0E0C' }}>Aucune demande en cours</p>
             <p className="text-xs mb-5" style={{ color: '#9A9A93' }}>Les offres apparaissent ici dès qu&apos;un leaser partenaire répond à votre dossier.</p>
             <Link
               href="/app/nouveau"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
+              style={{ background: '#0E0E0C', color: '#FAFAF9', borderRadius: 8 }}
             >
               Démarrer un financement
             </Link>
@@ -317,7 +317,7 @@ export default async function OffresPage() {
             {available.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-sm font-semibold" style={{ color: '#1A1A18' }}>Offres disponibles</h2>
+                  <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>Offres disponibles</h2>
                   <span
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ background: '#EEF2FF', color: '#3730A3' }}
@@ -332,7 +332,7 @@ export default async function OffresPage() {
             {processing.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-sm font-semibold" style={{ color: '#1A1A18' }}>En cours de traitement</h2>
+                  <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>En cours de traitement</h2>
                   <span
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ background: '#FFF7ED', color: '#92400E' }}
@@ -347,7 +347,7 @@ export default async function OffresPage() {
             {submitted.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-sm font-semibold" style={{ color: '#1A1A18' }}>En attente d&apos;offres</h2>
+                  <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>En attente d&apos;offres</h2>
                   <span
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ background: '#F5F5F4', color: '#9A9A93' }}

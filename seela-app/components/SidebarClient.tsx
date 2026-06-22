@@ -106,13 +106,13 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
               className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors group"
               style={{
                 background: active ? '#F5F5F4' : 'transparent',
-                color: active ? '#1A1A18' : '#9A9A93',
+                color: active ? '#0E0E0C' : '#9A9A93',
                 fontWeight: active ? 500 : 400,
               }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F4' }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              <span className="shrink-0" style={{ color: active ? '#1A1A18' : '#9A9A93' }}>
+              <span className="shrink-0" style={{ color: active ? '#0E0E0C' : '#9A9A93' }}>
                 {item.icon}
               </span>
               <span className="flex-1 truncate">{item.label}</span>
@@ -122,7 +122,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
                   <span
                     className="shrink-0 text-xs font-medium"
                     style={{
-                      background: '#1A1A18',
+                      background: '#0E0E0C',
                       color: '#fff',
                       fontSize: 11,
                       padding: '1px 6px',
@@ -152,7 +152,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
             <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
-          <span className="flex-1 truncate">Scoring Seela</span>
+          <span className="flex-1 truncate">Scoring Everlease</span>
           <span
             className="shrink-0 text-xs px-1.5 py-0.5 rounded"
             style={{ background: '#F5F5F4', color: '#9A9A93', fontSize: 10 }}
@@ -167,19 +167,19 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
         <div className="flex items-center gap-2.5">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ background: '#1A1A18', color: '#FAFAF9' }}
+            style={{ background: '#0E0E0C', color: '#FAFAF9' }}
           >
             {initials || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate" style={{ color: '#1A1A18', lineHeight: '16px' }}>
+            <p className="text-xs font-medium truncate" style={{ color: '#0E0E0C', lineHeight: '16px' }}>
               {companyName || email.split('@')[0]}
             </p>
             <p className="truncate" style={{ color: '#9A9A93', fontSize: 11, lineHeight: '15px' }}>{email}</p>
           </div>
           <button
             onClick={signOut}
-            className="shrink-0 transition-colors hover:text-[#1A1A18]"
+            className="shrink-0 transition-colors hover:text-[#0E0E0C]"
             style={{ color: '#9A9A93' }}
             title="Se déconnecter"
           >

@@ -137,7 +137,7 @@ export default function SouscrireCard({
 
   return (
     <div className="rounded-xl border p-5 sticky top-6" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-      <h2 className="font-semibold text-sm mb-0.5" style={{ color: '#1A1A18' }}>Souscrire à cette offre</h2>
+      <h2 className="font-semibold text-sm mb-0.5" style={{ color: '#0E0E0C' }}>Souscrire à cette offre</h2>
       <p className="text-xs mb-5" style={{ color: '#9A9A93' }}>
         Confirmation par le leaser sous {leaserDelai}h ouvrées
       </p>
@@ -186,11 +186,11 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s1 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s1} n={1} />
           <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>Vérification</p>
+            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Vérification</p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>Informations du dossier</p>
             {s1 === 'active' && (
               <div className="mt-3 p-3 rounded-xl border" style={{ background: '#FAFAF9', borderColor: '#E5E5E3' }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: '#1A1A18' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#0E0E0C' }}>
                   {companyName || userEmail.split('@')[0]}
                 </p>
                 {siren && (
@@ -206,7 +206,7 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s2 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s2} n={2} />
           <div>
-            <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>Validation Seela</p>
+            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Validation Everlease</p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>Examen par un conseiller</p>
             {s2 === 'loading' && (
               <p className="text-xs mt-1" style={{ color: '#4F46E5' }}>Votre sélection est enregistrée. Notre équipe examine votre dossier.</p>
@@ -218,7 +218,7 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s3 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s3} n={3} />
           <div>
-            <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>Confirmation leaser</p>
+            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Confirmation leaser</p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>Contrat de location</p>
             {s3 === 'loading' && (
               <p className="text-xs mt-1" style={{ color: '#4F46E5' }}>Le leaser examine votre dossier…</p>

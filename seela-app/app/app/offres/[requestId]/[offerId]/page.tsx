@@ -149,11 +149,11 @@ export default async function OfferDetailPage({
     <div>
       {/* Breadcrumb */}
       <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>Offres</Link>
+        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>Offres</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <Link href={`/app/offres/${requestId}`} className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>{reqRef}</Link>
+        <Link href={`/app/offres/${requestId}`} className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>{reqRef}</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>{offer.leaser_name}</span>
+        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</span>
         <TopActions />
       </div>
 
@@ -183,7 +183,7 @@ export default async function OfferDetailPage({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="font-semibold" style={{ fontSize: 22, color: '#1A1A18', letterSpacing: '-0.4px' }}>
+                  <h1 className="font-semibold" style={{ fontSize: 22, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
                     {offer.leaser_name}
                   </h1>
                   {isRecommended && (
@@ -218,7 +218,7 @@ export default async function OfferDetailPage({
               ].map(kpi => (
                 <div key={kpi.label} className="p-4 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                   <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>{kpi.label}</p>
-                  <p className="font-bold" style={{ fontSize: 22, color: '#1A1A18', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>
+                  <p className="font-bold" style={{ fontSize: 22, color: '#0E0E0C', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>
                     {kpi.value}
                   </p>
                 </div>
@@ -259,7 +259,7 @@ export default async function OfferDetailPage({
                       style={{ borderColor: '#E5E5E3', background: i % 2 === 0 ? '#fff' : '#FAFAF9' }}
                     >
                       <td className="px-5 py-3 text-sm w-2/5" style={{ color: '#9A9A93' }}>{row.label}</td>
-                      <td className="px-5 py-3 text-sm" style={{ color: '#1A1A18' }}>{row.value}</td>
+                      <td className="px-5 py-3 text-sm" style={{ color: '#0E0E0C' }}>{row.value}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -299,14 +299,14 @@ export default async function OfferDetailPage({
                       <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93' }}>
                         {String(row.n).padStart(2, '0')}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#1A1A18' }}>{row.date}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C' }}>{row.date}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                         {row.offert ? '0 €' : fmt(row.loyer)}
                       </td>
                       <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>
                         {row.offert ? '0 €' : fmt(row.tva)}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                         {row.offert ? (
                           <span style={{ color: '#16A34A' }}>0 € (offert)</span>
                         ) : fmt(row.total)}

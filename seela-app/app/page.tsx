@@ -11,7 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Seela — The new way of financing your equipment',
+  title: 'Everlease — The new way of financing your equipment',
 }
 
 export default async function Home() {

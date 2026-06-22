@@ -25,14 +25,14 @@ export default async function ContratsPage() {
       <main style={{ marginLeft: 220 }}>
         {/* Top nav */}
         <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>Contrats</span>
+          <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Contrats</span>
           <TopActions />
         </div>
 
         <div className="px-8 py-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#1A1A18', letterSpacing: '-0.4px' }}>
+              <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
                 Mes contrats
               </h1>
               <p className="text-sm" style={{ color: '#9A9A93' }}>
@@ -60,7 +60,7 @@ export default async function ContratsPage() {
               <Link
                 href="/app/nouveau"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ background: '#1A1A18', color: '#FAFAF9', borderRadius: 8 }}
+                style={{ background: '#0E0E0C', color: '#FAFAF9', borderRadius: 8 }}
               >
                 Créer ma première demande
               </Link>

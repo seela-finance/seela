@@ -25,7 +25,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
 
   try {
     const result = await resend.emails.send({
-      from: 'Seela <noreply@seela.io>',
+      from: 'Everlease <noreply@everlease.fr>',
       to: recipient,
       subject,
       html,
@@ -67,12 +67,12 @@ export function emailLeaserValidation({
 
   return {
     to: `leasing@${leaserName.toLowerCase().replace(/\s+/g, '')}.fr`,
-    subject: `[Seela] Nouveau dossier de financement — ${requestRef} — ${companyName}`,
+    subject: `[Everlease] Nouveau dossier de financement — ${requestRef} — ${companyName}`,
     html: `
-<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#1A1A18">
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
     <p style="font-size:20px;font-weight:600;margin:0">Nouveau dossier à étudier</p>
-    <p style="color:#9A9A93;margin:4px 0 0">Réf. ${requestRef} — transmis par Seela</p>
+    <p style="color:#9A9A93;margin:4px 0 0">Réf. ${requestRef} — transmis par Everlease</p>
   </div>
   <div style="background:#FAFAF9;border:1px solid #E5E5E3;border-radius:12px;padding:24px;margin-bottom:24px">
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9A9A93;margin:0 0 12px">Entreprise</p>
@@ -91,15 +91,15 @@ export function emailLeaserValidation({
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9A9A93;margin:0 0 12px">Équipements</p>
     <p style="font-size:13px;white-space:pre-line;margin:0">${equipmentList}</p>
   </div>
-  ${documentUrl ? `<p style="margin-bottom:24px"><a href="${documentUrl}" style="display:inline-block;padding:10px 20px;background:#1A1A18;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500">Télécharger le document original</a></p>` : ''}
-  <p style="font-size:13px;color:#9A9A93">Pour confirmer ou refuser ce dossier, contactez votre référent Seela. Réf. ${requestRef}.</p>
+  ${documentUrl ? `<p style="margin-bottom:24px"><a href="${documentUrl}" style="display:inline-block;padding:10px 20px;background:#0E0E0C;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500">Télécharger le document original</a></p>` : ''}
+  <p style="font-size:13px;color:#9A9A93">Pour confirmer ou refuser ce dossier, contactez votre référent Everlease. Réf. ${requestRef}.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
-  <p style="font-size:11px;color:#9A9A93">Seela — Plateforme de financement locatif · contact@seela.io</p>
+  <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif · contact@everlease.fr</p>
 </div>`,
   }
 }
 
-export function emailClientSeelaValidated({
+export function emailClientEverleaseValidated({
   userEmail,
   companyName,
   leaserName,
@@ -119,23 +119,23 @@ export function emailClientSeelaValidated({
 
   return {
     to: userEmail,
-    subject: `[Seela] Votre dossier ${requestRef} est en cours d'examen chez ${leaserName}`,
+    subject: `[Everlease] Votre dossier ${requestRef} est en cours d'examen chez ${leaserName}`,
     html: `
-<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#1A1A18">
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
     <p style="font-size:20px;font-weight:600;margin:0">Votre dossier avance</p>
     <p style="color:#9A9A93;margin:4px 0 0">Bonne nouvelle pour ${companyName}</p>
   </div>
   <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:12px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;color:#3730A3;margin:0">
-      Votre dossier a été validé par Seela et transmis à <strong>${leaserName}</strong>.
+      Votre dossier a été validé par Everlease et transmis à <strong>${leaserName}</strong>.
       Le leaser dispose de 48h ouvrées pour confirmer votre offre indicative de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong>.
     </p>
   </div>
   <p style="font-size:13px;color:#9A9A93">Réf. dossier : ${requestRef}</p>
-  <p style="font-size:13px;color:#9A9A93">Un conseiller Seela vous contacte dès que le leaser répond. En cas de question, écrivez-nous à <a href="mailto:contact@seela.io" style="color:#4F46E5">contact@seela.io</a>.</p>
+  <p style="font-size:13px;color:#9A9A93">Un conseiller Everlease vous contacte dès que le leaser répond. En cas de question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#4F46E5">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
-  <p style="font-size:11px;color:#9A9A93">Seela — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -160,9 +160,9 @@ export function emailClientLeaserConfirmed({
 
   return {
     to: userEmail,
-    subject: `[Seela] 🎉 Financement confirmé — ${requestRef}`,
+    subject: `[Everlease] 🎉 Financement confirmé — ${requestRef}`,
     html: `
-<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#1A1A18">
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
     <p style="font-size:20px;font-weight:600;margin:0">Financement confirmé !</p>
     <p style="color:#9A9A93;margin:4px 0 0">${companyName}</p>
@@ -175,9 +175,9 @@ export function emailClientLeaserConfirmed({
     </p>
   </div>
   <p style="font-size:13px;color:#9A9A93">Réf. dossier : ${requestRef}</p>
-  <p style="font-size:13px;color:#9A9A93">Vous recevrez votre contrat sous 2 à 3 jours ouvrés. Pour toute question : <a href="mailto:contact@seela.io" style="color:#4F46E5">contact@seela.io</a>.</p>
+  <p style="font-size:13px;color:#9A9A93">Vous recevrez votre contrat sous 2 à 3 jours ouvrés. Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#4F46E5">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
-  <p style="font-size:11px;color:#9A9A93">Seela — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -195,9 +195,9 @@ export function emailClientLeaserRefused({
 }) {
   return {
     to: userEmail,
-    subject: `[Seela] Mise à jour de votre dossier ${requestRef}`,
+    subject: `[Everlease] Mise à jour de votre dossier ${requestRef}`,
     html: `
-<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#1A1A18">
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
     <p style="font-size:20px;font-weight:600;margin:0">Mise à jour de votre dossier</p>
     <p style="color:#9A9A93;margin:4px 0 0">${companyName}</p>
@@ -209,9 +209,9 @@ export function emailClientLeaserRefused({
     </p>
   </div>
   <p style="font-size:13px;color:#9A9A93">Réf. dossier : ${requestRef}</p>
-  <p style="font-size:13px;color:#9A9A93">Un conseiller Seela vous contacte pour étudier les alternatives. Écrivez-nous à <a href="mailto:contact@seela.io" style="color:#4F46E5">contact@seela.io</a>.</p>
+  <p style="font-size:13px;color:#9A9A93">Un conseiller Everlease vous contacte pour étudier les alternatives. Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#4F46E5">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
-  <p style="font-size:11px;color:#9A9A93">Seela — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }

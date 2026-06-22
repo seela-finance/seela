@@ -40,7 +40,7 @@ export default function CounterOfferActions({ offerId, requestId, allOfferIds }:
         onClick={handleAccept}
         disabled={loading !== null}
         className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-        style={{ background: '#1A1A18', color: '#fff', borderRadius: 8 }}
+        style={{ background: '#0E0E0C', color: '#fff', borderRadius: 8 }}
       >
         {loading === 'accept' ? 'Confirmation…' : 'Accepter les conditions'}
       </button>

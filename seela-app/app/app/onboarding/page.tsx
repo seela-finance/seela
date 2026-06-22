@@ -41,7 +41,7 @@ function StepIndicator({ step }: { step: number }) {
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all"
             style={{
-              background: step >= n ? '#1A1A18' : '#F5F5F4',
+              background: step >= n ? '#0E0E0C' : '#F5F5F4',
               border: step < n ? '1px solid #E5E5E3' : 'none',
             }}
           >
@@ -61,7 +61,7 @@ function StepIndicator({ step }: { step: number }) {
           {i < 3 && (
             <div
               className="flex-1 h-px mx-1 transition-all"
-              style={{ background: step > n ? '#1A1A18' : '#E5E5E3' }}
+              style={{ background: step > n ? '#0E0E0C' : '#E5E5E3' }}
             />
           )}
         </div>
@@ -99,15 +99,15 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
     <div>
       <h1
         className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
       >
         Où est établie votre entreprise ?
       </h1>
       <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
-        Seela opère actuellement en France.
+        Everlease opère actuellement en France.
       </p>
 
-      <label className="block text-sm font-medium mb-2" style={{ color: '#1A1A18' }}>
+      <label className="block text-sm font-medium mb-2" style={{ color: '#0E0E0C' }}>
         Pays d&apos;établissement
       </label>
       <div className="relative" ref={dropRef}>
@@ -116,8 +116,8 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
           className="w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-all"
           style={{
             background: '#fff',
-            borderColor: open ? '#1A1A18' : '#E5E5E3',
-            color: '#1A1A18',
+            borderColor: open ? '#0E0E0C' : '#E5E5E3',
+            color: '#0E0E0C',
           }}
         >
           <span className="flex items-center gap-2">
@@ -149,7 +149,7 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
                   opacity: c.enabled ? 1 : 0.7,
                 }}
               >
-                <span className="flex items-center gap-2" style={{ color: '#1A1A18' }}>
+                <span className="flex items-center gap-2" style={{ color: '#0E0E0C' }}>
                   <span>{c.flag}</span>
                   <span>{c.label}</span>
                 </span>
@@ -174,7 +174,7 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
       <button
         onClick={() => onNext(selected)}
         className="w-full mt-8 py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-        style={{ background: '#1A1A18', color: '#fff' }}
+        style={{ background: '#0E0E0C', color: '#fff' }}
       >
         Continuer
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -239,7 +239,7 @@ function Step2Company({
     <div>
       <h1
         className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
       >
         Trouvez votre entreprise
       </h1>
@@ -263,7 +263,7 @@ function Step2Company({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm" style={{ color: '#1A1A18' }}>{selected.name}</p>
+              <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{selected.name}</p>
               <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                 {[selected.siren_formatted, selected.legal_form, selected.year_created && `Créée en ${selected.year_created}`]
                   .filter(Boolean).join(' · ')}
@@ -299,7 +299,7 @@ function Step2Company({
               onChange={e => setQuery(e.target.value)}
               placeholder="Nom de société ou SIREN"
               className="flex-1 text-sm outline-none"
-              style={{ background: 'transparent', color: '#1A1A18' }}
+              style={{ background: 'transparent', color: '#0E0E0C' }}
             />
             {searching && (
               <div className="w-4 h-4 rounded-full border-2 border-t-[#4F46E5] animate-spin shrink-0" style={{ borderColor: '#E5E5E3', borderTopColor: '#4F46E5' }} />
@@ -319,7 +319,7 @@ function Step2Company({
                   style={{ borderBottom: i < results.length - 1 ? '1px solid #F5F5F4' : 'none' }}
                 >
                   <div>
-                    <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>{c.name}</p>
+                    <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{c.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                       {[c.legal_form, c.address.split(',').slice(-2).join(',').trim(), c.year_created && `Créée en ${c.year_created}`]
                         .filter(Boolean).join(' · ')}
@@ -353,7 +353,7 @@ function Step2Company({
         disabled={!selected}
         className="w-full py-3.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
         style={{
-          background: selected ? '#1A1A18' : '#F5F5F4',
+          background: selected ? '#0E0E0C' : '#F5F5F4',
           color: selected ? '#fff' : '#9A9A93',
           cursor: selected ? 'pointer' : 'default',
         }}
@@ -394,7 +394,7 @@ function Step3Contact({
     background: '#fff',
     border: '1px solid #E5E5E3',
     borderRadius: 10,
-    color: '#1A1A18',
+    color: '#0E0E0C',
     fontSize: 14,
   }
 
@@ -404,7 +404,7 @@ function Step3Contact({
     <div>
       <h1
         className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#1A1A18', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
       >
         Qui êtes-vous ?
       </h1>
@@ -489,7 +489,7 @@ function Step3Contact({
                 style={{
                   background: role === r.key ? '#F0F0FF' : '#fff',
                   borderColor: role === r.key ? '#4F46E5' : '#E5E5E3',
-                  color: '#1A1A18',
+                  color: '#0E0E0C',
                 }}
               >
                 <div
@@ -500,7 +500,7 @@ function Step3Contact({
                     <div className="w-2 h-2 rounded-full" style={{ background: '#4F46E5' }} />
                   )}
                 </div>
-                <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>{r.label}</span>
+                <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{r.label}</span>
               </button>
             ))}
           </div>
@@ -511,7 +511,7 @@ function Step3Contact({
         onClick={() => canContinue && onNext({ first_name: firstName, last_name: lastName, phone, role })}
         disabled={!canContinue}
         className="w-full mt-6 py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40"
-        style={{ background: '#1A1A18', color: '#fff' }}
+        style={{ background: '#0E0E0C', color: '#fff' }}
       >
         Continuer
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -522,7 +522,7 @@ function Step3Contact({
   )
 }
 
-// ─── Step 4: Score Seela ──────────────────────────────────────────────────────
+// ─── Step 4: Score Everlease ──────────────────────────────────────────────────────
 
 const GRADE_COLORS: Record<string, string> = {
   A: '#16A34A',
@@ -553,7 +553,7 @@ function ScoreCircle({ grade, score }: { grade: string; score: number }) {
         </span>
       </div>
       <p className="text-xs" style={{ color: '#9A9A93' }}>
-        Score Seela · Basé sur vos données légales
+        Score Everlease · Basé sur vos données légales
       </p>
     </div>
   )
@@ -572,7 +572,7 @@ function ScoreBar({ score }: { score: number }) {
             left: `${pos}%`,
             transform: 'translate(-50%, -50%)',
             background: '#fff',
-            borderColor: '#1A1A18',
+            borderColor: '#0E0E0C',
             boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
           }}
         />
@@ -603,7 +603,7 @@ function UnlockItem({ label, locked, badge }: { label: string; locked?: boolean;
             </svg>
           )}
         </div>
-        <span className="text-sm" style={{ color: locked ? '#9A9A93' : '#1A1A18' }}>{label}</span>
+        <span className="text-sm" style={{ color: locked ? '#9A9A93' : '#0E0E0C' }}>{label}</span>
       </div>
       {badge && (
         <span
@@ -708,8 +708,8 @@ function Step4Score({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-t-[#1A1A18] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#1A1A18' }} />
-        <p className="text-sm" style={{ color: '#9A9A93' }}>Calcul de votre score Seela…</p>
+        <div className="w-10 h-10 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
+        <p className="text-sm" style={{ color: '#9A9A93' }}>Calcul de votre score Everlease…</p>
       </div>
     )
   }
@@ -729,9 +729,9 @@ function Step4Score({
     <div>
       <h1
         className="font-semibold mb-1"
-        style={{ fontSize: 26, color: '#1A1A18', letterSpacing: '-0.5px', lineHeight: 1.2 }}
+        style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px', lineHeight: 1.2 }}
       >
-        Votre profil Seela
+        Votre profil Everlease
       </h1>
       <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
         Basé sur les données officielles de votre entreprise.
@@ -781,7 +781,7 @@ function Step4Score({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm mb-2" style={{ color: '#1A1A18', lineHeight: 1.5 }}>
+            <p className="text-sm mb-2" style={{ color: '#0E0E0C', lineHeight: 1.5 }}>
               Uploadez vos <strong>2 derniers bilans</strong> pour améliorer votre score et accéder à plus d&apos;offres
             </p>
             <input
@@ -795,12 +795,12 @@ function Step4Score({
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-all hover:border-[#1A1A18] disabled:opacity-50"
-              style={{ background: '#fff', color: '#1A1A18', borderColor: '#E5E5E3', borderRadius: 8 }}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-all hover:border-[#0E0E0C] disabled:opacity-50"
+              style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
             >
               {uploading ? (
                 <>
-                  <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#1A1A18] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#1A1A18' }} />
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
                   Import en cours…
                 </>
               ) : (
@@ -834,9 +834,9 @@ function Step4Score({
       <button
         onClick={onNext}
         className="w-full py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 mb-3"
-        style={{ background: '#1A1A18', color: '#fff' }}
+        style={{ background: '#0E0E0C', color: '#fff' }}
       >
-        {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à Seela'}
+        {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à Everlease'}
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -930,7 +930,7 @@ export default function OnboardingPage() {
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF9' }}>
-        <div className="w-8 h-8 rounded-full border-2 border-t-[#1A1A18] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#1A1A18' }} />
+        <div className="w-8 h-8 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
       </div>
     )
   }
@@ -941,11 +941,11 @@ export default function OnboardingPage() {
       <div className="px-6 py-5 shrink-0">
         <a href="/" style={{ display: 'inline-block' }}>
           <div className="flex items-center gap-2">
-            <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-              <rect width="100" height="100" rx="23" fill="#1A1A18" />
-              <path d="M50 14 L65 35 L86 50 L65 65 L50 86 L35 65 L14 50 L35 35 Z" fill="#FAFAF9" />
+            <svg width="32" height="32" viewBox="8 26 104 104" fill="none">
+              <rect x="8" y="26" width="104" height="104" rx="24" fill="#0E0E0C" />
+              <path d="M16 100 A44 44 0 0 1 104 100 L67.86 100 L78.29 86.72 Q82 82 77.15 78.47 L64.85 69.53 Q60 66 55.15 69.53 L42.85 78.47 Q38 82 41.71 86.72 L52.14 100 Z" fill="#FAFAF9" />
             </svg>
-            <span style={{ fontSize: 20, fontWeight: 600, color: '#1A1A18', letterSpacing: '-0.5px' }}>seela</span>
+            <span style={{ fontSize: 20, fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.03em' }}>everlease</span>
           </div>
         </a>
       </div>

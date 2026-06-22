@@ -8,7 +8,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Seela — Financement locatif professionnel',
+  title: 'Everlease — Financement locatif professionnel',
   description: 'Financez votre équipement professionnel. Uploadez votre devis, configurez votre financement, recevez des offres sous 48h.',
 }
 

@@ -70,19 +70,19 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
     <div>
       {/* Breadcrumb */}
       <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#1A1A18]" style={{ color: '#9A9A93' }}>
+        <Link href="/app/offres" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
           Offres
         </Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm font-medium" style={{ color: '#1A1A18' }}>{ref}</span>
+        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{ref}</span>
         <TopActions />
       </div>
 
       <div className="px-8 py-8 max-w-3xl">
           {/* Header */}
-          <h1 className="font-semibold mb-1" style={{ fontSize: 26, color: '#1A1A18', letterSpacing: '-0.5px' }}>
+          <h1 className="font-semibold mb-1" style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px' }}>
             {assetTitle}{extraCount > 0 ? ` et ${extraCount} autre${extraCount > 1 ? 's' : ''}` : ''}
           </h1>
           <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
@@ -112,12 +112,12 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                     className="border-b last:border-0"
                     style={{ borderColor: '#E5E5E3', background: i % 2 === 0 ? '#fff' : '#FAFAF9' }}
                   >
-                    <td className="px-5 py-3.5 text-sm" style={{ color: '#1A1A18' }}>{item.description ?? '—'}</td>
+                    <td className="px-5 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.description ?? '—'}</td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>{item.quantity ?? '—'}</td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
                       {item.unit_price != null ? fmt(item.unit_price) : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-sm font-medium" style={{ color: '#1A1A18' }}>
+                    <td className="px-5 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C' }}>
                       {item.total_price != null ? fmt(item.total_price) : '—'}
                     </td>
                   </tr>
@@ -129,16 +129,16 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                 {request.duration_months ? `${request.duration_months} mois` : '—'}
                 {' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois
               </span>
-              <span className="text-sm font-semibold" style={{ color: '#1A1A18' }}>
+              <span className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
                 Total HT : {fmt(request.total_amount)}
               </span>
             </div>
           </section>
 
-          {/* Offres Seela */}
+          {/* Offres Everlease */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#9A9A93' }}>
-              Offres Seela
+              Offres Everlease
             </h2>
 
             {isWaiting ? (
@@ -148,11 +148,11 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
               >
                 <div className="w-8 h-8 rounded-full border-2 border-t-[#4F46E5] animate-spin shrink-0 mt-0.5" style={{ borderColor: '#E5E5E2', borderTopColor: '#4F46E5' }} />
                 <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: '#1A1A18' }}>
+                  <p className="text-sm font-medium mb-1" style={{ color: '#0E0E0C' }}>
                     Recherche en cours
                   </p>
                   <p className="text-sm" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
-                    Seela consulte ses leasers partenaires pour votre {request.document_type ?? 'dossier'}.
+                    Everlease consulte ses leasers partenaires pour votre {request.document_type ?? 'dossier'}.
                     Vous serez notifié dès que les offres sont disponibles.
                   </p>
                   <p className="text-xs mt-2" style={{ color: '#9A9A93' }}>Délai estimé : 24 à 48h ouvrées</p>
@@ -171,13 +171,13 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
                   if (isFirst) {
                     return (
-                      <div key={offer.id} className="rounded-xl p-6" style={{ background: '#1A1A18' }}>
+                      <div key={offer.id} className="rounded-xl p-6" style={{ background: '#0E0E0C' }}>
                         <div className="flex items-center gap-2 mb-5">
                           <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                             <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="rgba(255,255,255,0.7)" />
                           </svg>
                           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-                            Recommandée par Seela · Meilleur rapport coût / flexibilité
+                            Recommandée par Everlease · Meilleur rapport coût / flexibilité
                           </span>
                         </div>
                         <div className="flex items-start justify-between flex-wrap gap-4">
@@ -191,7 +191,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                             <div>
                               <p className="font-semibold text-white text-sm">{offer.leaser_name}</p>
                               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-                                Score Seela {score} / 100
+                                Score Everlease {score} / 100
                               </p>
                             </div>
                           </div>
@@ -213,7 +213,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                             <Link
                               href={`/app/offres/${requestId}/${offer.id}`}
                               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
-                              style={{ background: '#fff', color: '#1A1A18', borderRadius: 8 }}
+                              style={{ background: '#fff', color: '#0E0E0C', borderRadius: 8 }}
                             >
                               Voir le détail
                               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -245,30 +245,30 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                         {meta?.letters ?? offer.leaser_name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: '#1A1A18' }}>{offer.leaser_name}</p>
+                        <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</p>
                         <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                           Taux indicatif : {(meta?.rate ?? 4.85).toFixed(2)} %
                         </p>
                       </div>
                       <div className="shrink-0 w-24">
-                        <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>Score Seela</p>
+                        <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>Score Everlease</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: '#E5E5E3' }}>
                             <div className="h-full rounded-full" style={{ background: '#4F46E5', width: `${score}%` }} />
                           </div>
-                          <span className="text-xs font-medium" style={{ color: '#1A1A18', minWidth: 20 }}>{score}</span>
+                          <span className="text-xs font-medium" style={{ color: '#0E0E0C', minWidth: 20 }}>{score}</span>
                         </div>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Mensualité</p>
-                        <p className="font-semibold text-sm" style={{ color: '#1A1A18', fontVariantNumeric: 'tabular-nums' }}>
+                        <p className="font-semibold text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(offer.monthly_payment)}
                         </p>
                       </div>
                       <Link
                         href={`/app/offres/${requestId}/${offer.id}`}
-                        className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-[#1A1A18]"
-                        style={{ borderColor: '#E5E5E3', color: '#1A1A18', background: 'transparent', borderRadius: 8 }}
+                        className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-[#0E0E0C]"
+                        style={{ borderColor: '#E5E5E3', color: '#0E0E0C', background: 'transparent', borderRadius: 8 }}
                       >
                         Voir le détail
                         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
