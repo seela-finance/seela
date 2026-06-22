@@ -17,7 +17,7 @@ function Logo({ size = 22, dark }: { size?: number; dark?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: dark ? "#FAFAF9" : "var(--text)", display: "grid", placeItems: "center" }}>
-        <EverleaseMark size={(size + 4) * 0.66} color={dark ? "#0E0E0C" : "#FAFAF9"} />
+        <EverleaseMark size={size + 4} color={dark ? "#0E0E0C" : "#FAFAF9"} />
       </div>
       <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: "-0.03em", color: dark ? "#FAFAF9" : "var(--text)" }}>everlease</div>
     </div>
