@@ -482,6 +482,12 @@ function Footer() {
 function ExpertModal({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = React.useState(false)
   const [qualif, setQualif] = React.useState<'oui' | 'non' | null>(null)
+  const [form, setForm] = React.useState({ entreprise: '', prenom: '', nom: '', role: '', email: '', telephone: '' })
+  const [submitting, setSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const field = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }))
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -493,7 +499,25 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
     }
   }, [onClose])
 
-  const submit = (e: React.FormEvent) => { e.preventDefault(); setSent(true) }
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/contact-expert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, devis: qualif }),
+      })
+      if (!res.ok) throw new Error('request failed')
+      setSent(true)
+    } catch {
+      setError("Une erreur est survenue. Réessayez ou écrivez-nous à contact@everlease.fr.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="lp-modal__scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -511,23 +535,23 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
             <form className="lp-form" onSubmit={submit}>
               <div className="lp-field">
                 <label>Entreprise</label>
-                <input required placeholder="Nom de votre société" />
+                <input required placeholder="Nom de votre société" value={form.entreprise} onChange={field('entreprise')} />
               </div>
 
               <div className="lp-form__row">
                 <div className="lp-field">
                   <label>Prénom</label>
-                  <input required placeholder="Camille" />
+                  <input required placeholder="Camille" value={form.prenom} onChange={field('prenom')} />
                 </div>
                 <div className="lp-field">
                   <label>Nom</label>
-                  <input required placeholder="Verdier" />
+                  <input required placeholder="Verdier" value={form.nom} onChange={field('nom')} />
                 </div>
               </div>
 
               <div className="lp-field">
                 <label>Rôle dans l&apos;entreprise</label>
-                <select required defaultValue="">
+                <select required value={form.role} onChange={field('role')}>
                   <option value="" disabled>Sélectionnez votre rôle</option>
                   <option>Dirigeant / Gérant</option>
                   <option>Directeur Financier (DAF)</option>
@@ -547,15 +571,18 @@ function ExpertModal({ onClose }: { onClose: () => void }) {
 
               <div className="lp-field">
                 <label>Email professionnel</label>
-                <input required type="email" placeholder="camille@entreprise.fr" />
+                <input required type="email" placeholder="camille@entreprise.fr" value={form.email} onChange={field('email')} />
               </div>
 
               <div className="lp-field">
                 <label>Téléphone</label>
-                <input required type="tel" placeholder="06 12 34 56 78" />
+                <input required type="tel" placeholder="06 12 34 56 78" value={form.telephone} onChange={field('telephone')} />
               </div>
 
-              <button className="btn btn--accent btn--lg" type="submit">Demander à être rappelé <IconArrowRight /></button>
+              {error && <div style={{ fontSize: 13, color: "var(--danger)", textAlign: "center" }}>{error}</div>}
+              <button className="btn btn--accent btn--lg" type="submit" disabled={submitting} style={submitting ? { opacity: 0.7, cursor: "default" } : undefined}>
+                {submitting ? "Envoi en cours…" : <>Demander à être rappelé <IconArrowRight /></>}
+              </button>
               <div className="lp-modal__legal">En soumettant, vous acceptez d&apos;être contacté par Everlease. Aucune donnée n&apos;est partagée sans votre accord.</div>
             </form>
           </React.Fragment>
