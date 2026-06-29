@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
 
-// Où arrivent les demandes "Parler à un expert". Surchargé via env si besoin.
-const LEADS_EMAIL = process.env.LEADS_EMAIL ?? 'broutin.louis@gmail.com'
+// Où arrivent les demandes "Parler à un expert".
+// Liste d'emails séparés par des virgules, surchargeable via env LEADS_EMAIL.
+const LEADS_EMAILS = (process.env.LEADS_EMAIL ?? 'broutin.louis@gmail.com,aurelien.audelin@gmail.com')
+  .split(',')
+  .map((e) => e.trim())
+  .filter(Boolean)
 
 interface ExpertLead {
   entreprise?: string
@@ -82,7 +86,7 @@ export async function POST(req: Request) {
 
   // On tente les deux canaux indépendamment ; un lead n'est perdu que si les deux échouent.
   const [emailRes, slackRes] = await Promise.allSettled([
-    sendEmail({ to: LEADS_EMAIL, subject, html }),
+    sendEmail({ to: LEADS_EMAILS, subject, html, alwaysSend: true }),
     slackUrl
       ? fetch(slackUrl, {
           method: 'POST',

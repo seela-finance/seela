@@ -6,15 +6,19 @@ const EMAIL_MODE = process.env.EMAIL_MODE ?? 'development'
 const FOUNDER_EMAIL = process.env.FOUNDER_EMAIL ?? 'broutin.louis@gmail.com'
 
 interface SendEmailParams {
-  to: string
+  to: string | string[]
   subject: string
   html: string
+  // Notifications internes (équipe) : envoyées aux vrais destinataires même hors
+  // production. Le garde-fou dev ne sert qu'à ne pas spammer les vrais clients.
+  alwaysSend?: boolean
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailParams) {
-  const recipient = EMAIL_MODE !== 'production' ? FOUNDER_EMAIL : to
+export async function sendEmail({ to, subject, html, alwaysSend = false }: SendEmailParams) {
+  const live = alwaysSend || EMAIL_MODE === 'production'
+  const recipient = live ? to : FOUNDER_EMAIL
 
-  if (EMAIL_MODE !== 'production') {
+  if (!live) {
     console.log(`[DEV] Email redirigé vers ${FOUNDER_EMAIL} (destinataire réel : ${to})`)
   }
 
