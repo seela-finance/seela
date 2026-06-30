@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 import LandingPage from '@/components/landing/LandingPage'
-import { createClient } from '@/lib/supabase/server'
 import './landing.css'
 
 const jetbrainsMono = JetBrains_Mono({
@@ -14,9 +13,8 @@ export const metadata: Metadata = {
   title: 'Everlease — The new way of financing your equipment',
 }
 
-export default async function Home() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  return <LandingPage className={jetbrainsMono.variable} userEmail={user?.email ?? null} />
+// The nav (MarketingNav) fetches the session client-side, so the landing needs
+// no server-side cookie read and can stay static.
+export default function Home() {
+  return <LandingPage className={jetbrainsMono.variable} />
 }

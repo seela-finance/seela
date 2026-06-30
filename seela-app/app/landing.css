@@ -719,3 +719,10 @@
 @media (min-width: 601px) and (max-width: 920px) {
   .lp .mk-footer__cols { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- Marketing layout: shared gutter + left-aligned measures ----------
+   Every section uses the full .lp-wrap (one shared left gutter). Prose blocks
+   are width-capped but LEFT-aligned (no auto margin) so all blocks line up. */
+.lp .mk-measure { max-width: 860px; }
+.lp .mk-measure--sm { max-width: 760px; }
+.lp .mk-cta-center { text-align: center; margin-top: 56px; }

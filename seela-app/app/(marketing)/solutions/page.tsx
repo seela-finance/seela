@@ -45,13 +45,15 @@ export default function SolutionsHub() {
 
       <main>
         <header className="lp-section" style={{ paddingBottom: 32 }}>
-          <div className="lp-wrap" style={{ maxWidth: 820 }}>
-            <Breadcrumbs items={[{ name: 'Accueil', path: '/' }, { name: 'Solutions' }]} />
-            <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Modes de financement</span>
-            <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>Financer vos équipements professionnels</h1>
-            <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 660 }}>
-              Location financière, crédit-bail, LLD, LOA, lease-back : chaque mode de financement a ses atouts. Everlease vous conseille et met en concurrence ses partenaires financeurs pour trouver le bon.
-            </p>
+          <div className="lp-wrap">
+            <div className="mk-measure">
+              <Breadcrumbs items={[{ name: 'Accueil', path: '/' }, { name: 'Solutions' }]} />
+              <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Modes de financement</span>
+              <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>Financer vos équipements professionnels</h1>
+              <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 660 }}>
+                Location financière, crédit-bail, LLD, LOA, lease-back : chaque mode de financement a ses atouts. Everlease vous conseille et met en concurrence ses partenaires financeurs pour trouver le bon.
+              </p>
+            </div>
           </div>
         </header>
 
