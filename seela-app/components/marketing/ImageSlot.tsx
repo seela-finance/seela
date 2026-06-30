@@ -54,7 +54,7 @@ export default function ImageSlot({
         alt={photo.alt}
         onError={() => setFailed(true)}
         className={`mk-img${rounded ? ' mk-img--rounded' : ''}`}
-        style={{ aspectRatio: ratio, width: '100%', objectFit: 'cover', display: 'block' }}
+        style={{ aspectRatio: ratio, width: '100%', objectFit: 'cover', objectPosition: photo.objectPosition ?? 'center', display: 'block' }}
       />
     )
   }
