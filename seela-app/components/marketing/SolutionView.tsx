@@ -22,19 +22,17 @@ export default function SolutionView({ solution }: { solution: Solution }) {
       {/* Hero */}
       <header className="lp-section" style={{ paddingBottom: 40 }}>
         <div className="lp-wrap">
-          <div className="mk-measure">
-            <Breadcrumbs items={[
-              { name: 'Accueil', path: '/' },
-              { name: 'Solutions', path: '/solutions' },
-              { name: solution.name },
-            ]} />
-            <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Solution de financement</span>
-            <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>{solution.h1}</h1>
-            <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{solution.tagline}</p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
-            </div>
+          <Breadcrumbs items={[
+            { name: 'Accueil', path: '/' },
+            { name: 'Solutions', path: '/solutions' },
+            { name: solution.name },
+          ]} />
+          <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Solution de financement</span>
+          <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>{solution.h1}</h1>
+          <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 760 }}>{solution.tagline}</p>
+          <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'flex-start' }}>
+            <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
+            <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
           </div>
         </div>
       </header>

@@ -31,7 +31,7 @@ export default function SectorView({ sector }: { sector: Sector }) {
             <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Secteur d&apos;activité</span>
             <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>{sector.h1}</h1>
             <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{sector.tagline}</p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
+            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'flex-start' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
               <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
             </div>
@@ -42,10 +42,10 @@ export default function SectorView({ sector }: { sector: Sector }) {
         </div>
       </header>
 
-      {/* Intro (answer-first) */}
+      {/* Intro (answer-first) — full width of the container */}
       <section className="lp-section" style={{ paddingTop: 0 }}>
         <div className="lp-wrap">
-          <p className="lp-lede mk-measure--sm" style={{ fontSize: 17 }}>{sector.intro}</p>
+          <p className="lp-lede" style={{ fontSize: 17 }}>{sector.intro}</p>
         </div>
       </section>
 

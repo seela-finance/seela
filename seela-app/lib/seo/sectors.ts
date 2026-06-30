@@ -12,8 +12,9 @@ export type EquipmentLine = { category: string; examples: string }
 export type SolutionFit = { solutionSlug: string; equipment: string; why: string }
 export type SectorExample = { label: string; total: string; monthly: string; duration: string }
 /** A photo slot: alt/description for SEO + a hint for whoever sources the image.
- *  Leave `src` empty to render a placeholder; fill it later with a stock photo. */
-export type Photo = { alt: string; hint: string; src?: string }
+ *  Leave `src` empty to render a placeholder; fill it later with a stock photo.
+ *  `objectPosition` tweaks the crop focus (e.g. 'center bottom'). */
+export type Photo = { alt: string; hint: string; src?: string; objectPosition?: string }
 
 export type Sector = {
   slug: string
@@ -42,44 +43,46 @@ export const SECTORS: Sector[] = [
     nav: 'CHR — Hôtellerie & restauration',
     name: 'CHR (hôtellerie, café, restauration)',
     h1: "Financer les équipements de votre établissement CHR",
-    metaTitle: "Financement équipement CHR : restaurant, hôtel, café",
+    metaTitle: "Financement équipement CHR : hôtel, restaurant, café",
     metaDescription:
-      "Financez cuisine professionnelle, froid, mobilier et agencement de votre restaurant, hôtel ou café sans vider votre trésorerie. Solutions de leasing CHR et loyers adaptés à la saisonnalité.",
+      "Financez cuisine professionnelle, literie, mobilier et agencement de votre hôtel, restaurant ou café sans vider votre trésorerie. Solutions de leasing CHR adaptées à la saisonnalité.",
     tagline:
-      "Cuisine pro, froid, mobilier, agencement : équipez votre restaurant, hôtel ou café sans immobiliser votre trésorerie.",
+      "Cuisine professionnelle, chambres, mobilier, agencement : équipez votre hôtel, restaurant ou café sans immobiliser votre trésorerie.",
     intro:
-      "Dans la restauration et l'hôtellerie, l'équipement représente un investissement lourd — une cuisine professionnelle complète dépasse souvent 40 000 € — pour des marges serrées et une activité saisonnière. Le financement locatif (crédit-bail, location financière, LLD) permet d'étaler ce coût en loyers mensuels déductibles, de préserver votre trésorerie pour le quotidien (stocks, salaires, saison creuse) et de renouveler votre matériel sans repartir de zéro.",
+      "Dans l'hôtellerie comme dans la restauration, l'équipement pèse lourd : une cuisine professionnelle complète dépasse souvent 40 000 €, et rénover la literie, les téléviseurs et le mobilier des chambres d'un hôtel se chiffre vite en dizaines de milliers d'euros — le tout avec des marges serrées et une activité saisonnière. Le financement locatif (crédit-bail, location financière, LLD) permet d'étaler ce coût en loyers mensuels déductibles, de préserver votre trésorerie pour le quotidien (stocks, salaires, saison creuse) et de renouveler aussi bien votre matériel que vos chambres sans repartir de zéro.",
     whyFinance:
-      "Un établissement CHR vit au rythme des saisons : forte activité l'été ou en haute saison, trésorerie tendue le reste de l'année. Payer comptant 30, 50 ou 80 k€ de matériel de cuisine ou d'agencement, c'est bloquer un cash dont vous avez besoin pour vos achats et vos salaires. Le leasing lisse l'investissement, garde votre capacité bancaire intacte, et certains loyers peuvent s'adapter à votre saisonnalité.",
+      "Un établissement CHR — hôtel, restaurant ou café — vit au rythme des saisons : forte activité en haute saison, trésorerie tendue le reste de l'année. Payer comptant une cuisine, l'agencement d'une salle ou la rénovation complète des chambres d'un hôtel immobilise un cash dont vous avez besoin pour vos achats, vos salaires et l'entretien courant. Le leasing lisse l'investissement, préserve votre capacité bancaire, et permet de garder des chambres et un matériel toujours à niveau — un critère décisif pour vos réservations et la satisfaction de vos clients.",
     equipment: [
       { category: 'Cuisine professionnelle', examples: 'Pianos, fours, friteuses, plaques, salamandres' },
-      { category: 'Froid & conservation', examples: 'Chambres froides, vitrines réfrigérées, cellules de refroidissement' },
-      { category: 'Laverie', examples: 'Lave-vaisselle pro, laveuses à capot, tunnels' },
-      { category: 'Mobilier & agencement', examples: 'Mobilier de salle, banquettes, comptoirs, terrasses' },
+      { category: 'Froid & conservation', examples: 'Chambres froides, vitrines réfrigérées, cellules' },
+      { category: 'Chambres & literie', examples: 'Literie, matelas, sommiers, mobilier de chambre' },
+      { category: 'TV, multimédia & Wi-Fi', examples: 'Téléviseurs, IPTV, réseau Wi-Fi, coffres-forts' },
+      { category: 'Mobilier & agencement', examples: 'Salle, réception, terrasse, banquettes' },
+      { category: 'Laverie & blanchisserie', examples: 'Lave-vaisselle pro, lave-linge, sèche-linge, repassage' },
       { category: 'Bar & boissons', examples: 'Machines à café, tireuses, fontaines, cave à vin' },
-      { category: 'Encaissement & IT', examples: 'Caisses tactiles, TPE, logiciel, bornes de commande' },
+      { category: 'Encaissement & IT', examples: 'PMS hôtelier, caisses, TPE, channel manager' },
     ],
     solutionFit: [
-      { solutionSlug: 'credit-bail', equipment: 'Cuisine professionnelle & matériel de froid', why: "Matériel durable que vous comptez garder : le crédit-bail vous rend propriétaire au terme via l'option d'achat, tout en déduisant les loyers." },
-      { solutionSlug: 'location-financiere', equipment: 'Caisses, TPE, bornes de commande', why: "Matériel qui se renouvelle vite : la location financière finance 100 % sans engagement de rachat, idéal pour rester à jour." },
-      { solutionSlug: 'lld', equipment: 'Machines à café & équipements à entretenir', why: "La LLD intègre la maintenance dans le loyer — zéro mauvaise surprise sur l'entretien d'un équipement critique en service." },
-      { solutionSlug: 'leaseback', equipment: 'Cuisine déjà installée et payée', why: "Vous avez équipé votre cuisine comptant ? Le lease-back transforme cet actif en trésorerie immédiate sans cesser de l'utiliser." },
+      { solutionSlug: 'credit-bail', equipment: 'Cuisine professionnelle, froid & literie', why: "Matériel durable que vous comptez garder : le crédit-bail vous rend propriétaire au terme via l'option d'achat, tout en déduisant les loyers." },
+      { solutionSlug: 'location-financiere', equipment: 'Téléviseurs, Wi-Fi, PMS & encaissement', why: "Matériel qui se renouvelle vite : la location financière finance 100 % sans engagement de rachat, idéal pour garder des chambres et des outils à jour." },
+      { solutionSlug: 'lld', equipment: 'Blanchisserie & équipements à entretenir', why: "La LLD intègre la maintenance dans le loyer — zéro mauvaise surprise sur l'entretien d'un équipement sollicité en continu." },
+      { solutionSlug: 'leaseback', equipment: 'Cuisine ou chambres déjà équipées', why: "Vous avez équipé votre cuisine ou rénové vos chambres comptant ? Le lease-back transforme cet actif en trésorerie immédiate sans cesser de l'utiliser." },
     ],
     examples: [
       { label: 'Cuisine professionnelle complète', total: '45 000 €', monthly: '≈ 1 215 €', duration: '48 mois' },
-      { label: 'Mobilier & agencement de salle', total: '25 000 €', monthly: '≈ 675 €', duration: '48 mois' },
+      { label: 'Rénovation de chambres (literie, TV, mobilier)', total: '80 000 €', monthly: '≈ 1 840 €', duration: '60 mois' },
     ],
     faq: [
       { q: "Peut-on financer une cuisine professionnelle en leasing ?", a: "Oui. Une cuisine professionnelle se finance très bien en crédit-bail ou en location financière : l'organisme achète le matériel chez votre fournisseur et vous le loue contre un loyer mensuel déductible, sans apport. En crédit-bail, vous devenez propriétaire au terme." },
+      { q: "Peut-on financer la literie et l'équipement des chambres d'un hôtel ?", a: "Oui. Literie, matelas, mobilier de chambre, téléviseurs et équipements (Wi-Fi, coffres, climatisation) se financent en crédit-bail ou en location financière. Vous rénovez vos chambres en loyers mensuels déductibles, sans puiser dans votre trésorerie, et vous gardez un parc attractif pour vos clients." },
       { q: 'Le financement CHR tient-il compte de la saisonnalité ?', a: "Selon le contrat et le partenaire financeur, des loyers modulables ou des reports d'échéance en basse saison sont possibles. Everlease met en concurrence ses partenaires pour trouver la structure la plus adaptée à votre activité saisonnière." },
-      { q: 'Quel équipement de restaurant peut-on financer ?', a: "Pratiquement tout actif physique : cuisine professionnelle, matériel de froid, laverie, mobilier et agencement de salle, machines à café, caisses et matériel d'encaissement. Les prestations de service (installation, conseil) ne sont en général pas finançables." },
-      { q: 'Faut-il un apport pour équiper son restaurant ?', a: "Non, le financement locatif couvre 100 % de la valeur du matériel. Vous préservez votre trésorerie pour les stocks, les salaires et la saison creuse." },
-      { q: 'Je viens d\'acheter ma cuisine comptant, est-ce trop tard ?', a: "Non. Le lease-back (cession-bail) vous permet de vendre votre cuisine déjà installée à un financeur et de la reprendre en location : vous récupérez la trésorerie immobilisée tout en continuant à l'utiliser." },
+      { q: "Quel équipement d'hôtel ou de restaurant peut-on financer ?", a: "Pratiquement tout actif physique : cuisine professionnelle, matériel de froid, laverie et blanchisserie, mobilier et agencement, literie et mobilier de chambre, téléviseurs et réseau Wi-Fi, ainsi que les caisses et le PMS hôtelier. Les prestations de service (installation, conseil) ne sont en général pas finançables." },
+      { q: 'Je viens d\'acheter ma cuisine ou de rénover mes chambres comptant, est-ce trop tard ?', a: "Non. Le lease-back (cession-bail) vous permet de vendre un équipement déjà installé à un financeur et de le reprendre en location : vous récupérez la trésorerie immobilisée tout en continuant à l'utiliser." },
     ],
     photos: {
-      hero: { alt: "Cuisine professionnelle d'un restaurant en activité", hint: 'Photo banque d\'image : cuisine pro inox, chef en action — large format paysage' },
+      hero: { alt: "Cuisine professionnelle d'un établissement CHR en activité", hint: 'Photo banque d\'image : cuisine pro inox, chef en action — large format paysage' },
       equipment: { alt: 'Salle de restaurant aménagée avec mobilier et comptoir', hint: 'Photo : salle de restaurant chaleureuse, mobilier moderne' },
-      ambiance: { alt: 'Façade et terrasse d\'un café-restaurant', hint: 'Photo : devanture / terrasse d\'établissement CHR' },
+      ambiance: { alt: 'Façade et terrasse d\'un établissement CHR', hint: 'Photo : devanture / terrasse — mobilier visible', objectPosition: 'center bottom' },
     },
     related: ['commerce-retail', 'sante-cabinets-medicaux', 'industrie-production'],
   },
@@ -308,7 +311,7 @@ export const SECTORS: Sector[] = [
     ],
     photos: {
       hero: { alt: 'Flotte de camions et utilitaires d\'une entreprise de transport', hint: 'Photo banque d\'image : flotte de poids lourds / utilitaires — format paysage' },
-      equipment: { alt: "Chariot élévateur dans un entrepôt logistique", hint: 'Photo : chariot élévateur / manutention en entrepôt' },
+      equipment: { alt: "Chariot élévateur dans un entrepôt logistique", hint: 'Photo : chariot élévateur / manutention en entrepôt', objectPosition: 'center bottom' },
       ambiance: { alt: 'Entrepôt logistique avec racks de stockage', hint: 'Photo : entrepôt, racks, préparation de commandes' },
     },
     related: ['btp-construction', 'industrie-production', 'commerce-retail'],
