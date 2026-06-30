@@ -6,49 +6,14 @@
 import React from 'react'
 import Link from 'next/link'
 import {
-  SparkleGlyph, EverleaseMark, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
+  SparkleGlyph, IconArrowRight, IconUpload, IconAttach, IconCheck, IconCheckSm,
   IconClose, IconRefresh, IconLock, IconShield, IconStore, IconLaptop, IconPrinter,
   IconMedical, IconFactory, IconChair, IconTruck, IconCamera, IconTool,
-  IconServerStack, IconSolar, IconResto, IconUser, type IconProps,
+  IconServerStack, IconSolar, IconResto, type IconProps,
 } from './icons'
 import { VisualConversation, VisualMarketplace, VisualContract, VisualScoring } from './visuals'
-
-function Logo({ size = 22, dark }: { size?: number; dark?: boolean }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: dark ? "#FAFAF9" : "var(--text)", display: "grid", placeItems: "center" }}>
-        <EverleaseMark size={size + 4} color={dark ? "#0E0E0C" : "#FAFAF9"} />
-      </div>
-      <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: "-0.03em", color: dark ? "#FAFAF9" : "var(--text)" }}>everlease</div>
-    </div>
-  )
-}
-
-function Nav({ userEmail }: { userEmail?: string | null }) {
-  return (
-    <nav className="lp-nav">
-      <div className="lp-wrap lp-nav__inner">
-        <Logo size={20} />
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          {userEmail ? (
-            <Link className="lp-user" href="/app/dashboard">
-              <span className="lp-user__avatar"><IconUser size={15} /></span>
-              <span>
-                <span className="lp-user__action">Go to app <IconArrowRight size={13} /></span>
-                <span className="lp-user__email" style={{ display: "block" }}>{userEmail}</span>
-              </span>
-            </Link>
-          ) : (
-            <>
-              <Link className="btn btn--ghost lp-nav__login" href="/auth">Se connecter</Link>
-              <Link className="btn btn--accent" href="/auth">Financer un équipement</Link>
-            </>
-          )}
-        </div>
-      </div>
-    </nav>
-  )
-}
+import MarketingNav from '@/components/marketing/MarketingNav'
+import MarketingFooter from '@/components/marketing/MarketingFooter'
 
 /* ---------------- BLOCK 1 — HERO ---------------- */
 function Hero({ onOpenExpert }: { onOpenExpert: () => void }) {
@@ -462,21 +427,6 @@ function FinalCta({ onOpenExpert }: { onOpenExpert: () => void }) {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="lp-footer">
-      <div className="lp-wrap">
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", fontSize: 12, color: "var(--text-3)" }}>
-          <Logo size={20} />
-          <span>The new way of financing your equipment.</span>
-          <span style={{ marginLeft: "auto" }}>© 2026 Everlease SAS — Tous droits réservés.</span>
-          <span>Conçu et hébergé en France 🇫🇷</span>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 /* ---------------- EXPERT MODAL ---------------- */
 // Mounted only while open, so the form state is fresh on each opening.
 function ExpertModal({ onClose }: { onClose: () => void }) {
@@ -648,14 +598,14 @@ function PainBlock() {
   )
 }
 
-export default function LandingPage({ className, userEmail }: { className?: string; userEmail?: string | null }) {
+export default function LandingPage({ className }: { className?: string }) {
   const [expertOpen, setExpertOpen] = React.useState(false)
   const openExpert = React.useCallback(() => setExpertOpen(true), [])
   const closeExpert = React.useCallback(() => setExpertOpen(false), [])
 
   return (
     <div className={"lp" + (className ? " " + className : "")}>
-      <Nav userEmail={userEmail} />
+      <MarketingNav />
       <Hero onOpenExpert={openExpert} />
       <PainBlock />
       <TryBlock />
@@ -663,7 +613,7 @@ export default function LandingPage({ className, userEmail }: { className?: stri
       <Reassurance />
       <IntegrationsBlock />
       <FinalCta onOpenExpert={openExpert} />
-      <Footer />
+      <MarketingFooter />
       {expertOpen && <ExpertModal onClose={closeExpert} />}
     </div>
   )

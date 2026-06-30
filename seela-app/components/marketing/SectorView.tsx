@@ -1,6 +1,10 @@
 // Renders a full sector page from a Sector data object. The hero pairs text
 // with a photo slot; the solution × secteur mapping is the centrepiece and
 // links contextually to each /solutions/[slug] page.
+//
+// Layout: every section uses the full-width `.lp-wrap` (one shared left
+// gutter); prose-only blocks (intro, FAQ) are width-capped with `.mk-measure`
+// but stay LEFT-aligned so all blocks line up on the same left edge.
 import Link from 'next/link'
 import { SparkleGlyph, IconArrowRight, IconCheckSm } from '@/components/landing/icons'
 import { CONTACT_EMAIL } from '@/lib/seo/site'
@@ -40,8 +44,8 @@ export default function SectorView({ sector }: { sector: Sector }) {
 
       {/* Intro (answer-first) */}
       <section className="lp-section" style={{ paddingTop: 0 }}>
-        <div className="lp-wrap" style={{ maxWidth: 760 }}>
-          <p className="lp-lede" style={{ fontSize: 17 }}>{sector.intro}</p>
+        <div className="lp-wrap">
+          <p className="lp-lede mk-measure--sm" style={{ fontSize: 17 }}>{sector.intro}</p>
         </div>
       </section>
 
@@ -101,7 +105,7 @@ export default function SectorView({ sector }: { sector: Sector }) {
 
       {/* Indicative examples */}
       <section className="lp-section">
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <h2 className="lp-h2" style={{ fontSize: 26 }}>Exemples de financement</h2>
           <div className="mk-examples">
             {sector.examples.map((ex, i) => (
@@ -132,15 +136,17 @@ export default function SectorView({ sector }: { sector: Sector }) {
 
       {/* FAQ */}
       <section className="lp-section">
-        <div className="lp-wrap" style={{ maxWidth: 760 }}>
-          <h2 className="lp-h2" style={{ fontSize: 26 }}>Questions fréquentes</h2>
-          <div className="mk-faq">
-            {sector.faq.map((f, i) => (
-              <details key={i} className="mk-faq__item" open={i === 0}>
-                <summary className="mk-faq__q">{f.q}</summary>
-                <p className="mk-faq__a">{f.a}</p>
-              </details>
-            ))}
+        <div className="lp-wrap">
+          <div className="mk-measure--sm">
+            <h2 className="lp-h2" style={{ fontSize: 26 }}>Questions fréquentes</h2>
+            <div className="mk-faq">
+              {sector.faq.map((f, i) => (
+                <details key={i} className="mk-faq__item" open={i === 0}>
+                  <summary className="mk-faq__q">{f.q}</summary>
+                  <p className="mk-faq__a">{f.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -154,7 +160,7 @@ export default function SectorView({ sector }: { sector: Sector }) {
 
       {/* Related + CTA */}
       <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <div className="mk-related">
             <div className="mk-related__label">Autres secteurs</div>
             <div className="mk-related__row">
@@ -166,12 +172,12 @@ export default function SectorView({ sector }: { sector: Sector }) {
               ))}
             </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: 56 }}>
+          <div className="mk-cta-center">
             <h2 className="lp-h2">Équipez votre activité dès aujourd&apos;hui.</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
               Déposez un devis : Everlease analyse votre besoin et met en concurrence ses partenaires pour vous proposer la meilleure offre.
             </p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
+            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
             </div>
           </div>

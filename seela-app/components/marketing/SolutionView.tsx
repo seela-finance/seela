@@ -1,6 +1,10 @@
 // Renders a full solution page from a Solution data object. The SEO/GEO
 // structure (H1, answer-first intro, steps, pros/cons, comparison, FAQ,
 // internal links) is identical across pages; only the data differs.
+//
+// Layout: every section uses the full-width `.lp-wrap` (one shared left
+// gutter). Prose-only blocks (hero, FAQ) are width-capped with `.mk-measure`
+// but stay LEFT-aligned, so every block lines up on the same left edge.
 import Link from 'next/link'
 import {
   SparkleGlyph, IconArrowRight, IconCheckSm, IconClose,
@@ -17,18 +21,20 @@ export default function SolutionView({ solution }: { solution: Solution }) {
     <main>
       {/* Hero */}
       <header className="lp-section" style={{ paddingBottom: 40 }}>
-        <div className="lp-wrap" style={{ maxWidth: 820 }}>
-          <Breadcrumbs items={[
-            { name: 'Accueil', path: '/' },
-            { name: 'Solutions', path: '/solutions' },
-            { name: solution.name },
-          ]} />
-          <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Solution de financement</span>
-          <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>{solution.h1}</h1>
-          <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 680 }}>{solution.tagline}</p>
-          <div className="lp-cta-row" style={{ marginTop: 28 }}>
-            <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-            <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
+        <div className="lp-wrap">
+          <div className="mk-measure">
+            <Breadcrumbs items={[
+              { name: 'Accueil', path: '/' },
+              { name: 'Solutions', path: '/solutions' },
+              { name: solution.name },
+            ]} />
+            <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Solution de financement</span>
+            <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>{solution.h1}</h1>
+            <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{solution.tagline}</p>
+            <div className="lp-cta-row" style={{ marginTop: 28 }}>
+              <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
+              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
+            </div>
           </div>
         </div>
       </header>
@@ -54,7 +60,7 @@ export default function SolutionView({ solution }: { solution: Solution }) {
 
       {/* How it works */}
       <section className="lp-section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <h2 className="lp-h2" style={{ fontSize: 26 }}>{solution.name} : comment ça fonctionne ?</h2>
           <div className="mk-steps">
             {solution.howItWorks.map((step, i) => (
@@ -70,7 +76,7 @@ export default function SolutionView({ solution }: { solution: Solution }) {
 
       {/* Pros / cons */}
       <section className="lp-section">
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <h2 className="lp-h2" style={{ fontSize: 26 }}>Avantages et points d&apos;attention</h2>
           <div className="mk-proscons">
             <div className="card mk-pc">
@@ -97,7 +103,7 @@ export default function SolutionView({ solution }: { solution: Solution }) {
 
       {/* Best for */}
       <section className="lp-section" style={{ paddingTop: 0 }}>
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <h2 className="lp-h2" style={{ fontSize: 26 }}>Pour qui ?</h2>
           <div className="mk-bestfor">
             {solution.bestFor.map((b, i) => (
@@ -123,22 +129,24 @@ export default function SolutionView({ solution }: { solution: Solution }) {
 
       {/* FAQ */}
       <section className="lp-section">
-        <div className="lp-wrap" style={{ maxWidth: 760 }}>
-          <h2 className="lp-h2" style={{ fontSize: 26 }}>Questions fréquentes</h2>
-          <div className="mk-faq">
-            {solution.faq.map((f, i) => (
-              <details key={i} className="mk-faq__item" open={i === 0}>
-                <summary className="mk-faq__q">{f.q}</summary>
-                <p className="mk-faq__a">{f.a}</p>
-              </details>
-            ))}
+        <div className="lp-wrap">
+          <div className="mk-measure--sm">
+            <h2 className="lp-h2" style={{ fontSize: 26 }}>Questions fréquentes</h2>
+            <div className="mk-faq">
+              {solution.faq.map((f, i) => (
+                <details key={i} className="mk-faq__item" open={i === 0}>
+                  <summary className="mk-faq__q">{f.q}</summary>
+                  <p className="mk-faq__a">{f.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Related + CTA */}
       <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="lp-wrap" style={{ maxWidth: 920 }}>
+        <div className="lp-wrap">
           <div className="mk-related">
             <div className="mk-related__label">Autres solutions de financement</div>
             <div className="mk-related__row">
@@ -150,12 +158,12 @@ export default function SolutionView({ solution }: { solution: Solution }) {
               ))}
             </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: 56 }}>
+          <div className="mk-cta-center">
             <h2 className="lp-h2">Estimez votre financement en quelques minutes.</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
               Déposez un devis, comparez les offres de nos partenaires financeurs, recevez une estimation sous 48h.
             </p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
+            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
             </div>
           </div>
