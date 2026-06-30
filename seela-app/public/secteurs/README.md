@@ -39,3 +39,23 @@ Tant qu'un fichier est absent, le placeholder (avec la description de la photo �
 - `transport-logistique-hero.jpg` — flotte de poids lourds / utilitaires
 - `transport-logistique-equipement.jpg` — chariot élévateur / manutention en entrepôt
 - `transport-logistique-ambiance.jpg` — entrepôt, racks, préparation de commandes (large)
+
+### Boulangerie-pâtisserie
+- `boulangerie-patisserie-hero.jpg` — fournil / boulanger devant le four
+- `boulangerie-patisserie-equipement.jpg` — vitrine de boulangerie garnie, magasin
+- `boulangerie-patisserie-ambiance.jpg` — devanture / enseigne de boulangerie (large)
+
+### Salles de sport / fitness
+- `salles-de-sport-fitness-hero.jpg` — salle de sport moderne, machines
+- `salles-de-sport-fitness-equipement.jpg` — plateau musculation / cross-training
+- `salles-de-sport-fitness-ambiance.jpg` — ambiance club de sport, vue d'ensemble (large)
+
+### Sécurité & surveillance
+- `securite-surveillance-hero.jpg` — caméras de surveillance / centre de supervision
+- `securite-surveillance-equipement.jpg` — mur d'écrans / poste de supervision
+- `securite-surveillance-ambiance.jpg` — contrôle d'accès / badge / portique (large)
+
+### Audiovisuel & production
+- `audiovisuel-production-hero.jpg` — plateau de tournage / caméra
+- `audiovisuel-production-equipement.jpg` — poste de montage / écrans calibrés
+- `audiovisuel-production-ambiance.jpg` — studio, éclairage, ambiance production (large)

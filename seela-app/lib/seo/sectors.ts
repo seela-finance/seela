@@ -316,6 +316,190 @@ export const SECTORS: Sector[] = [
     },
     related: ['btp-construction', 'industrie-production', 'commerce-retail'],
   },
+  {
+    slug: 'boulangerie-patisserie',
+    nav: 'Boulangerie-pâtisserie',
+    name: 'Boulangerie-pâtisserie',
+    h1: "Financer les équipements de votre boulangerie-pâtisserie",
+    metaTitle: "Financement équipement boulangerie-pâtisserie",
+    metaDescription:
+      "Financez four, pétrin, chambre froide et vitrines de votre boulangerie-pâtisserie sans vider votre trésorerie. Crédit-bail et location financière adaptés au fournil et au magasin.",
+    tagline:
+      "Four, pétrin, chambre froide, vitrines : équipez votre fournil et votre laboratoire sans immobiliser votre trésorerie.",
+    intro:
+      "Ouvrir ou rééquiper une boulangerie-pâtisserie demande un investissement lourd : un four professionnel dépasse souvent 30 000 €, et l'ensemble fournil, laboratoire et vitrines de magasin se chiffre rapidement en dizaines de milliers d'euros. Le financement locatif (crédit-bail, location financière) permet d'étaler ce coût en loyers mensuels déductibles, de préserver votre trésorerie pour la farine, les salaires et le quotidien, et de devenir propriétaire d'un matériel que vous garderez de longues années.",
+    whyFinance:
+      "Le matériel de boulangerie est structurant et durable : un four ou un pétrin s'utilise quinze à vingt ans. Le payer comptant immobilise un capital considérable au pire moment — l'installation ou la reprise. Le crédit-bail aligne le coût sur la durée de vie du matériel et vous rend propriétaire au terme ; la location financière convient au matériel de magasin et d'encaissement qui se renouvelle plus vite. Dans les deux cas, vous gardez votre capacité d'emprunt pour le fonds de roulement.",
+    equipment: [
+      { category: 'Cuisson', examples: 'Fours à soles, ventilés, rotatifs, chambres de cuisson' },
+      { category: 'Pétrissage & façonnage', examples: 'Pétrins, batteurs, diviseuses, façonneuses, laminoirs' },
+      { category: 'Froid & fermentation', examples: 'Chambres froides, chambres de pousse, surgélateurs' },
+      { category: 'Laboratoire pâtisserie', examples: 'Tempéreuses chocolat, sorbetières, étuves' },
+      { category: 'Magasin & vitrines', examples: 'Vitrines réfrigérées, agencement, mobilier, enseigne' },
+      { category: 'Encaissement & pesage', examples: 'Caisses, TPE, balances, logiciel de gestion' },
+    ],
+    solutionFit: [
+      { solutionSlug: 'credit-bail', equipment: 'Four, pétrin & matériel de fournil', why: "Matériel durable que vous garderez des années : le crédit-bail vous rend propriétaire au terme via l'option d'achat, tout en déduisant les loyers." },
+      { solutionSlug: 'location-financiere', equipment: 'Vitrines, encaissement & agencement magasin', why: "Matériel de magasin qui se rafraîchit régulièrement : la location financière finance 100 % sans engagement de rachat." },
+      { solutionSlug: 'lld', equipment: 'Froid & équipements à entretenir', why: "La LLD intègre la maintenance dans le loyer — utile pour un froid sollicité en continu où la panne coûte cher." },
+      { solutionSlug: 'leaseback', equipment: 'Fournil déjà équipé et payé', why: "Vous avez équipé votre fournil comptant ? Le lease-back transforme cet actif en trésorerie immédiate sans cesser de produire." },
+    ],
+    examples: [
+      { label: 'Four + pétrin de fournil', total: '45 000 €', monthly: '≈ 1 215 €', duration: '48 mois' },
+      { label: 'Agencement magasin & vitrines réfrigérées', total: '30 000 €', monthly: '≈ 810 €', duration: '48 mois' },
+    ],
+    faq: [
+      { q: "Peut-on financer un four de boulangerie en leasing ?", a: "Oui. Un four professionnel se finance très bien en crédit-bail : l'établissement financier l'achète chez votre fournisseur et vous le loue contre un loyer mensuel déductible, sans apport. Au terme, vous levez l'option d'achat pour en devenir propriétaire." },
+      { q: 'Crédit-bail ou location financière pour une boulangerie ?', a: "Le crédit-bail convient au matériel de fournil durable (four, pétrin, chambre froide) que vous comptez garder et posséder. La location financière est préférable pour le matériel de magasin et d'encaissement, qui se renouvelle plus vite." },
+      { q: "Peut-on financer l'équipement d'un laboratoire de pâtisserie ?", a: "Oui : tempéreuses à chocolat, batteurs, laminoirs, sorbetières, étuves et froid se financent en crédit-bail ou en location financière, au même titre que le matériel de boulangerie." },
+      { q: 'Comment financer la reprise d\'une boulangerie ?', a: "Le matériel d'une boulangerie reprise peut être financé en crédit-bail, et un matériel déjà payé peut être refinancé en lease-back pour dégager de la trésorerie. Everlease met en concurrence ses partenaires pour structurer l'opération." },
+      { q: 'Faut-il un apport pour équiper sa boulangerie ?', a: "Non, le financement locatif couvre 100 % de la valeur du matériel. Vous préservez votre trésorerie pour la matière première, les salaires et le fonds de roulement." },
+    ],
+    photos: {
+      hero: { alt: "Fournil de boulangerie avec four professionnel", hint: 'Photo banque d\'image : fournil / boulanger devant le four — format paysage' },
+      equipment: { alt: 'Vitrine et magasin de boulangerie-pâtisserie', hint: 'Photo : vitrine de boulangerie garnie, magasin' },
+      ambiance: { alt: 'Devanture d\'une boulangerie-pâtisserie', hint: 'Photo : devanture / enseigne de boulangerie' },
+    },
+    related: ['chr-hotellerie-restauration', 'commerce-retail', 'sante-cabinets-medicaux'],
+  },
+  {
+    slug: 'salles-de-sport-fitness',
+    nav: 'Salles de sport / fitness',
+    name: 'Salles de sport & fitness',
+    h1: "Financer l'équipement de votre salle de sport",
+    metaTitle: "Financement équipement salle de sport & fitness",
+    metaDescription:
+      "Financez cardio, musculation, vestiaires et matériel de récupération de votre salle de sport sans bloquer votre trésorerie. Location financière et crédit-bail adaptés au fitness.",
+    tagline:
+      "Cardio, musculation, vestiaires : équipez votre salle sans bloquer votre trésorerie et renouvelez le parc au rythme des tendances.",
+    intro:
+      "Ouvrir une salle de sport mobilise un parc d'équipements lourd — un plateau cardio et musculation complet dépasse souvent 80 000 € — pour un matériel soumis à un usage intensif et à des tendances qui évoluent vite. Le financement locatif (location financière, crédit-bail) permet d'équiper et de renouveler votre salle en loyers mensuels déductibles, alignés sur vos revenus d'abonnement récurrents, sans immobiliser un capital énorme à l'ouverture.",
+    whyFinance:
+      "Un club de fitness vit d'abonnements récurrents mais doit investir massivement d'un coup pour ouvrir, puis renouveler un parc usé par un usage intensif. Payer comptant fragilise la trésorerie au démarrage et oblige à garder du matériel vieillissant. Le leasing transforme ce capex en loyer mensuel adossé à vos revenus, garde votre salle attractive et votre capacité bancaire intacte pour ouvrir d'autres sites.",
+    equipment: [
+      { category: 'Cardio-training', examples: 'Tapis de course, vélos, elliptiques, rameurs' },
+      { category: 'Musculation', examples: 'Machines guidées, poids libres, racks, poulies' },
+      { category: 'Cross-training & fonctionnel', examples: 'Rigs, kettlebells, médecine-balls, plateformes' },
+      { category: 'Récupération & bien-être', examples: 'Sauna, cryothérapie, massage, hammam' },
+      { category: 'Vestiaires & agencement', examples: 'Casiers, mobilier, revêtements, miroirs' },
+      { category: 'Accueil & gestion', examples: 'Contrôle d\'accès, logiciel de gestion, bornes' },
+    ],
+    solutionFit: [
+      { solutionSlug: 'location-financiere', equipment: 'Parc cardio & matériel à renouveler', why: "Le matériel suit les tendances et s'use vite : la location financière finance 100 % sans engagement de rachat, idéal pour garder une salle moderne." },
+      { solutionSlug: 'credit-bail', equipment: 'Musculation & équipements durables', why: "Pour le matériel robuste que vous gardez longtemps, le crédit-bail permet d'en devenir propriétaire au terme tout en déduisant les loyers." },
+      { solutionSlug: 'lld', equipment: 'Parc soumis à usage intensif', why: "La LLD intègre la maintenance — précieux pour un parc sollicité toute la journée où l'indisponibilité d'une machine se voit." },
+      { solutionSlug: 'leaseback', equipment: 'Salle déjà équipée', why: "Vous avez équipé votre salle comptant ? Le lease-back dégage de la trésorerie pour ouvrir un nouveau site ou renouveler le parc." },
+    ],
+    examples: [
+      { label: 'Plateau cardio + musculation complet', total: '90 000 €', monthly: '≈ 2 070 €', duration: '60 mois' },
+      { label: 'Espace fonctionnel & récupération', total: '30 000 €', monthly: '≈ 810 €', duration: '48 mois' },
+    ],
+    faq: [
+      { q: "Peut-on financer l'équipement d'une salle de sport en leasing ?", a: "Oui. Cardio, musculation, cross-training et matériel de récupération se financent en location financière ou en crédit-bail : l'organisme achète le matériel et vous le loue contre un loyer mensuel déductible, sans apport." },
+      { q: 'Location financière ou crédit-bail pour une salle de fitness ?', a: "La location financière convient au matériel qui suit les tendances et s'use vite (parc cardio), pour rester moderne sans engagement de rachat. Le crédit-bail convient au matériel de musculation durable que vous gardez et souhaitez posséder." },
+      { q: "Comment financer l'ouverture d'une salle de sport ?", a: "Le financement locatif couvre 100 % du parc d'équipements en loyers étalés, ce qui évite d'immobiliser un capital énorme à l'ouverture et adosse le coût à vos revenus d'abonnement." },
+      { q: 'Peut-on financer une franchise de fitness ?', a: "Oui. Le financement locatif s'adapte aux concepts de franchise : chaque ouverture peut être financée en loyers, et le lease-back d'une salle existante peut aider à financer la suivante." },
+      { q: 'La maintenance du matériel est-elle finançable ?', a: "Via une formule LLD, l'entretien du parc peut être intégré au loyer — utile pour un matériel sollicité en continu où la disponibilité est un argument commercial." },
+    ],
+    photos: {
+      hero: { alt: "Salle de sport équipée en cardio et musculation", hint: 'Photo banque d\'image : salle de sport moderne, machines — format paysage' },
+      equipment: { alt: 'Zone de musculation avec machines guidées', hint: 'Photo : plateau musculation / cross-training' },
+      ambiance: { alt: 'Intérieur d\'un club de fitness', hint: 'Photo : ambiance club de sport, vue d\'ensemble' },
+    },
+    related: ['commerce-retail', 'sante-cabinets-medicaux', 'chr-hotellerie-restauration'],
+  },
+  {
+    slug: 'securite-surveillance',
+    nav: 'Sécurité & surveillance',
+    name: 'Sécurité & surveillance',
+    h1: "Financer vos équipements de sécurité et de surveillance",
+    metaTitle: "Financement vidéosurveillance & équipement de sécurité",
+    metaDescription:
+      "Financez vidéosurveillance, alarmes et contrôle d'accès sans immobiliser de capital. Location financière adaptée au déploiement multi-sites et au renouvellement d'un parc technologique.",
+    tagline:
+      "Vidéosurveillance, alarmes, contrôle d'accès : déployez vos systèmes de sécurité sans immobiliser de capital, avec un parc toujours à jour.",
+    intro:
+      "Les équipements de sécurité — vidéosurveillance IP, alarmes, contrôle d'accès — évoluent vite (caméras intelligentes, analyse par IA) et se déploient souvent sur plusieurs sites, ce qui en fait un investissement lourd et vite obsolète. Le financement locatif, et en particulier la location financière, permet d'équiper et de renouveler vos systèmes en loyers mensuels déductibles, sans immobiliser de capital ni rester avec un parc dépassé.",
+    whyFinance:
+      "La sécurité est un domaine technologique : une installation de vidéosurveillance perd vite en performance face aux nouvelles caméras et aux exigences réglementaires (RGPD). Acheter comptant un parc multi-sites mobilise un capital important pour un matériel qu'il faudra remplacer. La location financière lisse l'investissement, finance 100 % sans rachat imposé, et permet de garder un dispositif à l'état de l'art — un enjeu autant pour les entreprises qui s'équipent que pour les installateurs qui déploient chez leurs clients.",
+    equipment: [
+      { category: 'Vidéosurveillance', examples: 'Caméras IP, dômes, enregistreurs (NVR), stockage' },
+      { category: 'Alarme & intrusion', examples: 'Détecteurs, centrales, sirènes, télésurveillance' },
+      { category: 'Contrôle d\'accès', examples: 'Badges, biométrie, interphonie, serrures connectées' },
+      { category: 'Sûreté périmétrique', examples: 'Portiques, barrières, bornes, tourniquets' },
+      { category: 'Supervision', examples: 'Logiciels VMS, postes de supervision, écrans' },
+      { category: 'Réseau & stockage', examples: 'Serveurs, baies, switches, onduleurs' },
+    ],
+    solutionFit: [
+      { solutionSlug: 'location-financiere', equipment: 'Caméras, alarmes & matériel technologique', why: "Matériel à obsolescence rapide : la location financière finance 100 % sans engagement de rachat et permet de renouveler le parc régulièrement." },
+      { solutionSlug: 'credit-bail', equipment: 'Infrastructure durable (réseau, périmétrique)', why: "Pour les éléments structurants et durables, le crédit-bail permet d'en devenir propriétaire au terme." },
+      { solutionSlug: 'lld', equipment: 'Dispositifs avec supervision & maintenance', why: "La LLD intègre la maintenance et la supervision dans le loyer — pertinent pour un dispositif critique qui doit rester opérationnel." },
+      { solutionSlug: 'leaseback', equipment: 'Parc de sécurité déjà installé', why: "Le lease-back dégage de la trésorerie à partir d'un parc déjà déployé, sans en interrompre l'exploitation." },
+    ],
+    examples: [
+      { label: 'Vidéosurveillance multi-sites', total: '40 000 €', monthly: '≈ 1 080 €', duration: '48 mois' },
+      { label: "Contrôle d'accès + alarme", total: '18 000 €', monthly: '≈ 612 €', duration: '36 mois' },
+    ],
+    faq: [
+      { q: 'Peut-on financer une installation de vidéosurveillance ?', a: "Oui. Caméras IP, enregistreurs, stockage et supervision se financent en location financière : l'organisme achète le matériel et vous le loue contre un loyer mensuel déductible, sans apport, avec la possibilité de renouveler au terme." },
+      { q: 'Pourquoi la location financière pour la sécurité ?', a: "Parce que le matériel de sécurité évolue vite : la location financière finance 100 % sans engagement de rachat, ce qui permet de garder un dispositif à jour (nouvelles caméras, IA, conformité) plutôt que de rester avec un parc dépassé acheté comptant." },
+      { q: 'Un installateur de sécurité peut-il financer le matériel de ses clients ?', a: "Oui, le financement locatif est un argument commercial pour les intégrateurs : il permet de proposer au client un loyer mensuel plutôt qu'un gros décaissement. Everlease accompagne ce type de montage." },
+      { q: 'Peut-on financer un déploiement multi-sites ?', a: "Tout à fait. Un parc déployé sur plusieurs sites se finance en une seule opération locative, en loyers étalés, sans immobiliser de trésorerie site par site." },
+      { q: 'Peut-on refinancer un parc de sécurité existant ?', a: "Oui, via le lease-back : vous cédez un parc déjà installé à un financeur et le reprenez en location, ce qui restaure de la trésorerie sans interrompre la protection de vos sites." },
+    ],
+    photos: {
+      hero: { alt: "Caméras de vidéosurveillance sur un site professionnel", hint: 'Photo banque d\'image : caméras de surveillance / centre de supervision — format paysage' },
+      equipment: { alt: "Poste de supervision et écrans de vidéosurveillance", hint: 'Photo : mur d\'écrans / supervision sécurité' },
+      ambiance: { alt: "Système de contrôle d'accès à l'entrée d'un bâtiment", hint: 'Photo : contrôle d\'accès / badge / portique' },
+    },
+    related: ['commerce-retail', 'audiovisuel-production', 'transport-logistique'],
+  },
+  {
+    slug: 'audiovisuel-production',
+    nav: 'Audiovisuel & production',
+    name: 'Audiovisuel & production',
+    h1: "Financer votre matériel audiovisuel et de production",
+    metaTitle: "Financement matériel audiovisuel & production",
+    metaDescription:
+      "Financez caméras, son, éclairage et matériel de post-production sans immobiliser votre trésorerie. Location financière adaptée aux studios, sociétés de production et créateurs.",
+    tagline:
+      "Caméras, son, éclairage, drones : équipez votre studio ou votre activité de production avec un matériel toujours à la pointe.",
+    intro:
+      "Le matériel audiovisuel est coûteux et se renouvelle vite : un kit de captation professionnel (caméras, optiques, son) dépasse facilement 30 000 €, et rester à la pointe est une exigence de vos clients. Le financement locatif, et notamment la location financière, permet d'équiper et de renouveler votre matériel en loyers mensuels déductibles, sans immobiliser de trésorerie et sans porter le risque d'un parc qui se déprécie vite.",
+    whyFinance:
+      "Studios, sociétés de production, photographes et vidéastes vivent de projets ponctuels mais doivent investir dans un matériel cher qui évolue à chaque génération. Payer comptant immobilise la trésorerie et expose à une décote rapide. La location financière transforme l'achat en loyer, finance 100 % du matériel, et permet de renouveler caméras et optiques au rythme des besoins — sans gérer la revente d'un parc déprécié.",
+    equipment: [
+      { category: 'Captation vidéo', examples: 'Caméras, optiques, drones, stabilisateurs' },
+      { category: 'Son & prise de son', examples: 'Micros, enregistreurs, mixage, monitoring' },
+      { category: 'Éclairage', examples: 'Projecteurs LED, structures, gélatines, pieds' },
+      { category: 'Post-production', examples: 'Stations de montage, écrans calibrés, stockage' },
+      { category: 'Studio & plateau', examples: 'Fonds, machinerie, rails, fer à fond' },
+      { category: 'Diffusion & streaming', examples: 'Régie, encodeurs, mélangeurs, captation live' },
+    ],
+    solutionFit: [
+      { solutionSlug: 'location-financiere', equipment: 'Caméras, optiques & matériel à renouveler', why: "Matériel coûteux qui se déprécie vite : la location financière finance 100 % sans engagement de rachat, idéal pour rester équipé à la pointe." },
+      { solutionSlug: 'credit-bail', equipment: 'Équipements de studio durables', why: "Pour le matériel de studio que vous gardez longtemps (éclairage, machinerie), le crédit-bail permet d'en devenir propriétaire au terme." },
+      { solutionSlug: 'lld', equipment: 'Parc à entretenir & maintenir', why: "La LLD intègre la maintenance — utile pour un matériel sollicité sur les tournages où la panne bloque la production." },
+      { solutionSlug: 'leaseback', equipment: 'Parc de matériel déjà acquis', why: "Le lease-back dégage de la trésorerie à partir d'un parc déjà acheté, sans en interrompre l'usage sur vos projets." },
+    ],
+    examples: [
+      { label: 'Kit captation (caméras, optiques, son)', total: '35 000 €', monthly: '≈ 945 €', duration: '48 mois' },
+      { label: 'Éclairage + régie de studio', total: '22 000 €', monthly: '≈ 594 €', duration: '48 mois' },
+    ],
+    faq: [
+      { q: 'Peut-on financer du matériel audiovisuel en leasing ?', a: "Oui. Caméras, optiques, son, éclairage et stations de post-production se financent en location financière : l'organisme achète le matériel et vous le loue contre un loyer mensuel déductible, sans apport, avec renouvellement possible au terme." },
+      { q: 'Pourquoi la location financière pour la production audiovisuelle ?', a: "Parce que le matériel se déprécie vite et évolue à chaque génération : la location financière finance 100 % sans rachat imposé, ce qui permet de renouveler caméras et optiques sans porter le risque de revente d'un parc déprécié." },
+      { q: 'Un photographe ou vidéaste indépendant peut-il financer son matériel ?', a: "Oui. Le financement locatif s'adresse aussi aux indépendants et petites structures : il préserve la trésorerie et lisse l'investissement dans un matériel professionnel coûteux." },
+      { q: 'Peut-on financer un studio complet ?', a: "Oui : captation, son, éclairage, plateau et post-production peuvent être financés en une seule opération locative, en loyers étalés. Le matériel durable de studio peut aussi passer en crédit-bail." },
+      { q: 'Peut-on refinancer un parc de matériel déjà acheté ?', a: "Oui, via le lease-back : vous cédez votre matériel à un financeur et le reprenez en location, ce qui restaure de la trésorerie sans interrompre vos tournages." },
+    ],
+    photos: {
+      hero: { alt: "Tournage en studio avec caméra et éclairage", hint: 'Photo banque d\'image : plateau de tournage / caméra — format paysage' },
+      equipment: { alt: "Station de montage et post-production", hint: 'Photo : poste de montage / écrans calibrés' },
+      ambiance: { alt: "Plateau audiovisuel avec éclairage de studio", hint: 'Photo : studio, éclairage, ambiance production' },
+    },
+    related: ['securite-surveillance', 'commerce-retail', 'transport-logistique'],
+  },
 ]
 
 export function getSector(slug: string): Sector | undefined {
