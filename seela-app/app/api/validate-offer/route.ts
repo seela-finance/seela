@@ -6,6 +6,7 @@ import {
   emailLeaserValidation,
   emailClientEverleaseValidated,
 } from '@/lib/email'
+import { OS, RS } from '@/lib/status'
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Offer not found' }, { status: 404 })
   }
 
-  if (offer.status !== 'client_confirmed') {
+  if (offer.status !== OS.client_confirmed) {
     return NextResponse.json({ error: `Expected status client_confirmed, got ${offer.status}` }, { status: 400 })
   }
 
@@ -67,12 +68,12 @@ export async function POST(req: Request) {
   // Update offer + request status
   await supabase
     .from('offers')
-    .update({ status: 'seela_validated' })
+    .update({ status: OS.seela_validated })
     .eq('id', offerId)
 
   await supabase
     .from('financing_requests')
-    .update({ status: 'seela_validated' })
+    .update({ status: RS.seela_validated })
     .eq('id', offer.request_id)
 
   const requestRef = `C-${offer.request_id.slice(0, 4).toUpperCase()}-${offer.request_id.slice(4, 8).toUpperCase()}`

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { OS, RS } from '@/lib/status'
 
 type LineItemRow = { category: string | null; selected: boolean }
 type LeaserRaw = {
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
 
     // Matching uniquement à la soumission : évite les offres en double et
     // qu'un dossier déjà validé repasse en "offres disponibles".
-    if (finReq.status !== 'submitted') {
+    if (finReq.status !== RS.submitted) {
       return NextResponse.json({ error: 'Request already matched' }, { status: 409 })
     }
 
@@ -175,7 +176,7 @@ export async function POST(req: Request) {
         duration_months: duration,
         rate: rateRow.taux_nominal ?? null,
         total_cost: totalCost,
-        status: 'indicative',
+        status: OS.indicative,
         selected: false,
         notes: advantages.join(' · '),
       })
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'offers_available' })
+      .update({ status: RS.offers_available })
       .eq('id', requestId)
 
     return NextResponse.json({ matched: true, offers_count: computed.length })

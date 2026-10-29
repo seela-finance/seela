@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import SouscrireCard from './SouscrireCard'
+import { formatRate, leaserInitials, recommendedOffer } from '@/lib/offers'
+import { RS, requestDestination, requestStatusInfo } from '@/lib/status'
 
 
 type OfferRow = {
@@ -35,10 +37,6 @@ function fmt(n: number | null) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 }
 
-function initials(name: string) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
-}
-
 export default async function OfferDetailPage({
   params,
 }: {
@@ -58,6 +56,10 @@ export default async function OfferDetailPage({
     .single()
 
   if (!request) notFound()
+
+  // Brouillon → flow ; dossier en phase contrat → fiche contrat
+  const section = requestStatusInfo(request.status).section
+  if (section === 'draft' || section === 'contrats') redirect(requestDestination(requestId, request.status))
 
   const offer: OfferRow | undefined = (request.offers ?? []).find((o: OfferRow) => o.id === offerId)
   if (!offer) notFound()
@@ -83,15 +85,14 @@ export default async function OfferDetailPage({
 
   // Derived display values
   const leaserColor = leaser?.brand_color ?? '#9A9A93'
-  const leaserInitials = initials(offer.leaser_name)
+  const initials = leaserInitials(offer.leaser_name)
   const duration = offer.duration_months
   const monthly = offer.monthly_payment
   const totalCost = offer.total_cost ?? monthly * duration
   const rate = offer.rate
 
-  // Recommended = cheapest monthly among all offers for this request
-  const minMonthly = Math.min(...allOffers.map(o => o.monthly_payment))
-  const isRecommended = monthly === minMonthly && allOffers.length > 1
+  // Même règle que la liste des offres (lib/offers.ts)
+  const isRecommended = recommendedOffer(allOffers)?.id === offer.id
 
   const reqRef = `C-${requestId.slice(0, 4).toUpperCase()}-${requestId.slice(4, 8).toUpperCase()}`
   const validUntil = new Date()
@@ -179,7 +180,7 @@ export default async function OfferDetailPage({
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-base font-bold shrink-0"
                 style={{ background: leaserColor }}
               >
-                {leaserInitials}
+                {initials}
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -213,7 +214,7 @@ export default async function OfferDetailPage({
               {[
                 { label: 'Mensualité', value: fmt(monthly) },
                 { label: 'Durée', value: `${duration} mois` },
-                { label: 'Taux contrat', value: rate != null ? `${rate.toFixed(2)} %` : '—' },
+                { label: 'Taux contrat', value: formatRate(rate) ?? '—' },
                 { label: 'Coût total', value: fmt(totalCost) },
               ].map(kpi => (
                 <div key={kpi.label} className="p-4 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
@@ -328,6 +329,7 @@ export default async function OfferDetailPage({
               requestId={requestId}
               allOfferIds={allOfferIds}
               initialStatus={offer.status}
+              canConfirm={request.status === RS.offers_available}
               leaserName={offer.leaser_name}
               leaserDelai={leaser?.delai_reponse_heures ?? 48}
               companyName={profile?.company_name ?? ''}

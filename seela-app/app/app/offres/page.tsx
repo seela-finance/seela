@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
+import { RS, requestStatusesIn } from '@/lib/status'
 type LineItem = { description: string | null; category: string | null; selected: boolean; quantity: number | null }
 type Offer = { id: string; leaser_name: string; monthly_payment: number; selected: boolean; status: string }
 
@@ -173,10 +174,10 @@ function StepDot({ state }: { state: 'done' | 'active' | 'pending' }) {
 
 function MiniProgress({ status }: { status: string }) {
   const s1: 'done' | 'active' | 'pending' = 'done'
-  const s2: 'done' | 'active' | 'pending' = status === 'seela_validated' ? 'done' : 'active'
-  const s3: 'done' | 'active' | 'pending' = status === 'seela_validated' ? 'active' : 'pending'
+  const s2: 'done' | 'active' | 'pending' = status === RS.seela_validated ? 'done' : 'active'
+  const s3: 'done' | 'active' | 'pending' = status === RS.seela_validated ? 'active' : 'pending'
 
-  const label = status === 'seela_validated'
+  const label = status === RS.seela_validated
     ? 'Décision du leaser en cours'
     : 'Validation Everlease en cours'
 
@@ -265,13 +266,14 @@ export default async function OffresPage() {
     .from('financing_requests')
     .select('id, total_amount, duration_months, created_at, status, supplier_name, document_number, line_items(description, category, selected, quantity), offers(id, leaser_name, monthly_payment, selected, status)')
     .eq('user_id', user.id)
-    .in('status', ['submitted', 'offers_available', 'offer_selected', 'seela_validated'])
+    .in('status', requestStatusesIn('offres'))
     .order('created_at', { ascending: false })
 
   const all: RequestRow[] = (data ?? []) as RequestRow[]
-  const available   = all.filter(r => r.status === 'offers_available')
-  const processing  = all.filter(r => r.status === 'offer_selected' || r.status === 'seela_validated')
-  const submitted   = all.filter(r => r.status === 'submitted')
+  // Action attendue du client / traitement Everlease ou leaser / en attente d'offres
+  const available   = all.filter(r => r.status === RS.offers_available || r.status === RS.counter_offer)
+  const processing  = all.filter(r => r.status === RS.offer_selected || r.status === RS.seela_validated)
+  const submitted   = all.filter(r => r.status === RS.submitted || r.status === RS.no_match)
 
   const totalPending = all.length
 
