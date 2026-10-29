@@ -18,6 +18,13 @@ type RequestRow = {
   created_at: string
 }
 
+// En-têtes partagés par le dashboard et la page Contrats (même ordre que les cellules ci-dessous)
+export const REQUESTS_TABLE_HEADERS = ['Référence', 'Actif financé', 'Leaser', 'Mensualité', 'Créé le', 'Statut']
+
+function fmtDate(s: string) {
+  return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 function fmt(n: number | null) {
   if (n == null) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
@@ -65,10 +72,9 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
             <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
               {selOffer ? fmt(selOffer.monthly_payment) : '—'}
             </td>
-            <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
-              {selOffer ? `— / ${selOffer.duration_months}` : '—'}
+            <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>
+              {fmtDate(r.created_at)}
             </td>
-            <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>—</td>
             <td className="px-4 py-3.5">
               {r.status === RS.offers_available ? (
                 <button

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
-import RequestsTable from '@/components/RequestsTable'
+import RequestsTable, { REQUESTS_TABLE_HEADERS } from '@/components/RequestsTable'
 import TopActions from '@/components/TopActions'
 import { requestStatusesIn } from '@/lib/status'
 
@@ -71,7 +71,7 @@ export default async function ContratsPage() {
               <table className="w-full">
                 <thead>
                   <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
-                    {['Référence', 'Actif financé', 'Leaser', 'Mensualité', 'Échéances', 'Prochaine', 'Statut'].map((h, i) => (
+                    {REQUESTS_TABLE_HEADERS.map((h, i) => (
                       <th
                         key={i}
                         className="px-4 py-3 text-left"

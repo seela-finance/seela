@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import RequestsTable from '@/components/RequestsTable'
+import RequestsTable, { REQUESTS_TABLE_HEADERS } from '@/components/RequestsTable'
 import TopActions from '@/components/TopActions'
 import { RS } from '@/lib/status'
 
 function fmt(n: number | null) {
-  if (!n) return '—'
+  if (n == null) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 }
 
@@ -23,13 +23,13 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')
-      .select('company_name, onboarding_completed, financial_docs_uploaded, seela_score_grade')
+      .select('first_name, onboarding_completed, financial_docs_uploaded, seela_score_grade')
       .eq('id', user.id)
       .single(),
   ])
 
   const allRequests = requests ?? []
-  const companyName = profile?.company_name ?? null
+  const firstName = (profile?.first_name as string | null | undefined)?.trim() || null
   const showProfileBanner = profile?.onboarding_completed === true && !profile?.financial_docs_uploaded
 
   const activeRequests = allRequests.filter(r => r.status === RS.active)
@@ -39,9 +39,10 @@ export default async function DashboardPage() {
     return s + (sel?.monthly_payment ?? 0)
   }, 0)
 
-  const greeting = companyName
-    ? `Bonjour, ${companyName.split(' ')[0]}`
-    : 'Tableau de bord'
+  // Dossiers en cours = ni brouillon, ni contrat actif, ni dossier clos
+  const inProgress = allRequests.filter(r => r.status !== RS.draft && r.status !== RS.active && r.status !== RS.refused)
+
+  const greeting = firstName ? `Bonjour ${firstName}` : 'Bonjour'
 
   return (
     <div>
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
             <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Encours total</p>
             <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
@@ -113,28 +114,17 @@ export default async function DashboardPage() {
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
             <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Loyers du mois</p>
             <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-              {totalMonthly > 0 ? fmt(totalMonthly) : '—'}
+              {fmt(totalMonthly)}
             </p>
             <p className="text-xs" style={{ color: '#9A9A93' }}>Mensualité totale</p>
           </div>
 
           <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
-            <div className="flex items-start justify-between mb-3">
-              <p className="text-xs font-medium" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Capacité d&apos;engagement</p>
-              <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: '#DCFCE7', color: '#166534', fontSize: 10 }}>Live</span>
-            </div>
+            <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Dossiers en cours</p>
             <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-              —
+              {inProgress.length}
             </p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>Score Everlease en attente</p>
-          </div>
-
-          <div className="p-5 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3', borderRadius: 12 }}>
-            <p className="text-xs font-medium mb-3" style={{ color: '#9A9A93', letterSpacing: '0.02em' }}>Économie fiscale 2026</p>
-            <p className="font-semibold mb-1" style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.8px', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-              —
-            </p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>vs. achat comptant</p>
+            <p className="text-xs" style={{ color: '#9A9A93' }}>En étude ou en attente de démarrage</p>
           </div>
         </div>
 
@@ -167,7 +157,7 @@ export default async function DashboardPage() {
               <table className="w-full">
                 <thead>
                   <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
-                    {['Référence', 'Actif financé', 'Leaser', 'Mensualité', 'Échéances', 'Prochaine', 'Statut'].map((h, i) => (
+                    {REQUESTS_TABLE_HEADERS.map((h, i) => (
                       <th
                         key={i}
                         className="px-4 py-3 text-left"
