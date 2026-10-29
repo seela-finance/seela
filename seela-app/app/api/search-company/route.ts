@@ -1,19 +1,5 @@
 import { NextResponse } from 'next/server'
-
-const LEGAL_FORMS: Record<string, string> = {
-  '1000': 'Entrepreneur individuel',
-  '1100': 'Auto-entrepreneur',
-  '5410': 'Société à responsabilité limitée',
-  '5498': 'EURL',
-  '5499': 'Société anonyme',
-  '5505': "Société anonyme à conseil d'administration",
-  '5710': 'Société par actions simplifiée',
-  '5720': 'Société par actions simplifiée unipersonnelle',
-  '5800': 'Société européenne',
-  '5300': 'Société en nom collectif',
-  '6540': 'SA coopérative',
-  '9220': 'Association loi 1901',
-}
+import { legalFormLabel } from '@/lib/legal-forms'
 
 function formatSiren(siren: string): string {
   const s = siren.replace(/\s/g, '')
@@ -53,7 +39,7 @@ export async function GET(req: Request) {
         name: r.nom_complet ?? r.denomination ?? '',
         siren,
         siren_formatted: siren.length === 9 ? formatSiren(siren) : siren,
-        legal_form: LEGAL_FORMS[natureCode] ?? null,
+        legal_form: legalFormLabel(natureCode),
         naf_code: siege?.activite_principale ?? (r.activite_principale as string | null) ?? null,
         year_created: r.date_creation
           ? parseInt(String(r.date_creation).slice(0, 4), 10)
