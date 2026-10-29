@@ -4,18 +4,13 @@ import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
 import CounterOfferActions from './CounterOfferActions'
-import { OS, requestDestination, requestStatusInfo } from '@/lib/status'
+import { OS, RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
 import { formatRate } from '@/lib/offers'
 
 
 function fmt(n: number | null) {
   if (n == null) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
-}
-
-function fmtDate(s: string | null | undefined) {
-  if (!s) return '—'
-  return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 function fmtShort(s: string | null | undefined) {
@@ -63,57 +58,19 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   const ref = `C-${id.slice(0, 4).toUpperCase()}-${id.slice(4, 8).toUpperCase()}`
   const leaserName = selectedOffer?.leaser_name ?? '—'
   const monthly = selectedOffer?.monthly_payment ?? null
-  const duration = selectedOffer?.duration_months ?? request.duration_months ?? 36
-  const startDate = new Date(request.created_at)
-
-  const endDate = new Date(startDate)
-  endDate.setMonth(endDate.getMonth() + duration)
-
-  // Compute payments paid / total (simple: use created_at as start, today as reference)
-  const today = new Date()
-  const monthsElapsed = Math.max(0,
-    (today.getFullYear() - startDate.getFullYear()) * 12 +
-    (today.getMonth() - startDate.getMonth())
-  )
-  const paymentsDone = Math.min(monthsElapsed, duration)
-  const paymentsLeft = duration - paymentsDone
-
-  const capitalTotal = request.total_amount ?? 0
-  const capitalRestant = monthly != null ? Math.max(0, capitalTotal - (paymentsDone / duration) * capitalTotal) : null
-
-  // Next payment date
-  const nextPayment = new Date(startDate)
-  nextPayment.setMonth(startDate.getMonth() + paymentsDone + 1)
-
-  // Generate upcoming payments (next 3)
-  const upcoming: { n: number; date: string; montant: number | null }[] = []
-  for (let i = 1; i <= Math.min(3, paymentsLeft); i++) {
-    const d = new Date(startDate)
-    d.setMonth(startDate.getMonth() + paymentsDone + i)
-    upcoming.push({
-      n: paymentsDone + i,
-      date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      montant: monthly,
-    })
-  }
-
-  // Generate recently paid (last 3 done before today, exclude month 1 offert)
-  const recentlyPaid: { n: number; date: string; montant: number | null; ref: string }[] = []
-  for (let i = Math.max(2, paymentsDone - 2); i <= paymentsDone; i++) {
-    const d = new Date(startDate)
-    d.setMonth(startDate.getMonth() + i)
-    recentlyPaid.unshift({
-      n: i,
-      date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      montant: monthly,
-      ref: `ref. ${d.getFullYear()}${String(i).padStart(4, '0')}`,
-    })
-  }
-
+  const duration: number | null = selectedOffer?.duration_months ?? request.duration_months ?? null
   const rate = formatRate(selectedOffer?.rate)
-  const totalCost = monthly != null ? monthly * duration : null
+  const totalCost = monthly != null && duration != null ? monthly * duration : null
+  const timeline = requestTimeline(request.status)
+  const isActive = request.status === RS.active
 
-  const sepaIban = '•••• 6742'
+  // Référent du leaser, affiché uniquement s'il est renseigné en base
+  const { data: leaser } = selectedOffer
+    ? await supabase.from('leasers').select('referent_name').eq('name', selectedOffer.leaser_name).maybeSingle()
+    : { data: null }
+
+  // Le client écrit à Everlease (pas d'adresse leaser devinée), avec la référence du dossier
+  const contactHref = `mailto:contact@everlease.fr?subject=${encodeURIComponent(`Dossier ${ref}`)}`
 
   return (
     <div className="flex min-h-screen" style={{ background: '#FAFAF9' }}>
@@ -158,27 +115,18 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5M1 11h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Contrat PDF
+                Document d&apos;origine ({request.document_type ?? 'devis/facture'})
               </a>
             )}
             {selectedOffer && (
               <a
-                href={`mailto:leasing@${leaserName.toLowerCase().replace(/\s+/g, '')}.fr`}
+                href={contactHref}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
                 style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
               >
-                Contacter le leaser
+                Contacter Everlease
               </a>
             )}
-            <button
-              className="w-7 h-7 rounded-lg flex items-center justify-center border transition-opacity hover:opacity-70"
-              style={{ background: '#fff', borderColor: '#E5E5E3', color: '#9A9A93' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.9 2.9l1.05 1.05M10.05 10.05l1.05 1.05M2.9 11.1l1.05-1.05M10.05 3.95l1.05-1.05" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-            </button>
           </div>
 
           {/* Title */}
@@ -187,7 +135,6 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
           </h1>
           <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
             Financé par <strong style={{ color: '#0E0E0C' }}>{leaserName}</strong>
-            {' · '}Crédit-bail mobilier · Option d&apos;achat 1 €
           </p>
 
           {/* Counter-offer */}
@@ -224,14 +171,13 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
             </section>
           )}
 
-          {/* 5 KPI cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+          {/* Chiffres du dossier (uniquement des valeurs en base) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {[
-              { label: 'Mensualité', value: fmt(monthly), sub: '/mois' },
-              { label: 'Échéances', value: `${paymentsDone} / ${duration}`, sub: `${paymentsLeft} restantes` },
-              { label: 'Capital restant', value: fmt(capitalRestant), sub: `sur ${fmt(capitalTotal)}` },
-              { label: 'Prochaine échéance', value: fmtShort(nextPayment.toISOString()), sub: '' },
-              { label: 'Fin du contrat', value: fmtShort(endDate.toISOString()), sub: '' },
+              { label: 'Mensualité', value: fmt(monthly), sub: 'HT /mois' },
+              { label: 'Durée', value: duration != null ? `${duration} mois` : '—', sub: '' },
+              { label: 'Montant financé', value: fmt(request.total_amount), sub: 'HT' },
+              { label: 'Coût total', value: fmt(totalCost), sub: 'HT' },
             ].map((kpi) => (
               <div key={kpi.label} className="p-4 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                 <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>{kpi.label}</p>
@@ -244,114 +190,57 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Two-column layout */}
-          <div className="flex gap-6 items-start">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
             {/* LEFT — Échéancier */}
             <div className="flex-1 min-w-0">
-              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
-                <div className="px-5 py-4 border-b flex items-center justify-between" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                  <div>
-                    <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>Échéancier</h2>
-                    <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                      Prélèvement SEPA le {startDate.getDate()} de chaque mois
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: '#0E0E0C', color: '#fff', borderRadius: 6 }}>Liste</button>
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={{ background: '#fff', color: '#9A9A93', borderColor: '#E5E5E3', borderRadius: 6 }}>Calendrier</button>
-                  </div>
+              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+                <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E5E3' }}>
+                  <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
+                    {isActive ? 'Contrat démarré' : 'Contrat en préparation'}
+                  </h2>
+                  <p className="text-xs mt-0.5" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
+                    {isActive
+                      ? `Votre échéancier détaillé vous est transmis par ${leaserName}. Il apparaîtra bientôt ici.`
+                      : 'Votre échéancier apparaîtra ici dès le démarrage du contrat.'}
+                  </p>
                 </div>
-
-                {/* À VENIR */}
-                <div className="px-5 py-3 border-b" style={{ borderColor: '#E5E5E3', background: '#FAFAF9' }}>
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>À venir</span>
-                </div>
-                {upcoming.length > 0 ? (
-                  <div>
-                    {upcoming.map((payment, i) => (
-                      <div
-                        key={payment.n}
-                        className="px-5 py-3.5 flex items-center gap-4 border-b"
-                        style={{ borderColor: '#E5E5E3', background: '#fff' }}
+                <ol className="px-5 py-4 space-y-3">
+                  {timeline.map((step) => (
+                    <li key={step.label} className="flex items-center gap-3">
+                      <span
+                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                        style={{
+                          background: step.state === 'done' ? '#0E0E0C' : '#fff',
+                          border: step.state === 'done' ? 'none' : `1.5px solid ${step.state === 'current' ? '#4F46E5' : '#E5E5E3'}`,
+                        }}
                       >
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0"
-                          style={{ background: '#EEF2FF', color: '#3730A3' }}
-                        >
-                          #{payment.n}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm" style={{ color: '#0E0E0C' }}>{payment.date}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                            Prélèvement SEPA · IBAN •••• {sepaIban}
-                          </p>
-                        </div>
-                        <p className="font-medium text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                          {fmt(payment.montant)}
-                        </p>
-                        <span
-                          className="text-xs px-2 py-1 rounded-lg"
-                          style={{ background: '#F5F5F4', color: '#9A9A93' }}
-                        >
-                          À venir
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-5 py-4">
-                    <p className="text-sm" style={{ color: '#9A9A93' }}>Aucune échéance à venir.</p>
-                  </div>
-                )}
-
-                {/* PAYÉES RÉCEMMENT */}
-                {recentlyPaid.length > 0 && (
-                  <>
-                    <div className="px-5 py-3 border-t border-b" style={{ borderColor: '#E5E5E3', background: '#FAFAF9' }}>
-                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Payées récemment</span>
-                    </div>
-                    {recentlyPaid.map((payment) => (
-                      <div
-                        key={payment.n}
-                        className="px-5 py-3.5 flex items-center gap-4 border-b"
-                        style={{ borderColor: '#E5E5E3', background: '#fff' }}
+                        {step.state === 'done' && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                        {step.state === 'current' && <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4F46E5' }} />}
+                      </span>
+                      <span
+                        className="text-sm"
+                        style={{
+                          color: step.state === 'todo' ? '#9A9A93' : '#0E0E0C',
+                          fontWeight: step.state === 'current' ? 500 : 400,
+                        }}
                       >
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0"
-                          style={{ background: '#F0FDF4', color: '#166534' }}
-                        >
-                          #{payment.n}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm" style={{ color: '#0E0E0C' }}>{payment.date}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                            Prélèvement effectué · {payment.ref}
-                          </p>
-                        </div>
-                        <p className="font-medium text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                          {fmt(payment.montant)}
-                        </p>
-                        <span
-                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
-                          style={{ background: '#F0FDF4', color: '#166534' }}
-                        >
-                          <span className="w-1 h-1 rounded-full" style={{ background: '#16A34A' }} />
-                          Payé
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                <div className="px-5 py-3.5 flex justify-center border-t" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-                  <button className="text-sm transition-opacity hover:opacity-70" style={{ color: '#4F46E5' }}>
-                    Voir les {duration} échéances
-                  </button>
-                </div>
+                        {step.label}
+                      </span>
+                      {step.state === 'current' && (
+                        <span className="text-xs" style={{ color: '#4F46E5' }}>En cours</span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
               </section>
             </div>
 
             {/* RIGHT — Documents, Détails, Actions */}
-            <div className="shrink-0 w-72 space-y-4">
+            <div className="w-full lg:w-72 lg:shrink-0 space-y-4">
 
               {/* Documents */}
               <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
@@ -411,13 +300,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="divide-y" style={{ background: '#fff' }}>
                   {[
-                    { label: 'Type', value: 'Crédit-bail mobilier' },
-                    { label: "Option d'achat finale", value: '1 €' },
-                    { label: 'Taux nominal', value: rate ?? '—' },
-                    { label: 'Coût total', value: fmt(totalCost) },
-                    { label: 'Fournisseur', value: firstItem?.description?.split(' ')[0] ?? '—' },
-                    { label: 'Référent leaser', value: '—' },
-                  ].map(row => (
+                    { label: 'Leaser', value: leaserName },
+                    { label: 'Taux nominal', value: rate },
+                    { label: 'Coût total', value: totalCost != null ? fmt(totalCost) : null },
+                    { label: 'Fournisseur', value: request.supplier_name as string | null },
+                    { label: 'Référent leaser', value: leaser?.referent_name ?? null },
+                  ].filter(row => row.value).map(row => (
                     <div key={row.label} className="px-4 py-2.5 flex items-center justify-between">
                       <span className="text-xs" style={{ color: '#9A9A93' }}>{row.label}</span>
                       <span className="text-xs font-medium" style={{ color: '#0E0E0C' }}>{row.value}</span>
@@ -435,7 +323,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                   {[
                     {
                       label: 'Contacter Everlease',
-                      href: 'mailto:contact@everlease.fr',
+                      href: contactHref,
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                           <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -446,6 +334,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     {
                       label: "Demander un report d'échéance",
                       href: `mailto:contact@everlease.fr?subject=Report%20d%27%C3%A9ch%C3%A9ance%20${ref}`,
+                      activeOnly: true,
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                           <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
@@ -462,8 +351,9 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                         </svg>
                       ),
                       danger: true,
+                      activeOnly: true,
                     },
-                  ].map(action => (
+                  ].filter(action => isActive || !action.activeOnly).map(action => (
                     <a
                       key={action.label}
                       href={action.href}

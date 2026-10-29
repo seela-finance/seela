@@ -13,6 +13,7 @@ import {
   requestStatusesIn,
   canTransitionRequest,
   canTransitionOffer,
+  requestTimeline,
 } from '../../lib/status'
 
 const ID = '00000000-0000-0000-0000-000000000001'
@@ -79,5 +80,20 @@ test.describe("Statuts d'offre", () => {
     expect(canTransitionOffer(OS.indicative, OS.seela_validated, 'client')).toBe(false)
     expect(canTransitionOffer(OS.counter_offer, OS.client_confirmed, 'client')).toBe(true)
     expect(canTransitionOffer(OS.client_confirmed, OS.seela_validated, 'admin')).toBe(true)
+  })
+})
+
+test.describe('Timeline client', () => {
+  test('leaser_confirmed : 4 étapes faites, démarrage en cours', () => {
+    const states = requestTimeline(RS.leaser_confirmed).map(s => s.state)
+    expect(states).toEqual(['done', 'done', 'done', 'done', 'current'])
+  })
+
+  test('active : tout est fait', () => {
+    expect(requestTimeline(RS.active).every(s => s.state === 'done')).toBe(true)
+  })
+
+  test('statut hors parcours : rien de coché', () => {
+    expect(requestTimeline('xyz').every(s => s.state === 'todo')).toBe(true)
   })
 })

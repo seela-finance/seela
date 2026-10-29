@@ -185,3 +185,26 @@ export function canTransitionOffer(from: string, to: OfferStatus, actor: Actor):
   if (!isOfferStatus(from)) return false
   return OFFER_TRANSITIONS[from].some(t => t.to === to && t.by.includes(actor))
 }
+
+// ── Timeline client ──────────────────────────────────────────────────
+
+/** Étapes du parcours affichées au client (fiche contrat). */
+export const REQUEST_TIMELINE: { status: RequestStatus; label: string }[] = [
+  { status: 'submitted', label: 'Dossier transmis' },
+  { status: 'offer_selected', label: 'Offre choisie' },
+  { status: 'seela_validated', label: 'Validé par Everlease' },
+  { status: 'leaser_confirmed', label: 'Confirmé par le leaser' },
+  { status: 'active', label: 'Contrat démarré' },
+]
+
+export type TimelineStep = { label: string; state: 'done' | 'current' | 'todo' }
+
+/** Étapes franchies / en cours / à venir pour un statut ; statut hors parcours → tout « à venir ». */
+export function requestTimeline(status: string | null | undefined): TimelineStep[] {
+  const reached = REQUEST_TIMELINE.findIndex(s => s.status === status)
+  return REQUEST_TIMELINE.map((s, i) => ({
+    label: s.label,
+    // Le dernier palier atteint est « fait » ; l'étape suivante est « en cours ».
+    state: reached === -1 ? 'todo' : i <= reached ? 'done' : i === reached + 1 ? 'current' : 'todo',
+  }))
+}
