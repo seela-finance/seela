@@ -47,3 +47,8 @@ test.describe('Formes juridiques INSEE', () => {
     }
   })
 })
+
+test('EARL : responsabilité limitée, pas société civile', () => {
+  expect(legalFormShort('6598')).toBe('EARL')
+  expect(legalFormLabel('6598')!.toLowerCase()).toContain('responsabilité limitée')
+})

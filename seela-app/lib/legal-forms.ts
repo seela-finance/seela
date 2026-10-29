@@ -284,6 +284,7 @@ function family(code: string): Family | null {
   if (code === '5585' || code === '5685') return { short: 'SELAFA', label: "Société d'exercice libéral à forme anonyme" }
   if (code === '5785') return { short: 'SELAS', label: "Société d'exercice libéral par actions simplifiée" }
   if (code === '6540') return { short: 'SCI', label: 'Société civile immobilière' }
+  if (code === '6598') return { short: 'EARL', label: 'Exploitation agricole à responsabilité limitée' }
   const p2 = code.slice(0, 2)
   if (p2 === '52') return { short: 'SNC', label: 'Société en nom collectif' }
   if (code === '5306' || code === '5307') return { short: 'SCS', label: 'Société en commandite simple' }
