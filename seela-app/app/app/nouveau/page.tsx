@@ -443,6 +443,8 @@ function Step2Lines({
     }
   }, [requestId, documentUrl, mimeType, supabase])
 
+  // TODO(backlog): refacto du chargement au montage (setState synchrone dans l'effet)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { analyze() }, [analyze])
 
   function toggle(id: string) {
@@ -795,6 +797,8 @@ function Step4Confirmation({
     }
   }, [requestId, items, totalAmount, duration, notes, supabase])
 
+  // TODO(backlog): refacto de la soumission au montage (setState synchrone dans l'effet)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { submit() }, [submit])
 
   if (error) {

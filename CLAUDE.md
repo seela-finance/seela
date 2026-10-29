@@ -56,6 +56,12 @@ Les routes authentifiées sont donc préfixées par `/app` : `/app/dashboard`, `
 
 ---
 
+## Agent de développement autonome
+
+Tout agent qui développe `seela-app/` en autonomie (routine planifiée, session cloud) suit **`seela-app/AGENT.md`** : choix des issues `ready`, branches, tests, niveaux de risque, merge. Vérifications locales : `npm run check` puis `npm run test:e2e` (dans `seela-app/`).
+
+---
+
 ## Design system
 
 Le style visuel de référence vit désormais dans le code : `seela-app/app/landing.css` (landing) et `seela-app/app/globals.css` (reste de l'app).

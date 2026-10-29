@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 
@@ -939,7 +940,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col" style={{ background: '#FAFAF9' }}>
       {/* Header */}
       <div className="px-6 py-5 shrink-0">
-        <a href="/" style={{ display: 'inline-block' }}>
+        <Link href="/" style={{ display: 'inline-block' }}>
           <div className="flex items-center gap-2">
             <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
               <rect width="100" height="100" rx="23" fill="#0E0E0C" />
@@ -947,7 +948,7 @@ export default function OnboardingPage() {
             </svg>
             <span style={{ fontSize: 20, fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.03em' }}>everlease</span>
           </div>
-        </a>
+        </Link>
       </div>
 
       {/* Content */}
