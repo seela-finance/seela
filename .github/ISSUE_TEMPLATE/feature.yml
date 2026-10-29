@@ -1,0 +1,53 @@
+name: Feature pour l'agent
+description: Une feature assez précise pour être développée par l'agent IA
+labels: ["needs-info"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Une issue est prête pour l'agent quand chaque critère d'acceptation est vérifiable
+        sans te poser de question. Remplace alors `needs-info` par `ready` + un label
+        `priority:P0|P1|P2` + un label `risk:low|risk:high` (cf. seela-app/AGENT.md).
+  - type: textarea
+    id: why
+    attributes:
+      label: Pourquoi
+      description: Le problème utilisateur ou business. Qui en bénéficie ?
+      placeholder: "Les clients ne retrouvent pas leurs demandes en cours quand ils en ont plus de 10…"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce qu'on construit
+      description: Le comportement attendu, du point de vue de l'utilisateur. Routes et écrans concernés.
+      placeholder: "Sur /app/dashboard, ajouter un filtre par statut au-dessus du tableau…"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: Une case par comportement vérifiable. Chacun devient un test.
+      value: |
+        - [ ] Étant donné …, quand …, alors …
+        - [ ] Sur mobile (375 px) : …
+        - [ ] En cas d'erreur : …
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Fichiers / zones concernés
+      description: Points d'entrée connus, et ce qu'il ne faut PAS toucher.
+      placeholder: "app/app/dashboard/page.tsx, components/RequestsTable.tsx — ne pas modifier le schéma."
+  - type: textarea
+    id: design
+    attributes:
+      label: Design / copy
+      description: Maquette, capture, textes exacts à afficher. Sinon "suivre les pages existantes".
+  - type: textarea
+    id: out
+    attributes:
+      label: Hors périmètre
+      placeholder: "Pas de tri, pas de pagination dans cette issue."

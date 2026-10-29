@@ -106,7 +106,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
       n: i,
       date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
       montant: monthly,
-      ref: `ref. ${today.getFullYear()}${String(i).padStart(4, '0')}${Math.floor(Math.random() * 100)}`,
+      ref: `ref. ${d.getFullYear()}${String(i).padStart(4, '0')}`,
     })
   }
 
