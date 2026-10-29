@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import RequestsTable from '@/components/RequestsTable'
 import TopActions from '@/components/TopActions'
+import { RS } from '@/lib/status'
 
 function fmt(n: number | null) {
   if (!n) return '—'
@@ -31,7 +32,7 @@ export default async function DashboardPage() {
   const companyName = profile?.company_name ?? null
   const showProfileBanner = profile?.onboarding_completed === true && !profile?.financial_docs_uploaded
 
-  const activeRequests = allRequests.filter(r => r.status === 'active')
+  const activeRequests = allRequests.filter(r => r.status === RS.active)
   const totalEncours = activeRequests.reduce((s: number, r: { total_amount: number | null }) => s + (r.total_amount ?? 0), 0)
   const totalMonthly = activeRequests.reduce((s: number, r: { offers?: { monthly_payment: number; selected: boolean }[] }) => {
     const sel = r.offers?.find((o: { selected: boolean }) => o.selected)

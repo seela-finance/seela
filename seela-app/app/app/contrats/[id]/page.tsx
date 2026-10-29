@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
 import CounterOfferActions from './CounterOfferActions'
+import { OS, requestDestination, requestStatusInfo } from '@/lib/status'
 
 
 const LEASERMETA: Record<string, { rate: number }> = {
@@ -45,8 +46,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
 
   if (!request) notFound()
 
+  // Seuls les dossiers en phase contrat ont une fiche contrat ; sinon, page adaptée au statut.
+  const statusInfo = requestStatusInfo(request.status)
+  if (statusInfo.section !== 'contrats') redirect(requestDestination(id, request.status))
+
   const selectedOffer: OfferRow | undefined = request.offers?.find((o: OfferRow) => o.selected)
-  const counterOffer: OfferRow | undefined = request.offers?.find((o: OfferRow) => o.status === 'counter_offer')
+  const counterOffer: OfferRow | undefined = request.offers?.find((o: OfferRow) => o.status === OS.counter_offer)
   const allOfferIds: string[] = (request.offers ?? []).map((o: OfferRow) => o.id)
   const selectedLines: LineItemRow[] = request.line_items?.filter((l: LineItemRow) => l.selected) ?? []
 
@@ -139,23 +144,13 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               </svg>
             </Link>
             <span className="text-sm font-medium" style={{ color: '#9A9A93' }}>{ref}</span>
-            {request.status === 'leaser_confirmed' ? (
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                style={{ background: '#FFF7ED', color: '#92400E' }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#D97706' }} />
-                En attente de démarrage
-              </span>
-            ) : (
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                style={{ background: '#F0FDF4', color: '#166534' }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#16A34A' }} />
-                Actif
-              </span>
-            )}
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+              style={{ background: statusInfo.bg, color: statusInfo.color }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusInfo.dot }} />
+              {statusInfo.label}
+            </span>
             <div className="flex-1" />
             {request.document_url && (
               <a

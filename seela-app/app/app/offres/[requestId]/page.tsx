@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
+import { RS } from '@/lib/status'
 
 
 type LineItem = { description: string | null; selected: boolean; quantity: number | null; unit_price: number | null; total_price: number | null }
@@ -64,7 +65,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
   const duration = request.duration_months ?? 36
   const coeff = COEFFICIENTS[duration] ?? 0.034
 
-  const isWaiting = request.status === 'submitted'
+  const isWaiting = request.status === RS.submitted
 
   return (
     <div>

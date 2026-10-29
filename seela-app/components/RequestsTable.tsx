@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { RS, requestStatusInfo, requestDestination } from '@/lib/status'
 
 type LineItemRow = { description: string | null; selected: boolean; quantity: number | null }
 type OfferRow = { monthly_payment: number; selected: boolean; leaser_name: string; duration_months: number }
@@ -17,16 +18,6 @@ type RequestRow = {
   created_at: string
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  draft:            { label: 'Brouillon',              color: '#9A9A93', bg: '#F5F5F4', dot: '#D1D1CE' },
-  submitted:        { label: 'Transmis',               color: '#854D0E', bg: '#FEF9C3', dot: '#D97706' },
-  offers_available: { label: 'Offres disponibles',     color: '#3730A3', bg: '#EEF2FF', dot: '#4F46E5' },
-  offer_selected:   { label: 'Offre sélectionnée',     color: '#92400E', bg: '#FFF7ED', dot: '#D97706' },
-  seela_validated:  { label: 'En cours de validation', color: '#92400E', bg: '#FFF7ED', dot: '#D97706' },
-  leaser_confirmed: { label: 'En attente de démarrage', color: '#92400E', bg: '#FFF7ED', dot: '#D97706' },
-  active:           { label: 'Actif',                  color: '#166534', bg: '#F0FDF4', dot: '#16A34A' },
-}
-
 function fmt(n: number | null) {
   if (n == null) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
@@ -38,7 +29,7 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
   return (
     <tbody>
       {requests.map((r) => {
-        const cfg = STATUS_CONFIG[r.status] ?? STATUS_CONFIG.draft
+        const cfg = requestStatusInfo(r.status)
         const selOffer = r.offers?.find(o => o.selected)
 
         const firstLine = r.line_items?.find(l => l.selected)
@@ -51,9 +42,7 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
         const ref = `C-${r.id.slice(0, 4).toUpperCase()}-${r.id.slice(4, 8).toUpperCase()}`
 
         const offerCount = r.offers?.length ?? 0
-        const destination = ['offers_available', 'offer_selected', 'seela_validated', 'submitted'].includes(r.status)
-          ? `/app/offres/${r.id}`
-          : `/app/contrats/${r.id}`
+        const destination = requestDestination(r.id, r.status)
 
         return (
           <tr
@@ -81,7 +70,7 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
             </td>
             <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>—</td>
             <td className="px-4 py-3.5">
-              {r.status === 'offers_available' ? (
+              {r.status === RS.offers_available ? (
                 <button
                   onClick={e => { e.stopPropagation(); router.push(`/app/offres/${r.id}`) }}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-80"

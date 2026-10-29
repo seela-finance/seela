@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { OS, RS } from '@/lib/status'
 
 interface Props {
   offerId: string
@@ -67,16 +68,15 @@ function StepIcon({ state, n }: { state: StepState; n: number }) {
 
 function stepStates(status: string): [StepState, StepState, StepState] {
   switch (status) {
-    case 'indicative':
+    case OS.indicative:
       return ['active', 'pending', 'pending']
-    case 'client_confirmed':
+    case OS.client_confirmed:
       return ['done', 'loading', 'pending']
-    case 'seela_validated':
+    case OS.seela_validated:
       return ['done', 'done', 'loading']
-    case 'leaser_confirmed':
-    case 'active':
+    case OS.leaser_confirmed:
       return ['done', 'done', 'done']
-    case 'refused':
+    case OS.refused:
       return ['done', 'done', 'pending']
     default:
       return ['active', 'pending', 'pending']
@@ -113,7 +113,7 @@ export default function SouscrireCard({
   }, [offerId, status])
 
   useEffect(() => {
-    if (status !== 'client_confirmed' && status !== 'seela_validated') return
+    if (status !== OS.client_confirmed && status !== OS.seela_validated) return
     const id = setInterval(poll, 5000)
     return () => clearInterval(id)
   }, [status, poll])
@@ -126,10 +126,10 @@ export default function SouscrireCard({
       await supabase.from('offers').update({ selected: false }).in('id', allOfferIds)
       await supabase.from('offers').update({
         selected: true,
-        status: 'client_confirmed',
+        status: OS.client_confirmed,
       }).eq('id', offerId)
-      await supabase.from('financing_requests').update({ status: 'offer_selected' }).eq('id', requestId)
-      setStatus('client_confirmed')
+      await supabase.from('financing_requests').update({ status: RS.offer_selected }).eq('id', requestId)
+      setStatus(OS.client_confirmed)
     } finally {
       setLoading(false)
     }
@@ -143,7 +143,7 @@ export default function SouscrireCard({
       </p>
 
       {/* Refused state */}
-      {status === 'refused' && (
+      {status === OS.refused && (
         <div className="rounded-xl p-4 mb-5" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
           <p className="text-sm font-medium mb-2" style={{ color: '#92400E' }}>
             {leaserName} n&apos;a pas pu donner suite.
@@ -159,7 +159,7 @@ export default function SouscrireCard({
       )}
 
       {/* Confirmed state */}
-      {(status === 'leaser_confirmed' || status === 'active') && (
+      {status === OS.leaser_confirmed && (
         <div className="rounded-xl p-4 mb-5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
           <div className="flex items-center gap-2 mb-1">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -227,14 +227,14 @@ export default function SouscrireCard({
         </div>
       </div>
 
-      {referentName && status !== 'refused' && (
+      {referentName && status !== OS.refused && (
         <p className="text-xs mb-4" style={{ color: '#9A9A93' }}>
           Référent : {referentName}
         </p>
       )}
 
       {/* Confirm button — only when indicative */}
-      {status === 'indicative' && (
+      {status === OS.indicative && (
         <div>
           <button
             onClick={handleConfirm}

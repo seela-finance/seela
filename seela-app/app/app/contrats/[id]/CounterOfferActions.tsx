@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { OS, RS } from '@/lib/status'
 
 interface Props {
   offerId: string
@@ -19,8 +20,9 @@ export default function CounterOfferActions({ offerId, requestId, allOfferIds }:
     setLoading('accept')
     const supabase = createClient()
     await supabase.from('offers').update({ selected: false }).in('id', allOfferIds)
-    await supabase.from('offers').update({ selected: true, status: 'selected' }).eq('id', offerId)
-    await supabase.from('financing_requests').update({ status: 'active' }).eq('id', requestId)
+    // Accepter une contre-offre = la confirmer ; Everlease la valide ensuite (cf. lib/status.ts)
+    await supabase.from('offers').update({ selected: true, status: OS.client_confirmed }).eq('id', offerId)
+    await supabase.from('financing_requests').update({ status: RS.offer_selected }).eq('id', requestId)
     router.refresh()
     setLoading(null)
   }
@@ -29,7 +31,8 @@ export default function CounterOfferActions({ offerId, requestId, allOfferIds }:
     if (loading) return
     setLoading('refuse')
     const supabase = createClient()
-    await supabase.from('financing_requests').update({ status: 'submitted' }).eq('id', requestId)
+    await supabase.from('offers').update({ status: OS.refused }).eq('id', offerId)
+    await supabase.from('financing_requests').update({ status: RS.offers_available }).eq('id', requestId)
     router.refresh()
     setLoading(null)
   }

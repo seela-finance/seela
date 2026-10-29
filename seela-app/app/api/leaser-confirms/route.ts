@@ -6,6 +6,7 @@ import {
   emailClientLeaserConfirmed,
   emailClientLeaserRefused,
 } from '@/lib/email'
+import { OS, RS } from '@/lib/status'
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
@@ -57,12 +58,12 @@ export async function POST(req: Request) {
   if (decision === 'confirmed') {
     await supabase
       .from('offers')
-      .update({ status: 'leaser_confirmed' })
+      .update({ status: OS.leaser_confirmed })
       .eq('id', offerId)
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'leaser_confirmed' })
+      .update({ status: RS.leaser_confirmed })
       .eq('id', offer.request_id)
 
     const emailData = emailClientLeaserConfirmed({
@@ -77,12 +78,12 @@ export async function POST(req: Request) {
   } else {
     await supabase
       .from('offers')
-      .update({ status: 'refused' })
+      .update({ status: OS.refused })
       .eq('id', offerId)
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'offers_available' })
+      .update({ status: RS.offers_available })
       .eq('id', offer.request_id)
 
     const emailData = emailClientLeaserRefused({
