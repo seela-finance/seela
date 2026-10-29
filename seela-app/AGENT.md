@@ -11,6 +11,8 @@ déploiement).
 
 1. **Choisir une issue** GitHub ouverte avec le label `ready` et sans label `agent:in-progress`.
    Ordre : `priority:P0` > `P1` > `P2`, puis la plus ancienne.
+   Ignorer une issue dont la section « Bloquée par » cite une issue encore ouverte.
+   Ignorer les issues `human` (actions réservées à Louis) et `needs-info`.
    Une seule issue à la fois.
 2. **La réserver** : ajouter le label `agent:in-progress` et commenter "Je prends".
 3. **Brancher** depuis `main` à jour : `agent/<numéro-issue>-<slug-court>`.
