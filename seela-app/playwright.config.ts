@@ -21,6 +21,8 @@ export default defineConfig({
     locale: 'fr-FR',
   },
   projects: [
+    // Tests de fonctions pures (lib/), sans navigateur.
+    { name: 'unit', testMatch: /unit\/.*\.spec\.ts/ },
     {
       name: 'public',
       testMatch: /public\/.*\.spec\.ts/,
