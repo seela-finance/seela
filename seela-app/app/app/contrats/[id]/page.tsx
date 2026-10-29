@@ -5,13 +5,8 @@ import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
 import CounterOfferActions from './CounterOfferActions'
 import { OS, requestDestination, requestStatusInfo } from '@/lib/status'
+import { formatRate } from '@/lib/offers'
 
-
-const LEASERMETA: Record<string, { rate: number }> = {
-  'BNP Lease':                    { rate: 4.85 },
-  'Société Générale Équipement':  { rate: 5.10 },
-  'Crédit Agricole Leasing':      { rate: 4.62 },
-}
 
 function fmt(n: number | null) {
   if (n == null) return '—'
@@ -29,7 +24,7 @@ function fmtShort(s: string | null | undefined) {
 }
 
 type LineItemRow = { id: string; description: string | null; quantity: number | null; unit_price: number | null; total_price: number | null; selected: boolean }
-type OfferRow = { id: string; leaser_name: string; monthly_payment: number; duration_months: number; selected: boolean; status: string }
+type OfferRow = { id: string; leaser_name: string; monthly_payment: number; duration_months: number; selected: boolean; status: string; rate: number | null }
 
 export default async function ContratPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -115,7 +110,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
     })
   }
 
-  const rate = LEASERMETA[leaserName]?.rate ?? 4.85
+  const rate = formatRate(selectedOffer?.rate)
   const totalCost = monthly != null ? monthly * duration : null
 
   const sepaIban = '•••• 6742'
@@ -418,7 +413,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                   {[
                     { label: 'Type', value: 'Crédit-bail mobilier' },
                     { label: "Option d'achat finale", value: '1 €' },
-                    { label: 'Taux nominal', value: `${rate.toFixed(2)} %` },
+                    { label: 'Taux nominal', value: rate ?? '—' },
                     { label: 'Coût total', value: fmt(totalCost) },
                     { label: 'Fournisseur', value: firstItem?.description?.split(' ')[0] ?? '—' },
                     { label: 'Référent leaser', value: '—' },

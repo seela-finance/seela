@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import { RS } from '@/lib/status'
+import { RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
 
 
 type LineItem = { description: string | null; selected: boolean; quantity: number | null; unit_price: number | null; total_price: number | null }
@@ -12,23 +13,13 @@ type OfferRow = {
   monthly_payment: number
   duration_months: number
   selected: boolean
+  status: string | null
+  rate: number | null
 }
 
 function fmt(n: number | null) {
   if (n == null) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
-}
-
-const SCORES: Record<string, number> = {
-  'BNP Lease': 94,
-  'Société Générale Équipement': 91,
-  'Crédit Agricole Leasing': 88,
-}
-
-const LEASERMETA: Record<string, { letters: string; bg: string; rate: number }> = {
-  'BNP Lease':                    { letters: 'BL', bg: '#2563EB', rate: 4.85 },
-  'Société Générale Équipement':  { letters: 'SG', bg: '#DC2626', rate: 5.10 },
-  'Crédit Agricole Leasing':      { letters: 'CA', bg: '#16A34A', rate: 4.62 },
 }
 
 const COEFFICIENTS: Record<number, number> = { 24: 0.048, 36: 0.034, 48: 0.027, 60: 0.023 }
@@ -48,9 +39,15 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
   if (!request) notFound()
 
-  const offers: OfferRow[] = (request.offers ?? []).sort(
-    (a: OfferRow, b: OfferRow) => (SCORES[b.leaser_name] ?? 80) - (SCORES[a.leaser_name] ?? 80)
-  )
+  const offers: OfferRow[] = sortOffers(request.offers ?? [])
+  const recommended = recommendedOffer(offers)
+
+  // Couleur de marque de chaque leaser (table leasers), à défaut gris neutre
+  const { data: leaserRows } = await supabase
+    .from('leasers')
+    .select('name, brand_color')
+    .in('name', offers.map(o => o.leaser_name))
+  const leaserColors = new Map((leaserRows ?? []).map(l => [l.name, l.brand_color as string | null]))
 
   const selectedLines: LineItem[] = (request.line_items ?? []).filter((l: LineItem) => l.selected)
   const firstLine = selectedLines[0]
@@ -165,12 +162,11 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
               </div>
             ) : (
               <div className="space-y-3">
-                {offers.map((offer, idx) => {
-                  const meta = LEASERMETA[offer.leaser_name]
-                  const score = SCORES[offer.leaser_name] ?? 85
-                  const isFirst = idx === 0
+                {offers.map((offer) => {
+                  const color = leaserColors.get(offer.leaser_name) ?? null
+                  const rate = formatRate(offer.rate)
 
-                  if (isFirst) {
+                  if (offer.id === recommended?.id) {
                     return (
                       <div key={offer.id} className="rounded-xl p-6" style={{ background: '#0E0E0C' }}>
                         <div className="flex items-center gap-2 mb-5">
@@ -178,22 +174,19 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                             <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="rgba(255,255,255,0.7)" />
                           </svg>
                           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-                            Recommandée par Everlease · Meilleur rapport coût / flexibilité
+                            Recommandée par Everlease · {RECOMMENDATION_REASON}
                           </span>
                         </div>
                         <div className="flex items-start justify-between flex-wrap gap-4">
                           <div className="flex items-center gap-3">
                             <div
                               className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                              style={{ background: meta?.bg ?? '#4F46E5' }}
+                              style={{ background: color ?? '#4F46E5' }}
                             >
-                              {meta?.letters ?? offer.leaser_name.slice(0, 2).toUpperCase()}
+                              {leaserInitials(offer.leaser_name)}
                             </div>
                             <div>
                               <p className="font-semibold text-white text-sm">{offer.leaser_name}</p>
-                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-                                Score Everlease {score} / 100
-                              </p>
                             </div>
                           </div>
                           <div className="flex items-end gap-6 flex-wrap">
@@ -207,10 +200,12 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 2 }}>Durée</p>
                               <p className="font-medium text-white text-sm">{offer.duration_months} mois</p>
                             </div>
-                            <div>
-                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 2 }}>Taux indicatif</p>
-                              <p className="font-medium text-white text-sm">{(meta?.rate ?? 4.85).toFixed(2)} %</p>
-                            </div>
+                            {rate && (
+                              <div>
+                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 2 }}>Taux indicatif</p>
+                                <p className="font-medium text-white text-sm">{rate}</p>
+                              </div>
+                            )}
                             <Link
                               href={`/app/offres/${requestId}/${offer.id}`}
                               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
@@ -222,12 +217,6 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                               </svg>
                             </Link>
                           </div>
-                        </div>
-                        <div className="mt-5 flex items-center gap-2">
-                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                            <div className="h-full rounded-full" style={{ background: '#fff', width: `${score}%` }} />
-                          </div>
-                          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{score} / 100</span>
                         </div>
                       </div>
                     )
@@ -241,24 +230,15 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                     >
                       <div
                         className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ background: meta?.bg ?? '#9A9A93' }}
+                        style={{ background: color ?? '#9A9A93' }}
                       >
-                        {meta?.letters ?? offer.leaser_name.slice(0, 2).toUpperCase()}
+                        {leaserInitials(offer.leaser_name)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</p>
                         <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                          Taux indicatif : {(meta?.rate ?? 4.85).toFixed(2)} %
+                          {offer.duration_months} mois{rate ? ` · taux indicatif ${rate}` : ''}
                         </p>
-                      </div>
-                      <div className="shrink-0 w-24">
-                        <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>Score Everlease</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: '#E5E5E3' }}>
-                            <div className="h-full rounded-full" style={{ background: '#4F46E5', width: `${score}%` }} />
-                          </div>
-                          <span className="text-xs font-medium" style={{ color: '#0E0E0C', minWidth: 20 }}>{score}</span>
-                        </div>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Mensualité</p>
