@@ -123,5 +123,11 @@ export async function POST(req: Request) {
 
 // document_url est écrit par le navigateur : on ne met en lien que nos propres fichiers.
 function isStorageUrl(url: string | null): url is string {
-  return !!url && url.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/`)
+  if (!url || !process.env.NEXT_PUBLIC_SUPABASE_URL) return false
+  try {
+    const u = new URL(url)
+    return u.origin === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin && u.pathname.startsWith('/storage/v1/object/')
+  } catch {
+    return false
+  }
 }

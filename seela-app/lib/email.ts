@@ -47,6 +47,11 @@ export async function sendEmail({ to, subject, html, alwaysSend = false }: SendE
 
 // Échappe les valeurs saisies par le client ou extraites par l'IA avant de les
 // injecter dans le HTML des emails (sinon : liens/boutons piégés envoyés aux leasers).
+// Valeur insérée dans un sujet d'email (texte brut) : pas de retour à la ligne.
+function oneLine(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ')
+}
+
 export function esc(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -88,7 +93,7 @@ export function emailLeaserValidation({
 
   return {
     to: leaserEmail,
-    subject: `[Everlease] Nouveau dossier de financement — ${requestRef} — ${companyName}`,
+    subject: `[Everlease] Nouveau dossier de financement — ${oneLine(requestRef)} — ${oneLine(companyName)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
@@ -140,7 +145,7 @@ export function emailClientEverleaseValidated({
 
   return {
     to: userEmail,
-    subject: `[Everlease] Votre dossier ${requestRef} est en cours d'examen chez ${leaserName}`,
+    subject: `[Everlease] Votre dossier ${oneLine(requestRef)} est en cours d'examen chez ${oneLine(leaserName)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
@@ -181,7 +186,7 @@ export function emailClientLeaserConfirmed({
 
   return {
     to: userEmail,
-    subject: `[Everlease] 🎉 Financement confirmé — ${requestRef}`,
+    subject: `[Everlease] 🎉 Financement confirmé — ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
@@ -216,7 +221,7 @@ export function emailClientLeaserRefused({
 }) {
   return {
     to: userEmail,
-    subject: `[Everlease] Mise à jour de votre dossier ${requestRef}`,
+    subject: `[Everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
   <div style="padding:32px 0 16px">
