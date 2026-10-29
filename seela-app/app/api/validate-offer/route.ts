@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { isAdminRequest } from '@/lib/admin-auth'
 import {
   sendEmail,
   emailLeaserValidation,
@@ -7,8 +8,7 @@ import {
 } from '@/lib/email'
 
 export async function POST(req: Request) {
-  const auth = req.headers.get('authorization') ?? ''
-  if (auth !== `Bearer ${process.env.SEELA_ADMIN_TOKEN}`) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -52,6 +52,18 @@ export async function POST(req: Request) {
 
   const userEmail = (profile as { email?: string } | null)?.email ?? ''
 
+  // Destinataire leaser : le référent enregistré en base, jamais une adresse devinée.
+  // Vérifié avant tout changement de statut pour ne pas valider un dossier non transmis.
+  const { data: leaser } = await supabase
+    .from('leasers')
+    .select('referent_email, referent_name')
+    .eq('name', offer.leaser_name)
+    .maybeSingle()
+
+  if (!leaser?.referent_email) {
+    return NextResponse.json({ error: `No referent_email for leaser ${offer.leaser_name}` }, { status: 409 })
+  }
+
   // Update offer + request status
   await supabase
     .from('offers')
@@ -77,18 +89,19 @@ export async function POST(req: Request) {
 
   // Send leaser email
   const leaserEmailData = emailLeaserValidation({
+    leaserEmail: leaser.referent_email,
     leaserName: offer.leaser_name,
-    referentName: '',
+    referentName: leaser.referent_name ?? '',
     companyName,
     siren,
     totalAmount: request.total_amount ?? 0,
     durationMonths: offer.duration_months,
     monthlyPayment: offer.monthly_payment,
     equipmentList,
-    documentUrl: request.document_url ?? '',
+    documentUrl: isStorageUrl(request.document_url) ? request.document_url : '',
     requestRef,
   })
-  await sendEmail(leaserEmailData)
+  const leaserSent = await sendEmail(leaserEmailData)
 
   // Send client email
   const clientEmailData = emailClientEverleaseValidated({
@@ -99,7 +112,22 @@ export async function POST(req: Request) {
     durationMonths: offer.duration_months,
     requestRef,
   })
-  await sendEmail(clientEmailData)
+  const clientSent = await sendEmail(clientEmailData)
 
-  return NextResponse.json({ success: true, requestRef })
+  return NextResponse.json({
+    success: true,
+    requestRef,
+    emails: { leaser: leaserSent.success, client: clientSent.success },
+  })
+}
+
+// document_url est écrit par le navigateur : on ne met en lien que nos propres fichiers.
+function isStorageUrl(url: string | null): url is string {
+  if (!url || !process.env.NEXT_PUBLIC_SUPABASE_URL) return false
+  try {
+    const u = new URL(url)
+    return u.origin === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin && u.pathname.startsWith('/storage/v1/object/')
+  } catch {
+    return false
+  }
 }

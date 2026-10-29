@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { fetchOwnDocument, DocumentError } from '@/lib/documents'
 
 const client = new Anthropic()
 
@@ -28,15 +30,12 @@ Si une valeur est absente ou non trouvée, utilise null.`
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
     const { documentUrl, mimeType } = await req.json()
-    if (!documentUrl) return NextResponse.json({ error: 'Missing documentUrl' }, { status: 400 })
-
-    const res = await fetch(documentUrl)
-    if (!res.ok) throw new Error('Failed to fetch document')
-
-    const buffer = await res.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
-    const type = (mimeType || res.headers.get('content-type') || 'application/pdf') as string
+    const { base64, type } = await fetchOwnDocument(documentUrl, mimeType, user.id)
     const isPdf = type === 'application/pdf'
 
     const messages: MessageParam[] = [
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
         content: [
           isPdf
             ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
-            : { type: 'image', source: { type: 'base64', media_type: type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: base64 } },
+            : { type: 'image', source: { type: 'base64', media_type: type as 'image/jpeg' | 'image/png' | 'image/webp', data: base64 } },
           { type: 'text', text: PROMPT },
         ],
       },
@@ -66,9 +65,9 @@ export async function POST(req: Request) {
     return NextResponse.json(JSON.parse(jsonMatch[0]))
   } catch (err: unknown) {
     console.error('Analyze error:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Analyse échouée' },
-      { status: 500 }
-    )
+    if (err instanceof DocumentError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    return NextResponse.json({ error: 'Analyse échouée, veuillez réessayer' }, { status: 500 })
   }
 }

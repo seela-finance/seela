@@ -64,13 +64,8 @@ ALTER TABLE offers ADD COLUMN IF NOT EXISTS rate NUMERIC;
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS total_cost NUMERIC;
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS notes TEXT;
 
--- RLS : tables leasers en lecture publique (pas de données sensibles)
-ALTER TABLE leasers DISABLE ROW LEVEL SECURITY;
-ALTER TABLE leaser_equipment_categories DISABLE ROW LEVEL SECURITY;
-ALTER TABLE leaser_financing_types DISABLE ROW LEVEL SECURITY;
-ALTER TABLE leaser_excluded_sectors DISABLE ROW LEVEL SECURITY;
-ALTER TABLE leaser_rates DISABLE ROW LEVEL SECURITY;
-ALTER TABLE leaser_advantages DISABLE ROW LEVEL SECURITY;
+-- RLS : voir secure-leasers-rls.sql (lecture seule pour anon/authenticated).
+-- Ne jamais désactiver la RLS sur ces tables : la clé anon est publique.
 
 -- ─── Seed : BNP Lease ─────────────────────────────────────────────────────────
 

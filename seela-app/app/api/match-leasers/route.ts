@@ -22,16 +22,27 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    }
 
-    // 1. Get financing request + line items
+    // 1. Get financing request + line items (uniquement les dossiers du client connecté)
     const { data: finReq, error: reqErr } = await supabase
       .from('financing_requests')
-      .select('id, total_amount, duration_months, document_type, user_id, line_items(category, selected)')
+      .select('id, status, total_amount, duration_months, document_type, user_id, line_items(category, selected)')
       .eq('id', requestId)
+      .eq('user_id', user.id)
       .single()
 
     if (reqErr || !finReq) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
+
+    // Matching uniquement à la soumission : évite les offres en double et
+    // qu'un dossier déjà validé repasse en "offres disponibles".
+    if (finReq.status !== 'submitted') {
+      return NextResponse.json({ error: 'Request already matched' }, { status: 409 })
     }
 
     const totalAmount: number = finReq.total_amount ?? 0
