@@ -4,6 +4,7 @@ import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import SouscrireCard from './SouscrireCard'
 import { formatRate, leaserInitials, recommendedOffer } from '@/lib/offers'
+import { RS, requestDestination, requestStatusInfo } from '@/lib/status'
 
 
 type OfferRow = {
@@ -55,6 +56,10 @@ export default async function OfferDetailPage({
     .single()
 
   if (!request) notFound()
+
+  // Brouillon → flow ; dossier en phase contrat → fiche contrat
+  const section = requestStatusInfo(request.status).section
+  if (section === 'draft' || section === 'contrats') redirect(requestDestination(requestId, request.status))
 
   const offer: OfferRow | undefined = (request.offers ?? []).find((o: OfferRow) => o.id === offerId)
   if (!offer) notFound()
@@ -324,6 +329,7 @@ export default async function OfferDetailPage({
               requestId={requestId}
               allOfferIds={allOfferIds}
               initialStatus={offer.status}
+              canConfirm={request.status === RS.offers_available}
               leaserName={offer.leaser_name}
               leaserDelai={leaser?.delai_reponse_heures ?? 48}
               companyName={profile?.company_name ?? ''}

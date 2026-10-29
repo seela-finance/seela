@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
-import { RS } from '@/lib/status'
+import { OS, RS, offerStatusInfo, requestDestination, requestStatusInfo } from '@/lib/status'
+import CounterOfferActions from './CounterOfferActions'
 import { RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
 
 
@@ -39,14 +40,18 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
   if (!request) notFound()
 
+  // Brouillon → flow ; dossier en phase contrat → fiche contrat (pas d'offre à confirmer)
+  const section = requestStatusInfo(request.status).section
+  if (section === 'draft' || section === 'contrats') redirect(requestDestination(requestId, request.status))
+
   const offers: OfferRow[] = sortOffers(request.offers ?? [])
+  const counterOffer = offers.find(o => o.status === OS.counter_offer)
   const recommended = recommendedOffer(offers)
 
   // Couleur de marque de chaque leaser (table leasers), à défaut gris neutre
-  const { data: leaserRows } = await supabase
-    .from('leasers')
-    .select('name, brand_color')
-    .in('name', offers.map(o => o.leaser_name))
+  const { data: leaserRows } = offers.length > 0
+    ? await supabase.from('leasers').select('name, brand_color').in('name', offers.map(o => o.leaser_name))
+    : { data: [] }
   const leaserColors = new Map((leaserRows ?? []).map(l => [l.name, l.brand_color as string | null]))
 
   const selectedLines: LineItem[] = (request.line_items ?? []).filter((l: LineItem) => l.selected)
@@ -62,7 +67,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
   const duration = request.duration_months ?? 36
   const coeff = COEFFICIENTS[duration] ?? 0.034
 
-  const isWaiting = request.status === RS.submitted
+  const isWaiting = request.status === RS.submitted || request.status === RS.no_match
+  const isNoMatch = request.status === RS.no_match
 
   return (
     <div>
@@ -133,6 +139,31 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
             </div>
           </section>
 
+          {/* Contre-proposition du leaser */}
+          {counterOffer && (
+            <section className="p-5 rounded-xl border mb-6" style={{ background: '#FFF7ED', borderColor: '#FED7AA' }}>
+              <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
+                {counterOffer.leaser_name} propose des conditions modifiées
+              </p>
+              <p className="text-xs mt-0.5 mb-4" style={{ color: '#B45309' }}>
+                Examinez les nouveaux termes, puis acceptez-les ou refusez-les.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-5 max-w-sm">
+                <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
+                  <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Nouvelle mensualité</p>
+                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(counterOffer.monthly_payment)} <span className="font-normal text-xs" style={{ color: '#9A9A93' }}>HT</span>
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
+                  <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Durée proposée</p>
+                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{counterOffer.duration_months} mois</p>
+                </div>
+              </div>
+              <CounterOfferActions offerId={counterOffer.id} requestId={requestId} allOfferIds={offers.map(o => o.id)} />
+            </section>
+          )}
+
           {/* Offres Everlease */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#9A9A93' }}>
@@ -147,11 +178,13 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                 <div className="w-8 h-8 rounded-full border-2 border-t-[#4F46E5] animate-spin shrink-0 mt-0.5" style={{ borderColor: '#E5E5E2', borderTopColor: '#4F46E5' }} />
                 <div>
                   <p className="text-sm font-medium mb-1" style={{ color: '#0E0E0C' }}>
-                    Recherche en cours
+                    {isNoMatch ? 'Étude par un conseiller Everlease' : 'Recherche en cours'}
                   </p>
                   <p className="text-sm" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
-                    Everlease consulte ses leasers partenaires pour votre {request.document_type ?? 'dossier'}.
-                    Vous serez notifié dès que les offres sont disponibles.
+                    {isNoMatch
+                      ? 'Aucune offre automatique ne correspond à votre demande : un conseiller recherche une solution auprès de nos partenaires.'
+                      : `Everlease consulte ses leasers partenaires pour votre ${request.document_type ?? 'dossier'}.`}
+                    {' '}Vous serez notifié dès que les offres sont disponibles.
                   </p>
                   <p className="text-xs mt-2" style={{ color: '#9A9A93' }}>Délai estimé : 24 à 48h ouvrées</p>
                 </div>
@@ -239,6 +272,11 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                         <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                           {offer.duration_months} mois{rate ? ` · taux indicatif ${rate}` : ''}
                         </p>
+                        {offer.status === OS.refused && (
+                          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full" style={{ background: offerStatusInfo(offer.status).bg, color: offerStatusInfo(offer.status).color }}>
+                            {offerStatusInfo(offer.status).label}
+                          </span>
+                        )}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Mensualité</p>

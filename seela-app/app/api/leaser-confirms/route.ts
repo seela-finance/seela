@@ -78,7 +78,7 @@ export async function POST(req: Request) {
   } else {
     await supabase
       .from('offers')
-      .update({ status: OS.refused })
+      .update({ status: OS.refused, selected: false })
       .eq('id', offerId)
 
     await supabase

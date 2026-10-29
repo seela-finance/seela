@@ -10,6 +10,8 @@ interface Props {
   requestId: string
   allOfferIds: string[]
   initialStatus: string
+  // false si le dossier n'attend plus de choix (offre déjà confirmée, contrat en cours…)
+  canConfirm: boolean
   leaserName: string
   leaserDelai: number
   companyName: string
@@ -88,6 +90,7 @@ export default function SouscrireCard({
   requestId,
   allOfferIds,
   initialStatus,
+  canConfirm,
   leaserName,
   leaserDelai,
   companyName,
@@ -234,7 +237,13 @@ export default function SouscrireCard({
       )}
 
       {/* Confirm button — only when indicative */}
-      {status === OS.indicative && (
+      {status === OS.indicative && !canConfirm && (
+        <p className="text-xs" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
+          Une autre offre est déjà en cours de traitement pour ce dossier.
+        </p>
+      )}
+
+      {status === OS.indicative && canConfirm && (
         <div>
           <button
             onClick={handleConfirm}

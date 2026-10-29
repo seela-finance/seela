@@ -67,7 +67,8 @@ export function requestStatusesIn(section: RequestSection): RequestStatus[] {
 export function requestDestination(id: string, status: string | null | undefined): string {
   switch (requestStatusInfo(status).section) {
     case 'draft':
-      return `/app/nouveau?request=${id}`
+      // La reprise d'un brouillon (/app/nouveau?request=<id>) arrive avec #27
+      return '/app/nouveau'
     case 'contrats':
       return `/app/contrats/${id}`
     default:

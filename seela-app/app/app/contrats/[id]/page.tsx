@@ -3,8 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
-import CounterOfferActions from './CounterOfferActions'
-import { OS, RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
+import { RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
 import { formatRate } from '@/lib/offers'
 
 
@@ -41,8 +40,6 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   if (statusInfo.section !== 'contrats') redirect(requestDestination(id, request.status))
 
   const selectedOffer: OfferRow | undefined = request.offers?.find((o: OfferRow) => o.selected)
-  const counterOffer: OfferRow | undefined = request.offers?.find((o: OfferRow) => o.status === OS.counter_offer)
-  const allOfferIds: string[] = (request.offers ?? []).map((o: OfferRow) => o.id)
   const selectedLines: LineItemRow[] = request.line_items?.filter((l: LineItemRow) => l.selected) ?? []
 
   const firstItem = selectedLines[0]
@@ -137,39 +134,6 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
             Financé par <strong style={{ color: '#0E0E0C' }}>{leaserName}</strong>
           </p>
 
-          {/* Counter-offer */}
-          {counterOffer && (
-            <section className="p-5 rounded-xl border mb-6" style={{ background: '#FFF7ED', borderColor: '#FED7AA' }}>
-              <div className="flex items-start gap-3 mb-5">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 mt-0.5">
-                  <path d="M8 1l7 13H1L8 1Z" stroke="#D97706" strokeWidth="1.3" strokeLinejoin="round" />
-                  <path d="M8 6v4M8 12h.01" stroke="#D97706" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
-                    Le leaser a proposé des conditions modifiées
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: '#B45309' }}>
-                    Examinez les nouveaux termes et acceptez ou refusez avant de continuer.
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
-                  <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Nouvelle mensualité</p>
-                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmt(counterOffer.monthly_payment)}
-                    <span className="font-normal text-xs ml-1" style={{ color: '#9A9A93' }}>HT</span>
-                  </p>
-                </div>
-                <div className="p-3.5 rounded-xl border" style={{ background: '#fff', borderColor: '#FED7AA' }}>
-                  <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Durée proposée</p>
-                  <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{counterOffer.duration_months} mois</p>
-                </div>
-              </div>
-              <CounterOfferActions offerId={counterOffer.id} requestId={id} allOfferIds={allOfferIds} />
-            </section>
-          )}
 
           {/* Chiffres du dossier (uniquement des valeurs en base) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
