@@ -18,9 +18,6 @@ type RequestRow = {
   created_at: string
 }
 
-// En-têtes partagés par le dashboard et la page Contrats (même ordre que les cellules ci-dessous)
-export const REQUESTS_TABLE_HEADERS = ['Référence', 'Actif financé', 'Leaser', 'Mensualité', 'Créé le', 'Statut']
-
 function fmtDate(s: string) {
   return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
