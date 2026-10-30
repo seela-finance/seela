@@ -112,3 +112,6 @@ risk:low | risk:high — <raison si high>
 - Les tests `e2e/authenticated/` nécessitent `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` :
   un compte du projet Supabase **de staging**, onboarding terminé. Jamais un vrai client.
 - `PLAYWRIGHT_BASE_URL=<url preview Vercel> npm run test:e2e` pour tester une preview.
+- `SUPABASE_SERVICE_ROLE_KEY` : clé service role, lue **uniquement** par `lib/supabase/admin.ts`
+  (`import 'server-only'`). Requise par les routes admin ; à définir dans Vercel (prod + preview),
+  jamais préfixée `NEXT_PUBLIC_`, jamais importée depuis un composant client.
