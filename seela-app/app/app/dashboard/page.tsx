@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import RequestsTable, { REQUESTS_TABLE_HEADERS } from '@/components/RequestsTable'
+import RequestsTable from '@/components/RequestsTable'
+import { REQUESTS_TABLE_HEADERS } from '@/components/requests-table-headers'
 import TopActions from '@/components/TopActions'
 import { RS } from '@/lib/status'
 
