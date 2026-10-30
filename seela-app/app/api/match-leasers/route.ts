@@ -9,6 +9,8 @@ type LeaserRaw = {
   anciennete_min_mois: number
   periodicites: string[] | null
   score_seela_min: number | null
+  // Leaser de test : réservé à ce compte (undefined si la colonne n'existe pas encore)
+  test_user_id?: string | null
   leaser_equipment_categories: { category: string }[]
   leaser_financing_types: { financing_type: string }[]
   leaser_advantages: { advantage: string }[]
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
     const { data: leasersRaw } = await supabase
       .from('leasers')
       .select(`
-        id, name, anciennete_min_mois, periodicites, score_seela_min,
+        *,
         leaser_equipment_categories ( category ),
         leaser_financing_types ( financing_type ),
         leaser_advantages ( advantage )
@@ -97,8 +99,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ matched: false })
     }
 
-    // 6. Filter by equipment categories + financing type
+    // 6. Filter by test leaser, equipment categories + financing type
     const matched = (leasersRaw as LeaserRaw[]).filter(l => {
+      // Un leaser de test n'est jamais proposé aux autres clients
+      if (l.test_user_id && l.test_user_id !== user.id) return false
       const lCats = l.leaser_equipment_categories.map(c => c.category)
       const lTypes = l.leaser_financing_types.map(t => t.financing_type)
       const lPeriods = l.periodicites ?? ['mensuelle']
