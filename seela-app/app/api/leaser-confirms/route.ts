@@ -1,14 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { isAdminRequest } from '@/lib/admin-auth'
 import {
   sendEmail,
   emailClientLeaserConfirmed,
   emailClientLeaserRefused,
 } from '@/lib/email'
+import { OS, RS } from '@/lib/status'
 
 export async function POST(req: Request) {
-  const auth = req.headers.get('authorization') ?? ''
-  if (auth !== `Bearer ${process.env.SEELA_ADMIN_TOKEN}`) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -53,15 +54,16 @@ export async function POST(req: Request) {
   const requestRef = `C-${offer.request_id.slice(0, 4).toUpperCase()}-${offer.request_id.slice(4, 8).toUpperCase()}`
   const companyName = profile?.company_name ?? 'Entreprise'
 
+  let emailSent = false
   if (decision === 'confirmed') {
     await supabase
       .from('offers')
-      .update({ status: 'leaser_confirmed' })
+      .update({ status: OS.leaser_confirmed })
       .eq('id', offerId)
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'leaser_confirmed' })
+      .update({ status: RS.leaser_confirmed })
       .eq('id', offer.request_id)
 
     const emailData = emailClientLeaserConfirmed({
@@ -72,16 +74,16 @@ export async function POST(req: Request) {
       durationMonths: offer.duration_months,
       requestRef,
     })
-    await sendEmail(emailData)
+    emailSent = (await sendEmail(emailData)).success
   } else {
     await supabase
       .from('offers')
-      .update({ status: 'refused' })
+      .update({ status: OS.refused, selected: false })
       .eq('id', offerId)
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'offers_available' })
+      .update({ status: RS.offers_available })
       .eq('id', offer.request_id)
 
     const emailData = emailClientLeaserRefused({
@@ -90,8 +92,8 @@ export async function POST(req: Request) {
       leaserName: offer.leaser_name,
       requestRef,
     })
-    await sendEmail(emailData)
+    emailSent = (await sendEmail(emailData)).success
   }
 
-  return NextResponse.json({ success: true, decision, requestRef })
+  return NextResponse.json({ success: true, decision, requestRef, emailSent })
 }

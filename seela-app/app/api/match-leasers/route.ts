@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { OS, RS } from '@/lib/status'
 
 type LineItemRow = { category: string | null; selected: boolean }
 type LeaserRaw = {
@@ -22,16 +23,27 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    }
 
-    // 1. Get financing request + line items
+    // 1. Get financing request + line items (uniquement les dossiers du client connecté)
     const { data: finReq, error: reqErr } = await supabase
       .from('financing_requests')
-      .select('id, total_amount, duration_months, document_type, user_id, line_items(category, selected)')
+      .select('id, status, total_amount, duration_months, document_type, user_id, line_items(category, selected)')
       .eq('id', requestId)
+      .eq('user_id', user.id)
       .single()
 
     if (reqErr || !finReq) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
+
+    // Matching uniquement à la soumission : évite les offres en double et
+    // qu'un dossier déjà validé repasse en "offres disponibles".
+    if (finReq.status !== RS.submitted) {
+      return NextResponse.json({ error: 'Request already matched' }, { status: 409 })
     }
 
     const totalAmount: number = finReq.total_amount ?? 0
@@ -164,7 +176,7 @@ export async function POST(req: Request) {
         duration_months: duration,
         rate: rateRow.taux_nominal ?? null,
         total_cost: totalCost,
-        status: 'indicative',
+        status: OS.indicative,
         selected: false,
         notes: advantages.join(' · '),
       })
@@ -183,7 +195,7 @@ export async function POST(req: Request) {
 
     await supabase
       .from('financing_requests')
-      .update({ status: 'offers_available' })
+      .update({ status: RS.offers_available })
       .eq('id', requestId)
 
     return NextResponse.json({ matched: true, offers_count: computed.length })

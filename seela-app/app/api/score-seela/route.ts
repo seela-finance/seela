@@ -21,6 +21,8 @@ function scoreLegalForm(legalForm: string | null): number {
   if (!legalForm) return 0
   const lf = legalForm.toLowerCase()
   if (lf.includes('auto') || lf.includes('entrepreneur individuel')) return 0
+  // Forme non reconnue (lib/legal-forms.ts) : aucun point plutôt que le maximum
+  if (lf.startsWith('autre (code')) return 0
   if (lf.includes('responsabilité limitée') || lf.includes('eurl')) return 10
   if (lf.includes('actions simplifiée')) return 15
   return 20

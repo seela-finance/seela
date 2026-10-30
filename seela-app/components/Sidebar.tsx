@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import SidebarClient from './SidebarClient'
+import { requestStatusesIn } from '@/lib/status'
 
 export default async function Sidebar() {
   const supabase = await createClient()
@@ -12,12 +13,12 @@ export default async function Sidebar() {
       .from('financing_requests')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .in('status', ['submitted', 'offers_available', 'offer_selected', 'seela_validated']),
+      .in('status', requestStatusesIn('offres')),
     supabase
       .from('financing_requests')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .in('status', ['leaser_confirmed', 'active']),
+      .in('status', requestStatusesIn('contrats')),
   ])
 
   return (

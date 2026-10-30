@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import TopActions from '@/components/TopActions'
+import { RS } from '@/lib/status'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -203,7 +204,7 @@ function Step1Upload({
 
       const { data: req, error: insertErr } = await supabase
         .from('financing_requests')
-        .insert({ user_id: user.id, document_url: publicUrl, document_type: documentType, status: 'draft' })
+        .insert({ user_id: user.id, document_url: publicUrl, document_type: documentType, status: RS.draft })
         .select('id')
         .single()
       if (insertErr) throw insertErr
@@ -769,7 +770,7 @@ function Step4Confirmation({
       const { error: upErr } = await supabase
         .from('financing_requests')
         .update({
-          status: 'submitted',
+          status: RS.submitted,
           total_amount: totalAmount,
           duration_months: duration,
           notes: notes || null,

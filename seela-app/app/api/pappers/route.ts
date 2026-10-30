@@ -1,18 +1,5 @@
 import { NextResponse } from 'next/server'
-
-// Code INSEE → libellé forme juridique (principales formes)
-const FORME_JURIDIQUE: Record<string, string> = {
-  '1000': 'Entrepreneur individuel',
-  '5410': 'SARL',
-  '5498': 'EURL',
-  '5499': 'SA',
-  '5505': 'SA à conseil d\'administration',
-  '5710': 'SAS',
-  '5720': 'SASU',
-  '5800': 'Société européenne',
-  '6540': 'SA coopérative',
-  '9220': 'Association loi 1901',
-}
+import { legalFormShort, legalFormLabel } from '@/lib/legal-forms'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -42,7 +29,7 @@ export async function GET(req: Request) {
     }
 
     const njCode: string = result.nature_juridique ?? ''
-    const formeJuridique = FORME_JURIDIQUE[njCode] ?? null
+    const formeJuridique = legalFormShort(njCode) ?? legalFormLabel(njCode)
 
     return NextResponse.json({
       denomination: result.nom_complet ?? null,

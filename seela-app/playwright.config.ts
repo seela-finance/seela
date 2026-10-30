@@ -2,7 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 
 // Cible : PLAYWRIGHT_BASE_URL (ex. une preview Vercel) ou, à défaut, un serveur local.
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL
-const baseURL = externalBaseURL ?? 'http://localhost:3000'
+// E2E_PORT : lancer les tests sur un autre port si 3000 est déjà pris
+const port = Number(process.env.E2E_PORT ?? 3000)
+const baseURL = externalBaseURL ?? `http://localhost:${port}`
 
 // Les tests authentifiés ne tournent que si un compte de test est fourni
 // (projet Supabase de staging uniquement — jamais la prod).
@@ -21,6 +23,8 @@ export default defineConfig({
     locale: 'fr-FR',
   },
   projects: [
+    // Tests de fonctions pures (lib/), sans navigateur.
+    { name: 'unit', testMatch: /unit\/.*\.spec\.ts/ },
     {
       name: 'public',
       testMatch: /public\/.*\.spec\.ts/,
@@ -46,7 +50,7 @@ export default defineConfig({
   webServer: externalBaseURL
     ? undefined
     : {
-        command: process.env.CI ? 'npm run start' : 'npm run dev',
+        command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

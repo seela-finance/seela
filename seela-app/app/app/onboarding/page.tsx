@@ -662,7 +662,9 @@ function Step4Score({
 
       for (const file of Array.from(files)) {
         if (file.type !== 'application/pdf') continue
-        const path = `${user.id}/bilans/${Date.now()}-${file.name}`
+        // Nom assaini : Supabase refuse les accents, et `#` / espaces cassent l'URL publique
+        const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]+/g, '-')
+        const path = `${user.id}/bilans/${Date.now()}-${safeName}`
         const { error: uploadErr } = await supabase.storage.from('documents').upload(path, file)
         if (uploadErr) throw uploadErr
         const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
