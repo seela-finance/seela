@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { isAdminRequest } from '@/lib/admin-auth'
 import {
@@ -6,7 +6,8 @@ import {
   emailLeaserValidation,
   emailClientEverleaseValidated,
 } from '@/lib/email'
-import { OS, RS } from '@/lib/status'
+import { OS, RS, canTransitionOffer, canTransitionRequest } from '@/lib/status'
+import { TransitionError, transitionOffer, transitionRequest } from '@/lib/transitions'
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
@@ -18,7 +19,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'offerId required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  // Service role : la RLS bloquerait (sans erreur) les écritures de la clé anon sans session.
+  const supabase = createAdminClient()
 
   // Get offer + request + user
   const { data: offer, error: offerErr } = await supabase
@@ -31,18 +33,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Offer not found' }, { status: 404 })
   }
 
-  if (offer.status !== OS.client_confirmed) {
-    return NextResponse.json({ error: `Expected status client_confirmed, got ${offer.status}` }, { status: 400 })
-  }
-
   const { data: request } = await supabase
     .from('financing_requests')
-    .select('id, total_amount, duration_months, document_type, document_url, user_id, line_items(description, selected, quantity)')
+    .select('id, status, total_amount, duration_months, document_type, document_url, user_id, line_items(description, selected, quantity)')
     .eq('id', offer.request_id)
     .single()
 
   if (!request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+  }
+
+  // Vérifié avant toute écriture : une offre déjà validée (double appel) ou non confirmée → 409, aucun email.
+  if (!canTransitionOffer(offer.status, OS.seela_validated, 'admin')) {
+    return NextResponse.json({ error: `Offer status is ${offer.status}, expected client_confirmed` }, { status: 409 })
+  }
+  if (!canTransitionRequest(request.status, RS.seela_validated, 'admin')) {
+    return NextResponse.json({ error: `Request status is ${request.status}, expected offer_selected` }, { status: 409 })
   }
 
   const { data: profile } = await supabase
@@ -65,16 +71,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `No referent_email for leaser ${offer.leaser_name}` }, { status: 409 })
   }
 
-  // Update offer + request status
-  await supabase
-    .from('offers')
-    .update({ status: OS.seela_validated })
-    .eq('id', offerId)
-
-  await supabase
-    .from('financing_requests')
-    .update({ status: RS.seela_validated })
-    .eq('id', offer.request_id)
+  try {
+    await transitionOffer(supabase, offerId, offer.status, OS.seela_validated, {
+      seela_validated_at: new Date().toISOString(),
+    })
+    try {
+      await transitionRequest(supabase, request.id, request.status, RS.seela_validated)
+    } catch (err) {
+      // Le dossier n'a pas suivi : on remet l'offre dans son statut d'origine.
+      await supabase
+        .from('offers')
+        .update({ status: offer.status, seela_validated_at: null })
+        .eq('id', offerId)
+        .eq('status', OS.seela_validated)
+      throw err
+    }
+  } catch (err) {
+    if (err instanceof TransitionError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    throw err
+  }
 
   const requestRef = `C-${offer.request_id.slice(0, 4).toUpperCase()}-${offer.request_id.slice(4, 8).toUpperCase()}`
   const companyName = profile?.company_name ?? 'Entreprise'
