@@ -160,7 +160,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                   <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{counterOffer.duration_months} mois</p>
                 </div>
               </div>
-              <CounterOfferActions offerId={counterOffer.id} requestId={requestId} allOfferIds={offers.map(o => o.id)} />
+              <CounterOfferActions offerId={counterOffer.id} />
             </section>
           )}
 

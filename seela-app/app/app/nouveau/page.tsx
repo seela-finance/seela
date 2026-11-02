@@ -708,7 +708,7 @@ function Step3Config({
   )
 }
 
-// ─── Step 4: Confirmation (auto-submit) ──────────────────────────────────────
+// ─── Step 4: Confirmation ──────────────────────────────────────
 
 function Step4Confirmation({
   requestId,
@@ -730,77 +730,46 @@ function Step4Confirmation({
   meta: DocumentMeta
 }) {
   const router = useRouter()
-  const supabase = createClient()
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const submitted_ref = useRef(false)
 
   const items = lineItems.filter(i => selectedItems.includes(i.id))
   const totalAmount = items.reduce((s, i) => s + (i.total_price ?? 0), 0)
 
-  const submit = useCallback(async () => {
-    if (submitted_ref.current) return
-    submitted_ref.current = true
-
+  // Soumission côté serveur : lignes, total recalculé, statut et matching (le navigateur n'écrit plus le dossier).
+  // Un deuxième clic ou un rechargement ne duplique rien (route idempotente).
+  async function submit() {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Non authentifié')
-
-      const lineItemsData = items.map(i => ({
-        request_id: requestId,
-        description: i.description,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        total_price: i.total_price,
-        category: i.category ?? null,
-        selected: true,
-      }))
-      const { error: liErr } = await supabase.from('line_items').insert(lineItemsData)
-      if (liErr) {
-        if (liErr.message?.includes('category')) {
-          const { error: liErr2 } = await supabase.from('line_items').insert(
-            lineItemsData.map(({ category: _c, ...rest }) => rest)
-          )
-          if (liErr2) throw liErr2
-        } else {
-          throw liErr
-        }
-      }
-
-      const { error: upErr } = await supabase
-        .from('financing_requests')
-        .update({
-          status: RS.submitted,
-          total_amount: totalAmount,
-          duration_months: duration,
-          notes: notes || null,
-          periodicite,
-          supplier_name: meta.supplier_name,
-          supplier_address: meta.supplier_address,
-          supplier_siren: meta.supplier_siren,
-          document_number: meta.document_number,
-          document_date: meta.document_date,
-        })
-        .eq('id', requestId)
-      if (upErr) throw upErr
-
-      setSubmitted(true)
-
-      // Fire-and-forget: run matching in background
-      fetch('/api/match-leasers', {
+      const res = await fetch(`/api/requests/${requestId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId }),
-      }).catch(err => console.error('[match-leasers]', err))
+        body: JSON.stringify({
+          lines: items.map(i => ({
+            description: i.description,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            total_price: i.total_price,
+            category: i.category ?? null,
+          })),
+          durationMonths: duration,
+          periodicite,
+          notes,
+          meta,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error ?? 'Erreur lors de la soumission')
+      setSubmitted(true)
     } catch (err: unknown) {
-      submitted_ref.current = false
       setError(err instanceof Error ? err.message : 'Erreur lors de la soumission')
+    } finally {
+      setSubmitting(false)
     }
-  }, [requestId, items, totalAmount, duration, notes, supabase])
-
-  // TODO(backlog): refacto de la soumission au montage (setState synchrone dans l'effet)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { submit() }, [submit])
+  }
 
   if (error) {
     return (
@@ -813,7 +782,8 @@ function Step4Confirmation({
         <h2 className="font-semibold text-xl mb-3" style={{ color: '#0E0E0C' }}>Erreur lors de la soumission</h2>
         <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: '#DC2626' }}>{error}</p>
         <button
-          onClick={() => { submitted_ref.current = false; setError(null); submit() }}
+          onClick={submit}
+          disabled={submitting}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           style={{ background: '#0E0E0C', color: '#FAFAF9' }}
         >
@@ -853,11 +823,35 @@ function Step4Confirmation({
     )
   }
 
+  const eur = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+
   return (
-    <div className="text-center py-12">
-      <div className="w-10 h-10 rounded-full border-2 border-t-[#0E0E0C] animate-spin mx-auto mb-6" style={{ borderColor: '#E5E5E2', borderTopColor: '#0E0E0C' }} />
-      <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Transmission de votre dossier…</p>
-      <p className="text-xs mt-1" style={{ color: '#9A9A93' }}>Quelques secondes</p>
+    <div className="max-w-md mx-auto py-8">
+      <h2 className="font-semibold text-xl mb-2 text-center" style={{ color: '#0E0E0C' }}>Transmettre votre demande</h2>
+      <p className="text-sm mb-6 text-center" style={{ color: '#9A9A93' }}>
+        Vérifiez le récapitulatif : Everlease interroge ensuite ses leasers partenaires.
+      </p>
+      <dl className="rounded-xl border divide-y divide-[#E5E5E2] mb-6" style={{ background: '#fff', borderColor: '#E5E5E2' }}>
+        {[
+          ['Lignes financées', String(items.length)],
+          ['Montant HT', eur(totalAmount)],
+          ['Durée', `${duration} mois`],
+          ['Périodicité', periodicite.charAt(0).toUpperCase() + periodicite.slice(1)],
+        ].map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between px-4 py-3 text-sm">
+            <dt style={{ color: '#9A9A93' }}>{label}</dt>
+            <dd className="font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <button
+        onClick={submit}
+        disabled={submitting || items.length === 0}
+        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        style={{ background: '#0E0E0C', color: '#FAFAF9' }}
+      >
+        {submitting ? 'Transmission de votre dossier…' : 'Transmettre ma demande'}
+      </button>
     </div>
   )
 }
