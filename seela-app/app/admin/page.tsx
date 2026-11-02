@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { REQUEST_STATUSES, requestStatusInfo } from '@/lib/status'
 import {
   ADMIN_TODO_STATUSES,
@@ -35,6 +35,17 @@ function listHref(params: AdminListParams, patch: Partial<AdminListParams>) {
   return qs ? `/admin?${qs}` : '/admin'
 }
 
+// Service role : l'équipe voit les dossiers de tous les clients (la RLS les limite à leur propriétaire)
+function loadRequests() {
+  return createAdminClient()
+    .from('financing_requests')
+    .select(`
+      id, status, total_amount, duration_months, created_at, updated_at,
+      profiles ( company_name, siren ),
+      offers ( leaser_name, monthly_payment, duration_months, selected, confirmed_at, seela_validated_at, leaser_confirmed_at )
+    `)
+}
+
 export default async function AdminRequestsPage({
   searchParams,
 }: {
@@ -43,14 +54,8 @@ export default async function AdminRequestsPage({
   await requireAdmin()
   const params = parseAdminListParams(await searchParams)
 
-  // Service role : l'équipe voit les dossiers de tous les clients (la RLS les limite à leur propriétaire)
-  const { data, error } = await createAdminClient()
-    .from('financing_requests')
-    .select(`
-      id, status, total_amount, duration_months, created_at, updated_at,
-      profiles ( company_name, siren ),
-      offers ( leaser_name, monthly_payment, duration_months, selected, confirmed_at, seela_validated_at, leaser_confirmed_at )
-    `)
+  const configured = isServiceRoleConfigured()
+  const { data, error } = configured ? await loadRequests() : { data: null, error: null }
 
   const requests = ((data ?? []) as unknown as AdminRequestRow[]).map(toAdminRequest)
   const { items, total, page, pageCount } = listAdminRequests(requests, params)
@@ -130,9 +135,9 @@ export default async function AdminRequestsPage({
           )}
         </form>
 
-        {error && (
+        {(error || !configured) && (
           <p className="mt-4 text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>
-            Impossible de charger les dossiers. Réessayez dans un instant.
+            {configured ? 'Impossible de charger les dossiers. Réessayez dans un instant.' : SERVICE_ROLE_MISSING_MESSAGE}
           </p>
         )}
 
@@ -189,7 +194,7 @@ export default async function AdminRequestsPage({
             </tbody>
           </table>
 
-          {items.length === 0 && !error && (
+          {items.length === 0 && !error && configured && (
             <p className="px-4 py-10 text-sm text-center" style={{ color: '#9A9A93' }}>
               {params.query || params.status
                 ? 'Aucun dossier ne correspond à cette recherche.'
