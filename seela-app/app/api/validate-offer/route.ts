@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { isAdminRequest } from '@/lib/admin-auth'
 import {
@@ -16,6 +16,9 @@ const LEASER_DOCUMENT_LINK_SECONDS = 7 * 24 * 3600
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isServiceRoleConfigured()) {
+    return NextResponse.json({ error: SERVICE_ROLE_MISSING_MESSAGE }, { status: 503 })
   }
 
   const { offerId } = await req.json()
