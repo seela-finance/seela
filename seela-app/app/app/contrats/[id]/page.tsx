@@ -215,7 +215,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                   <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Documents</h2>
                 </div>
-                <div className="divide-y" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
+                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
                   {documentHref ? (
                     <div className="px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#EEF2FF' }}>
@@ -266,7 +266,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                   <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Détails du contrat</h2>
                 </div>
-                <div className="divide-y" style={{ background: '#fff' }}>
+                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
                   {[
                     { label: 'Leaser', value: leaserName },
                     { label: 'Taux nominal', value: rate },
@@ -287,7 +287,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                   <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Actions</h2>
                 </div>
-                <div className="divide-y" style={{ background: '#fff' }}>
+                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
                   {[
                     {
                       label: 'Contacter Everlease',
