@@ -86,6 +86,9 @@ ne pas auto-merger et le signaler en tête de PR) :
 - Server Components par défaut ; `'use client'` seulement quand il faut de l'état ou des événements.
 - Pas de code mort, pas de `console.log` de debug laissé.
 - Une PR = une issue. Viser < 400 lignes modifiées ; au-delà, découper et le signaler.
+- **Back-office `/admin`** : chaque page appelle `requireAdmin()` (`lib/admin.ts`, 404 si non admin) ;
+  chaque écriture passe par une Server Action qui appelle `requireAdmin()` puis `logAdminEvent()`.
+  Ajouter un admin : `INSERT INTO public.admins (user_id, name) SELECT id, 'Prénom' FROM auth.users WHERE email = '…';`
 
 ## 5. Format de PR
 

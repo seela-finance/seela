@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-// Toutes les routes /app sont protégées : sans session → /auth.
-const protectedRoutes = ['/app', '/app/dashboard', '/app/nouveau', '/app/contrats', '/app/offres', '/app/onboarding']
+// Toutes les routes /app et /admin sont protégées : sans session → /auth.
+const protectedRoutes = ['/app', '/app/dashboard', '/app/nouveau', '/app/contrats', '/app/offres', '/app/onboarding', '/admin']
 
 for (const path of protectedRoutes) {
   test(`${path} redirige vers /auth sans session`, async ({ page }) => {
