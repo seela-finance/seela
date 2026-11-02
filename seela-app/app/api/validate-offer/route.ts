@@ -8,6 +8,10 @@ import {
 } from '@/lib/email'
 import { OS, RS, canTransitionOffer, canTransitionRequest } from '@/lib/status'
 import { TransitionError, transitionOffer, transitionRequest } from '@/lib/transitions'
+import { signedDocumentUrl } from '@/lib/documents'
+
+// Durée de validité du lien vers le devis envoyé au leaser
+const LEASER_DOCUMENT_LINK_SECONDS = 7 * 24 * 3600
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
@@ -116,7 +120,7 @@ export async function POST(req: Request) {
     durationMonths: offer.duration_months,
     monthlyPayment: offer.monthly_payment,
     equipmentList,
-    documentUrl: isStorageUrl(request.document_url) ? request.document_url : '',
+    documentUrl: (await signedDocumentUrl(supabase, request.document_url, request.user_id, LEASER_DOCUMENT_LINK_SECONDS)) ?? '',
     requestRef,
   })
   const leaserSent = await sendEmail(leaserEmailData)
@@ -137,15 +141,4 @@ export async function POST(req: Request) {
     requestRef,
     emails: { leaser: leaserSent.success, client: clientSent.success },
   })
-}
-
-// document_url est écrit par le navigateur : on ne met en lien que nos propres fichiers.
-function isStorageUrl(url: string | null): url is string {
-  if (!url || !process.env.NEXT_PUBLIC_SUPABASE_URL) return false
-  try {
-    const u = new URL(url)
-    return u.origin === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin && u.pathname.startsWith('/storage/v1/object/')
-  } catch {
-    return false
-  }
 }
