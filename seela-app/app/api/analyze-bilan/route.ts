@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
     const { documentUrl, mimeType } = await req.json()
-    const { base64, type } = await fetchOwnDocument(documentUrl, mimeType, user.id)
+    const { base64, type } = await fetchOwnDocument(supabase, documentUrl, mimeType, user.id)
     const isPdf = type === 'application/pdf'
 
     const messages: MessageParam[] = [

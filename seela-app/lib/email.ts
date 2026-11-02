@@ -117,7 +117,7 @@ export function emailLeaserValidation({
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9A9A93;margin:0 0 12px">Équipements</p>
     <p style="font-size:13px;white-space:pre-line;margin:0">${esc(equipmentList)}</p>
   </div>
-  ${documentUrl ? `<p style="margin-bottom:24px"><a href="${esc(documentUrl)}" style="display:inline-block;padding:10px 20px;background:#0E0E0C;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500">Télécharger le document original</a></p>` : ''}
+  ${documentUrl ? `<p style="margin-bottom:24px"><a href="${esc(documentUrl)}" style="display:inline-block;padding:10px 20px;background:#0E0E0C;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500">Télécharger le document original</a><br><span style="font-size:12px;color:#9A9A93">Lien valable 7 jours.</span></p>` : ''}
   <p style="font-size:13px;color:#9A9A93">Pour confirmer ou refuser ce dossier, contactez votre référent Everlease. Réf. ${esc(requestRef)}.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
   <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif · contact@everlease.fr</p>

@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
 import { RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
 import { formatRate } from '@/lib/offers'
+import { signedDocumentUrl } from '@/lib/documents'
 
 
 function fmt(n: number | null) {
@@ -66,6 +67,9 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
     ? await supabase.from('leasers').select('referent_name').eq('name', selectedOffer.leaser_name).maybeSingle()
     : { data: null }
 
+  // Bucket privé : lien temporaire, valable le temps de la consultation
+  const documentHref = await signedDocumentUrl(supabase, request.document_url, user.id, 3600)
+
   // Le client écrit à Everlease (pas d'adresse leaser devinée), avec la référence du dossier
   const contactHref = `mailto:contact@everlease.fr?subject=${encodeURIComponent(`Dossier ${ref}`)}`
 
@@ -101,9 +105,9 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               {statusInfo.label}
             </span>
             <div className="flex-1" />
-            {request.document_url && (
+            {documentHref && (
               <a
-                href={request.document_url}
+                href={documentHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
@@ -212,7 +216,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                   <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Documents</h2>
                 </div>
                 <div className="divide-y" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                  {request.document_url ? (
+                  {documentHref ? (
                     <div className="px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#EEF2FF' }}>
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -229,7 +233,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                         </p>
                       </div>
                       <a
-                        href={request.document_url}
+                        href={documentHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 transition-opacity hover:opacity-70"
