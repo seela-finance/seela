@@ -9,12 +9,14 @@ interface SendEmailParams {
   to: string | string[]
   subject: string
   html: string
+  // Copie (ex. l'admin qui transmet un dossier) ; non envoyée hors production
+  cc?: string
   // Notifications internes (équipe) : envoyées aux vrais destinataires même hors
   // production. Le garde-fou dev ne sert qu'à ne pas spammer les vrais clients.
   alwaysSend?: boolean
 }
 
-export async function sendEmail({ to, subject, html, alwaysSend = false }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, cc, alwaysSend = false }: SendEmailParams) {
   const live = alwaysSend || EMAIL_MODE === 'production'
   const recipient = live ? to : FOUNDER_EMAIL
 
@@ -31,6 +33,7 @@ export async function sendEmail({ to, subject, html, alwaysSend = false }: SendE
     const result = await resend.emails.send({
       from: 'Everlease <noreply@everlease.fr>',
       to: recipient,
+      ...(live && cc ? { cc } : {}),
       subject,
       html,
     })
@@ -75,6 +78,7 @@ export function emailLeaserValidation({
   equipmentList,
   documentUrl,
   requestRef,
+  note = '',
 }: {
   leaserEmail: string
   leaserName: string
@@ -87,6 +91,8 @@ export function emailLeaserValidation({
   equipmentList: string
   documentUrl: string
   requestRef: string
+  // Mot de l'équipe Everlease ajouté à l'email (facultatif)
+  note?: string
 }) {
   const fmt = (n: number) =>
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
@@ -100,6 +106,7 @@ export function emailLeaserValidation({
     <p style="font-size:20px;font-weight:600;margin:0">Nouveau dossier à étudier</p>
     <p style="color:#9A9A93;margin:4px 0 0">Réf. ${esc(requestRef)} — transmis par Everlease</p>
   </div>
+  ${note.trim() ? `<div style="border-left:3px solid #0E0E0C;padding:4px 0 4px 16px;margin-bottom:24px"><p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9A9A93;margin:0 0 6px">Mot de l'équipe Everlease</p><p style="font-size:13px;white-space:pre-line;margin:0">${esc(note.trim())}</p></div>` : ''}
   <div style="background:#FAFAF9;border:1px solid #E5E5E3;border-radius:12px;padding:24px;margin-bottom:24px">
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9A9A93;margin:0 0 12px">Entreprise</p>
     <p style="font-size:16px;font-weight:600;margin:0 0 4px">${esc(companyName)}</p>
@@ -236,6 +243,38 @@ export function emailClientLeaserRefused({
   </div>
   <p style="font-size:13px;color:#9A9A93">Réf. dossier : ${esc(requestRef)}</p>
   <p style="font-size:13px;color:#9A9A93">Un conseiller Everlease vous contacte pour étudier les alternatives. Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#4F46E5">contact@everlease.fr</a>.</p>
+  <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
+  <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif</p>
+</div>`,
+  }
+}
+
+export function emailClientRequestRefused({
+  userEmail,
+  companyName,
+  message,
+  requestRef,
+}: {
+  userEmail: string
+  companyName: string
+  // Message rédigé par l'équipe pour le client (le motif interne n'est jamais envoyé)
+  message: string
+  requestRef: string
+}) {
+  return {
+    to: userEmail,
+    subject: `[Everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#0E0E0C">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Mise à jour de votre dossier</p>
+    <p style="color:#9A9A93;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;color:#92400E;margin:0;white-space:pre-line">${esc(message)}</p>
+  </div>
+  <p style="font-size:13px;color:#9A9A93">Réf. dossier : ${esc(requestRef)}</p>
+  <p style="font-size:13px;color:#9A9A93">Pour toute question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#4F46E5">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #E5E5E3;margin:24px 0">
   <p style="font-size:11px;color:#9A9A93">Everlease — Plateforme de financement locatif</p>
 </div>`,
