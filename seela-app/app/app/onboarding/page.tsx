@@ -752,7 +752,7 @@ function Step4Score({
           Ce que votre score débloque
         </p>
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <div className="px-4 divide-y" style={{ borderColor: '#F5F5F4' }}>
+          <div className="px-4 divide-y divide-[#F5F5F4]">
             <UnlockItem label="Accès à 3 leasers partenaires" />
             <UnlockItem label={isHighGrade ? 'Financement jusqu\'à 150 000 €' : 'Financement jusqu\'à 50 000 €'} />
             {!isHighGrade && (
