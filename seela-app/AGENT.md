@@ -64,7 +64,9 @@ ne pas auto-merger et le signaler en tête de PR) :
 
 - Pousser sur `main`, forcer un push, réécrire l'historique.
 - Toucher à la base de **production** Supabase, ou exécuter du SQL où que ce soit.
-  Une migration se livre comme fichier `supabase/<nom>.sql` dans la PR, appliquée à la main par Louis.
+  Toute évolution de schéma = un **nouveau** fichier `supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`
+  dans la PR (jamais de modification d'une migration existante). Louis l'applique d'abord sur staging,
+  puis en prod. `supabase/legacy/` contient les anciens scripts, déjà inclus dans la baseline.
 - Committer un secret, une clé, un `.env*`.
 - Modifier `seela-bos/` (workspace business, hors périmètre de l'agent).
 - Partager le CSS entre la landing (`app/landing.css`, scopé `.lp`) et l'app (`app/globals.css`).
