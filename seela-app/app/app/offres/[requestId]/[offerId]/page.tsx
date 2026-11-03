@@ -65,7 +65,6 @@ export default async function OfferDetailPage({
   if (!offer) notFound()
 
   const allOffers: OfferRow[] = request.offers ?? []
-  const allOfferIds: string[] = allOffers.map(o => o.id)
 
   // 2. Fetch leaser metadata from DB
   const { data: leaserData } = await supabase
@@ -327,7 +326,6 @@ export default async function OfferDetailPage({
             <SouscrireCard
               offerId={offerId}
               requestId={requestId}
-              allOfferIds={allOfferIds}
               initialStatus={offer.status}
               canConfirm={request.status === RS.offers_available}
               leaserName={offer.leaser_name}

@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { OS, RS } from '@/lib/status'
+import { OS } from '@/lib/status'
 
 interface Props {
   offerId: string
   requestId: string
-  allOfferIds: string[]
   initialStatus: string
   // false si le dossier n'attend plus de choix (offre déjà confirmée, contrat en cours…)
   canConfirm: boolean
@@ -88,7 +88,6 @@ function stepStates(status: string): [StepState, StepState, StepState] {
 export default function SouscrireCard({
   offerId,
   requestId,
-  allOfferIds,
   initialStatus,
   canConfirm,
   leaserName,
@@ -100,6 +99,8 @@ export default function SouscrireCard({
 }: Props) {
   const [status, setStatus] = useState(initialStatus)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const [s1, s2, s3] = stepStates(status)
 
@@ -124,15 +125,16 @@ export default function SouscrireCard({
   async function handleConfirm() {
     if (loading) return
     setLoading(true)
+    setError(null)
     try {
-      const supabase = createClient()
-      await supabase.from('offers').update({ selected: false }).in('id', allOfferIds)
-      await supabase.from('offers').update({
-        selected: true,
-        status: OS.client_confirmed,
-      }).eq('id', offerId)
-      await supabase.from('financing_requests').update({ status: RS.offer_selected }).eq('id', requestId)
+      // Confirmation côté serveur : une seule offre par dossier, statuts vérifiés
+      const res = await fetch(`/api/offers/${offerId}/confirm`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error ?? 'Confirmation impossible, réessayez.')
       setStatus(OS.client_confirmed)
+      router.refresh()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Confirmation impossible, réessayez.')
     } finally {
       setLoading(false)
     }
@@ -268,6 +270,9 @@ export default function SouscrireCard({
               </>
             )}
           </button>
+          {error && (
+            <p className="mt-3 text-xs px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>{error}</p>
+          )}
           <div className="flex items-center justify-center gap-1.5 mt-3">
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <rect x="2" y="5" width="8" height="6" rx="1" stroke="#9A9A93" strokeWidth="1.2" />
