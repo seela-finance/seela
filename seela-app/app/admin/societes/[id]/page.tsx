@@ -172,7 +172,7 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
               <Field label="Chiffre d'affaires" value={profile.revenue_declared != null ? eur(profile.revenue_declared) : profile.revenue_bracket} />
               <Field label="Résultat net" value={profile.result_declared != null ? eur(profile.result_declared) : null} />
               <Field label="Effectif" value={profile.headcount_bracket} />
-              <Field label="Ancienneté" value={profile.age_bracket} />
+              <Field label="Année de création" value={profile.date_creation ? `${profile.date_creation} (${new Date().getFullYear() - profile.date_creation} ans)` : null} />
               <Field label="Bilans fournis" value={profile.financial_docs_uploaded ? 'Oui' : 'Non'} />
               <Field label="Pays" value={profile.country} />
             </dl>
