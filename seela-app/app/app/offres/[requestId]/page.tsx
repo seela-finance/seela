@@ -131,7 +131,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
             <div className="px-5 py-3 flex items-center justify-between border-t" style={{ background: '#FAFAF9', borderColor: '#E5E5E3' }}>
               <span className="text-xs" style={{ color: '#9A9A93' }}>
                 {request.duration_months ? `${request.duration_months} mois` : '—'}
-                {' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois
+                {/* Estimation par coefficients seulement tant qu'aucune offre réelle n'existe */}
+                {offers.length === 0 && <>{' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois</>}
               </span>
               <span className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
                 Total HT : {fmt(request.total_amount)}

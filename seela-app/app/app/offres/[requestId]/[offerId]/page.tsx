@@ -5,6 +5,7 @@ import TopActions from '@/components/TopActions'
 import SouscrireCard from './SouscrireCard'
 import { formatRate, leaserInitials, recommendedOffer } from '@/lib/offers'
 import { RS, requestDestination, requestStatusInfo } from '@/lib/status'
+import { requestLabel } from '@/lib/request-label'
 
 
 type OfferRow = {
@@ -50,7 +51,7 @@ export default async function OfferDetailPage({
   // 1. Get request + all its offers
   const { data: request } = await supabase
     .from('financing_requests')
-    .select('id, total_amount, duration_months, created_at, status, supplier_name, document_number, line_items(description, selected, quantity), offers(*)')
+    .select('id, total_amount, duration_months, created_at, status, document_type, periodicite, supplier_name, document_number, line_items(description, selected, quantity), offers(*)')
     .eq('id', requestId)
     .eq('user_id', user.id)
     .single()
@@ -93,57 +94,33 @@ export default async function OfferDetailPage({
   // Même règle que la liste des offres (lib/offers.ts)
   const isRecommended = recommendedOffer(allOffers)?.id === offer.id
 
-  const reqRef = `C-${requestId.slice(0, 4).toUpperCase()}-${requestId.slice(4, 8).toUpperCase()}`
-  const validUntil = new Date()
-  validUntil.setDate(validUntil.getDate() + 7)
-  const validUntilStr = validUntil.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const reqRef = requestLabel(request)
 
   // Advantages from notes field
   const advantages = offer.notes ? offer.notes.split(' · ') : []
 
-  // Contract conditions built from leaser DB data
+  // Conditions : uniquement ce que l'on sait (dossier et fiche leaser), rien d'inventé (#25)
+  const isLeaseBack = request.document_type === 'facture'
+  const periodicite = request.periodicite ?? 'mensuelle'
   const contractConditions = [
-    { label: 'Type de contrat', value: 'Crédit-bail mobilier (location avec option d\'achat)' },
-    { label: 'Option d\'achat finale', value: `1 € symbolique au mois ${duration}` },
     {
-      label: 'Périodicité',
-      value: leaser?.periodicite ?? 'Mensuelle, par prélèvement SEPA',
+      label: 'Type de financement',
+      value: isLeaseBack
+        ? 'Lease-back (refinancement de matériel déjà acheté)'
+        : 'Location financière / crédit-bail',
     },
-    { label: 'Premier loyer', value: 'Offert (campagne mai–juin 2026)' },
-    {
-      label: 'Caution / dépôt',
-      value: leaser?.depot_garantie ? fmt(leaser.depot_garantie) : 'Aucun',
-    },
-    {
-      label: 'Frais de dossier',
-      value: leaser?.frais_dossier ? fmt(leaser.frais_dossier) : 'Offerts',
-    },
-    {
-      label: 'Pénalités de résiliation anticipée',
-      value: leaser?.penalite_resiliation ?? 'Capital restant dû + 3%',
-    },
-    {
-      label: 'Délai de disposition des fonds',
-      value: `Dans les ${leaser?.delai_reponse_heures ?? 48}h après signature et réception du matériel`,
-    },
+    { label: 'Périodicité des loyers', value: periodicite.charAt(0).toUpperCase() + periodicite.slice(1) },
+    { label: 'Dépôt de garantie', value: leaser?.depot_garantie ? fmt(leaser.depot_garantie) : 'Aucun' },
+    { label: 'Frais de dossier', value: leaser?.frais_dossier ? fmt(leaser.frais_dossier) : 'Aucun' },
+    { label: 'Résiliation anticipée', value: leaser?.penalite_resiliation ?? 'Selon le contrat du leaser' },
+    { label: 'Délai de réponse du leaser', value: `${leaser?.delai_reponse_heures ?? 48} h ouvrées` },
   ]
 
-  // Échéancier prévisionnel: first month offert (0€)
-  const schedule: {
-    n: number; date: string; loyer: number; tva: number; total: number; capitalRestant: number; offert: boolean
-  }[] = []
-  const startDate = new Date(request.created_at)
-  const capitalTotal = request.total_amount ?? 0
-  for (let i = 1; i <= Math.min(6, duration); i++) {
-    const d = new Date(startDate)
-    d.setMonth(d.getMonth() + i)
-    const offert = i === 1
-    const loyer = offert ? 0 : monthly
-    const tva = offert ? 0 : Math.round(monthly * 0.2)
-    const total = offert ? 0 : monthly + tva
-    const capitalRestant = capitalTotal > 0 ? Math.round(capitalTotal * (1 - i / duration)) : 0
-    schedule.push({ n: i, date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }), loyer, tva, total, capitalRestant, offert })
-  }
+  // Simulation indicative : loyer constant, mois relatifs (pas de date tant que le contrat n'a pas démarré)
+  const schedule = Array.from({ length: Math.min(6, duration) }, (_, i) => {
+    const tva = Math.round(monthly * 0.2 * 100) / 100
+    return { n: i + 1, loyer: monthly, tva, total: monthly + tva }
+  })
 
   return (
     <div>
@@ -199,7 +176,7 @@ export default async function OfferDetailPage({
                   )}
                 </div>
                 <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                  Offre {offer.leaser_name} · valable jusqu&apos;au {validUntilStr}
+                  Offre indicative {offer.leaser_name} · confirmée par le leaser sous 48 h ouvrées
                 </p>
               </div>
             </div>
@@ -271,10 +248,10 @@ export default async function OfferDetailPage({
               <div className="px-5 py-4 border-b flex items-center justify-between" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
                 <div>
                   <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>
-                    Échéancier prévisionnel
+                    Simulation indicative
                   </h2>
                   <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
-                    Aperçu des 6 premières échéances · les suivantes restent constantes
+                    6 premières échéances · le calendrier réel démarre à la livraison du matériel
                   </p>
                 </div>
                 <span className="text-xs" style={{ color: '#9A9A93' }}>
@@ -284,7 +261,7 @@ export default async function OfferDetailPage({
               <table className="w-full">
                 <thead>
                   <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
-                    {['N°', 'Date', 'Loyer HT', 'TVA', 'Total', 'Capital restant'].map(h => (
+                    {['Échéance', 'Loyer HT', 'TVA (20 %)', 'Total TTC'].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium" style={{ color: '#9A9A93' }}>{h}</th>
                     ))}
                   </tr>
@@ -296,24 +273,10 @@ export default async function OfferDetailPage({
                       className="border-b last:border-0"
                       style={{ borderColor: '#E5E5E3', background: i % 2 === 0 ? '#fff' : '#FAFAF9' }}
                     >
-                      <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93' }}>
-                        {String(row.n).padStart(2, '0')}
-                      </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C' }}>{row.date}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                        {row.offert ? '0 €' : fmt(row.loyer)}
-                      </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>
-                        {row.offert ? '0 €' : fmt(row.tva)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                        {row.offert ? (
-                          <span style={{ color: '#16A34A' }}>0 € (offert)</span>
-                        ) : fmt(row.total)}
-                      </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>
-                        {fmt(row.capitalRestant)}
-                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93' }}>Mois {row.n}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{fmt(row.loyer)}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>{fmt(row.tva)}</td>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{fmt(row.total)}</td>
                     </tr>
                   ))}
                 </tbody>
