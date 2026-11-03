@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { requireAdmin } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { documentPath, signedDocumentUrl } from '@/lib/documents'
-import { RS, offerStatusInfo, requestStatusInfo } from '@/lib/status'
+import { OS, RS, canTransitionOffer, canTransitionRequest, offerStatusInfo, requestStatusInfo } from '@/lib/status'
 import { formatRate } from '@/lib/offers'
 import { requestLabel } from '@/lib/request-label'
 import {
@@ -13,6 +13,8 @@ import {
   type DetailAdminEvent,
   type DetailOffer,
 } from '@/lib/admin-request-detail'
+import { leaserValidationEmail, WorkflowError, type OfferContext } from '@/lib/admin-workflow'
+import RequestActions from '@/components/admin/RequestActions'
 
 type LineItem = {
   id: string
@@ -69,7 +71,7 @@ function Badge({ info }: { info: { label: string; color: string; bg: string; dot
 }
 
 export default async function AdminRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const { id } = await params
   if (!isUuid(id)) notFound()
 
@@ -124,6 +126,37 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const previewKind = documentPreviewKind(docPath)
   const timeline = buildTimeline(request, offers, events)
   const ref = requestLabel(request)
+
+  // Actions possibles, d'après les statuts (mêmes règles que les Server Actions)
+  const selected = offers.find(o => o.selected) ?? null
+  const canValidate = !!selected && canTransitionOffer(selected.status ?? '', OS.seela_validated, 'admin')
+    && canTransitionRequest(request.status, RS.seela_validated, 'admin')
+  const awaitingLeaser = !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
+  const canRefuse = canTransitionRequest(request.status, RS.refused, 'admin')
+
+  // Aperçu de l'email au leaser, construit par la même fonction que l'envoi
+  let leaserPreview: { to: string; cc?: string; subject: string; html: string } | { error: string } | null = null
+  if (canValidate && selected) {
+    const { data: leaser } = await db.from('leasers').select('referent_email, referent_name').eq('name', selected.leaser_name ?? '').maybeSingle()
+    const ctx: OfferContext = {
+      offer: {
+        id: selected.id,
+        request_id: request.id,
+        leaser_name: selected.leaser_name ?? '',
+        monthly_payment: selected.monthly_payment ?? 0,
+        duration_months: selected.duration_months ?? 0,
+        status: selected.status ?? '',
+      },
+      request: { ...request, line_items: lines },
+      profile: profile ? { company_name: profile.company_name, siren: profile.siren, email: profile.email } : null,
+      leaser,
+    }
+    try {
+      leaserPreview = leaserValidationEmail(ctx, docUrl ? '#lien-signe-7-jours-genere-a-l-envoi' : '', '', admin.email)
+    } catch (err) {
+      leaserPreview = { error: err instanceof WorkflowError ? err.message : 'Aperçu indisponible.' }
+    }
+  }
 
   return (
     <div>
@@ -289,15 +322,20 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
               ))}
             </ol>
             <p className="px-4 pb-4 text-xs" style={{ color: '#9A9A93' }}>
-              La date de soumission et les emails envoyés seront journalisés avec les actions admin.
+              Les emails envoyés depuis le back-office sont journalisés ici ; la date de soumission n&apos;est pas encore enregistrée.
             </p>
           </Section>
 
-          {/* Actions (remplies par les issues suivantes du Lot 3) */}
+          {/* Actions : valider et transmettre, réponse du leaser, refus */}
           <Section title="Actions">
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>
-              Valider et transmettre, enregistrer la réponse du leaser, corriger le dossier : bientôt disponible ici.
-            </p>
+            <RequestActions
+              requestId={request.id}
+              canValidate={canValidate}
+              awaitingLeaser={awaitingLeaser}
+              canRefuse={canRefuse}
+              offer={selected ? { id: selected.id, leaserName: selected.leaser_name ?? 'le leaser' } : null}
+              leaserPreview={leaserPreview}
+            />
           </Section>
         </div>
       </div>
