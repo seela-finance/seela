@@ -156,8 +156,10 @@ export default async function AdminRequestsPage({
                 const badge = requestStatusInfo(r.status)
                 return (
                   <tr key={r.id} style={{ borderBottom: '1px solid #F5F5F4' }}>
-                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
-                      {r.ref}
+                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <Link href={`/admin/dossiers/${r.id}`} className="underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>
+                        {r.ref}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-sm max-w-[220px]">
                       <span className="block truncate" style={{ color: '#0E0E0C' }}>{r.companyName ?? '—'}</span>

@@ -11,18 +11,11 @@ test.describe('Sécurité des routes API', () => {
     })
   }
 
+  // Validation et réponse leaser passent par le back-office (#33) : les anciennes routes à token n'existent plus.
   for (const path of ['/api/validate-offer', '/api/leaser-confirms']) {
-    test(`${path} refuse sans token admin`, async ({ request }) => {
+    test(`${path} n’existe plus`, async ({ request }) => {
       const res = await request.post(path, { data: { offerId: crypto.randomUUID(), decision: 'confirmed' } })
-      expect(res.status()).toBe(401)
-    })
-
-    test(`${path} refuse "Bearer undefined"`, async ({ request }) => {
-      const res = await request.post(path, {
-        headers: { Authorization: 'Bearer undefined' },
-        data: { offerId: crypto.randomUUID(), decision: 'confirmed' },
-      })
-      expect(res.status()).toBe(401)
+      expect(res.status()).toBe(404)
     })
   }
 
