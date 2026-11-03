@@ -22,6 +22,7 @@ type OfferRow = {
 
 export type AdminRequestRow = {
   id: string
+  user_id?: string | null
   status: string | null
   total_amount: number | null
   duration_months: number | null
@@ -33,6 +34,7 @@ export type AdminRequestRow = {
 
 export type AdminRequest = {
   id: string
+  userId: string | null
   ref: string
   status: string | null
   companyName: string | null
@@ -58,6 +60,7 @@ export function toAdminRequest(row: AdminRequestRow): AdminRequest {
   const selected = row.offers?.find(o => o.selected) ?? null
   return {
     id: row.id,
+    userId: row.user_id ?? null,
     ref: requestLabel(row),
     status: row.status,
     companyName: row.profiles?.company_name?.trim() || null,

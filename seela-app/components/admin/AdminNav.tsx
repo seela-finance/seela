@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 // Les sections sans href arrivent avec les issues suivantes du Lot 3
 const NAV = [
   { href: '/admin', label: 'Dossiers' },
-  { href: null, label: 'Sociétés' },
+  { href: '/admin/societes', label: 'Sociétés' },
   { href: null, label: 'Leasers' },
 ]
 
@@ -48,7 +48,9 @@ export default function AdminNav({ name, email }: { name: string; email: string 
               </span>
             )
           }
-          const active = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
+          const active = item.href === '/admin'
+            ? pathname === '/admin' || pathname.startsWith('/admin/dossiers')
+            : pathname.startsWith(item.href)
           return (
             <Link
               key={item.label}

@@ -15,6 +15,9 @@ import {
 } from '@/lib/admin-request-detail'
 import { leaserValidationEmail, WorkflowError, type OfferContext } from '@/lib/admin-workflow'
 import RequestActions from '@/components/admin/RequestActions'
+import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
+import { fetchRegistry } from '@/lib/company-registry'
+import { companyAlert } from '@/lib/admin-company'
 
 type LineItem = {
   id: string
@@ -24,50 +27,6 @@ type LineItem = {
   total_price: number | null
   category: string | null
   selected: boolean | null
-}
-
-function eur(n: number | null, digits = 0) {
-  if (n == null) return '—'
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n)
-}
-
-function fmtDate(s: string | null) {
-  if (!s) return '—'
-  return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function fmtDateTime(s: string) {
-  return new Date(s).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-function Section({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-      <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: '#E5E5E3' }}>
-        <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>{title}</h2>
-        {right}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs" style={{ color: '#9A9A93' }}>{label}</dt>
-      <dd className="mt-0.5 text-sm" style={{ color: '#0E0E0C' }}>{value ?? '—'}</dd>
-    </div>
-  )
-}
-
-function Badge({ info }: { info: { label: string; color: string; bg: string; dot: string } }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap" style={{ background: info.bg, color: info.color }}>
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: info.dot }} />
-      {info.label}
-    </span>
-  )
 }
 
 export default async function AdminRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -121,6 +80,10 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const profile = request.profiles as { company_name: string | null; siren: string | null; first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
   const contactName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || null
 
+  // Société cessée au registre : bandeau rouge (même règle que la fiche société)
+  const registry = await fetchRegistry(profile?.siren)
+  const alert = companyAlert(registry.status === 'ok' ? registry.company : null)
+
   const docPath = documentPath(request.document_url, request.user_id)
   const docUrl = await signedDocumentUrl(db, request.document_url, request.user_id, 3600)
   const previewKind = documentPreviewKind(docPath)
@@ -160,17 +123,17 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
 
   return (
     <div>
-      <div className="h-12 flex items-center gap-2 px-6 border-b text-sm" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/admin" className="hover:opacity-70" style={{ color: '#9A9A93' }}>Dossiers</Link>
-        <span style={{ color: '#D1D1CE' }}>/</span>
-        <span className="font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{ref}</span>
-      </div>
+      <Breadcrumb items={[{ label: 'Dossiers', href: '/admin' }, { label: ref }]} />
 
       <div className="px-6 py-6 max-w-6xl space-y-4">
+        {alert && <AlertBanner>{alert}</AlertBanner>}
+
         {/* En-tête */}
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold" style={{ color: '#0E0E0C', letterSpacing: '-0.02em' }}>
-            {profile?.company_name?.trim() || 'Société sans nom'}
+            <Link href={`/admin/societes/${request.user_id}`} className="underline-offset-4 hover:underline">
+              {profile?.company_name?.trim() || 'Société sans nom'}
+            </Link>
           </h1>
           <Badge info={requestStatusInfo(request.status)} />
         </div>
