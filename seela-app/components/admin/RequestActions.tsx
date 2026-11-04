@@ -23,16 +23,10 @@ type Props = {
 const input = 'w-full px-3 py-2 rounded-lg border text-sm outline-none focus:border-[#9A9A93]'
 const inputStyle = { background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C' }
 
-function Feedback({ state }: { state: ActionState }) {
-  if (!state) return null
-  return (
-    <p
-      className="text-sm px-3 py-2 rounded-lg"
-      style={state.ok ? { background: '#F0FDF4', color: '#166534' } : { background: '#FEF2F2', color: '#991B1B' }}
-    >
-      {state.message}
-    </p>
-  )
+// Erreur affichée dans le formulaire concerné
+function ErrorFeedback({ state }: { state: ActionState }) {
+  if (!state || state.ok) return null
+  return <p className="text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>{state.message}</p>
 }
 
 function Button({ pending, children, tone = 'dark' }: { pending: boolean; children: React.ReactNode; tone?: 'dark' | 'light' | 'danger' }) {
@@ -54,12 +48,19 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
   const [refuseState, refuse, refusing] = useActionState(refuseRequestAction, null)
   const [showRefuse, setShowRefuse] = useState(false)
 
-  if (!canValidate && !awaitingLeaser && !canRefuse) {
-    return <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucune action possible sur ce dossier.</p>
-  }
+  // Le succès s'affiche hors des formulaires : le changement de statut fait disparaître celui qui vient d'être envoyé
+  const success = [refuseState, decisionState, validateState].find(s => s?.ok)
 
   return (
     <div className="px-4 py-4 space-y-6">
+      {success && (
+        <p role="status" className="text-sm px-3 py-2 rounded-lg" style={{ background: '#F0FDF4', color: '#166534' }}>{success.message}</p>
+      )}
+
+      {!canValidate && !awaitingLeaser && !canRefuse && (
+        <p className="py-2 text-sm" style={{ color: '#9A9A93' }}>Aucune action possible sur ce dossier.</p>
+      )}
+
       {canValidate && offer && (
         <form action={validate} className="space-y-3">
           <input type="hidden" name="requestId" value={requestId} />
@@ -80,7 +81,7 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
           <div className="flex items-center gap-3">
             <Button pending={validating}>Valider et transmettre</Button>
           </div>
-          <Feedback state={validateState} />
+          <ErrorFeedback state={validateState} />
         </form>
       )}
 
@@ -106,7 +107,7 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
               Refusé par le leaser
             </button>
           </div>
-          <Feedback state={decisionState} />
+          <ErrorFeedback state={decisionState} />
         </form>
       )}
 
@@ -131,7 +132,7 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
               </div>
             </form>
           )}
-          <Feedback state={refuseState} />
+          <ErrorFeedback state={refuseState} />
         </div>
       )}
     </div>

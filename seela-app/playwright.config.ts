@@ -1,9 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
+import { loadStagingEnv } from './e2e/support/staging'
+
+// E2E_STAGING=1 : parcours connectés sur le Supabase de staging, avec des comptes éphémères
+// (`npm run test:staging`). Charge .env.staging.local et refuse toute autre base que le staging.
+const stagingMode = process.env.E2E_STAGING === '1'
+if (stagingMode) loadStagingEnv()
 
 // Cible : PLAYWRIGHT_BASE_URL (ex. une preview Vercel) ou, à défaut, un serveur local.
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL
 // E2E_PORT : lancer les tests sur un autre port si 3000 est déjà pris
-const port = Number(process.env.E2E_PORT ?? 3000)
+const port = Number(process.env.E2E_PORT ?? (stagingMode ? 3100 : 3000))
 const baseURL = externalBaseURL ?? `http://localhost:${port}`
 
 // Les tests authentifiés ne tournent que si un compte de test est fourni
@@ -46,13 +52,27 @@ export default defineConfig({
           },
         ]
       : []),
+    ...(stagingMode
+      ? [
+          { name: 'staging-seed', testMatch: /staging\.seed\.ts/, teardown: 'staging-cleanup' },
+          { name: 'staging-cleanup', testMatch: /staging\.cleanup\.ts/ },
+          {
+            name: 'flows',
+            testMatch: /flows\/.*\.spec\.ts/,
+            dependencies: ['staging-seed'],
+            expect: { timeout: 20_000 },
+            use: { ...devices['Desktop Chrome'] },
+          },
+        ]
+      : []),
   ],
   webServer: externalBaseURL
     ? undefined
     : {
         command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        // Jamais de réutilisation en mode staging : un serveur déjà lancé peut viser une autre base
+        reuseExistingServer: !process.env.CI && !stagingMode,
         timeout: 120_000,
       },
 })
