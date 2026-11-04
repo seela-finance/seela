@@ -10,8 +10,8 @@ const inter = Inter({
 })
 
 // Design system v2 : Bricolage Grotesque pour les titres, JetBrains Mono pour
-// les montants et kickers. Consommées par `.lp` (app/landing.css) via
-// --font-display et --font-mono ; globals.css (app authentifiée) reste sur Inter.
+// les montants et kickers. Consommées par `.lp` (app/landing.css) et par
+// app/globals.css (app authentifiée) via --font-display et --font-mono.
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   weight: ['500', '600', '700'],
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     default: 'Everlease — Financement locatif professionnel',
     template: `%s | ${SITE_NAME}`,
   },
-  description: 'Financez votre équipement professionnel. Uploadez votre devis, configurez votre financement, recevez des offres sous 48h.',
+  description: 'Financez votre équipement professionnel en location. Déposez un devis, everlease prépare votre dossier et le présente à des financeurs adaptés.',
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',

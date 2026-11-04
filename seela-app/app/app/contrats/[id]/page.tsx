@@ -74,34 +74,31 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   const contactHref = `mailto:contact@everlease.fr?subject=${encodeURIComponent(`Dossier ${ref}`)}`
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#FAFAF9' }}>
+    <div className="flex min-h-screen" style={{ background: 'var(--paper)' }}>
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto" style={{ marginLeft: 220 }}>
         {/* Breadcrumb */}
-        <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <Link href="/app/contrats" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
+        <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
+          <Link href="/app/contrats" className="text-sm transition-colors hover:text-[var(--ink)]" style={{ color: 'var(--ink-3)' }}>
             Contrats
           </Link>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{ref}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="var(--line-strong)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <span className="ev-mono text-sm font-medium" style={{ color: 'var(--ink)' }}>{ref}</span>
           <TopActions />
         </div>
 
         <div className="px-8 py-8">
           {/* Header row */}
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/app/contrats" className="flex items-center transition-opacity hover:opacity-70" style={{ color: '#9A9A93' }}>
+            <Link href="/app/contrats" className="flex items-center transition-opacity hover:opacity-70" style={{ color: 'var(--ink-3)' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <span className="text-sm font-medium" style={{ color: '#9A9A93' }}>{ref}</span>
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-              style={{ background: statusInfo.bg, color: statusInfo.color }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusInfo.dot }} />
+            <span className="ev-mono text-sm font-medium" style={{ color: 'var(--ink-3)' }}>{ref}</span>
+            <span className="ev-tag" style={{ background: statusInfo.bg, color: statusInfo.color }}>
+              <span className="ev-tag__dot" style={{ background: statusInfo.dot }} />
               {statusInfo.label}
             </span>
             <div className="flex-1" />
@@ -110,8 +107,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 href={documentHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
-                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
+                className="ev-btn ev-btn--ghost ev-btn--sm"
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5M1 11h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -122,8 +118,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
             {selectedOffer && (
               <a
                 href={contactHref}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-opacity hover:opacity-70"
-                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
+                className="ev-btn ev-btn--ghost ev-btn--sm"
               >
                 Contacter Everlease
               </a>
@@ -131,11 +126,11 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Title */}
-          <h1 className="font-semibold mt-3 mb-0.5" style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px' }}>
+          <h1 className="ev-display mt-3 mb-0.5" style={{ fontSize: 26, color: 'var(--ink)' }}>
             {assetTitle}{assetSuffix}
           </h1>
-          <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
-            Financé par <strong style={{ color: '#0E0E0C' }}>{leaserName}</strong>
+          <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
+            Financé par <strong style={{ color: 'var(--ink)' }}>{leaserName}</strong>
           </p>
 
 
@@ -147,12 +142,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
               { label: 'Montant financé', value: fmt(request.total_amount), sub: 'HT' },
               { label: 'Coût total', value: fmt(totalCost), sub: 'HT' },
             ].map((kpi) => (
-              <div key={kpi.label} className="p-4 rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                <p className="text-xs mb-1.5" style={{ color: '#9A9A93' }}>{kpi.label}</p>
-                <p className="font-semibold text-sm leading-tight" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+              <div key={kpi.label} className="ev-card p-4">
+                <p className="text-xs mb-1.5" style={{ color: 'var(--ink-3)' }}>{kpi.label}</p>
+                <p className="ev-mono font-semibold text-sm leading-tight" style={{ color: 'var(--ink)' }}>
                   {kpi.value}
                 </p>
-                {kpi.sub && <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>{kpi.sub}</p>}
+                {kpi.sub && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>{kpi.sub}</p>}
               </div>
             ))}
           </div>
@@ -161,12 +156,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             {/* LEFT — Échéancier */}
             <div className="flex-1 min-w-0">
-              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-                <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E5E3' }}>
-                  <h2 className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
+              <section className="ev-card overflow-hidden">
+                <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--line)' }}>
+                  <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                     {isActive ? 'Contrat démarré' : 'Contrat en préparation'}
                   </h2>
-                  <p className="text-xs mt-0.5" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
                     {isActive
                       ? `Votre échéancier détaillé vous est transmis par ${leaserName}. Il apparaîtra bientôt ici.`
                       : 'Votre échéancier apparaîtra ici dès le démarrage du contrat.'}
@@ -178,8 +173,8 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                       <span
                         className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                         style={{
-                          background: step.state === 'done' ? '#0E0E0C' : '#fff',
-                          border: step.state === 'done' ? 'none' : `1.5px solid ${step.state === 'current' ? '#4F46E5' : '#E5E5E3'}`,
+                          background: step.state === 'done' ? 'var(--ink)' : 'var(--surface)',
+                          border: step.state === 'done' ? 'none' : `1.5px solid ${step.state === 'current' ? 'var(--accent)' : 'var(--line-strong)'}`,
                         }}
                       >
                         {step.state === 'done' && (
@@ -187,19 +182,19 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                             <path d="M2 5l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
-                        {step.state === 'current' && <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4F46E5' }} />}
+                        {step.state === 'current' && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />}
                       </span>
                       <span
                         className="text-sm"
                         style={{
-                          color: step.state === 'todo' ? '#9A9A93' : '#0E0E0C',
+                          color: step.state === 'todo' ? 'var(--ink-3)' : 'var(--ink)',
                           fontWeight: step.state === 'current' ? 500 : 400,
                         }}
                       >
                         {step.label}
                       </span>
                       {step.state === 'current' && (
-                        <span className="text-xs" style={{ color: '#4F46E5' }}>En cours</span>
+                        <span className="text-xs" style={{ color: 'var(--accent)' }}>En cours</span>
                       )}
                     </li>
                   ))}
@@ -211,24 +206,24 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
             <div className="w-full lg:w-72 lg:shrink-0 space-y-4">
 
               {/* Documents */}
-              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
-                <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Documents</h2>
+              <section className="ev-card overflow-hidden">
+                <div className="px-4 py-3.5 border-b" style={{ borderColor: 'var(--line)' }}>
+                  <h2 className="ev-kicker">Documents</h2>
                 </div>
-                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
+                <div className="divide-y divide-[var(--line)]">
                   {documentHref ? (
                     <div className="px-4 py-3 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#EEF2FF' }}>
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0" style={{ background: 'var(--accent-soft)' }}>
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M3 1h6l3 3v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1Z" stroke="#4F46E5" strokeWidth="1.2" />
-                          <path d="M9 1v3h3" stroke="#4F46E5" strokeWidth="1.2" />
+                          <path d="M3 1h6l3 3v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1Z" stroke="var(--accent)" strokeWidth="1.2" />
+                          <path d="M9 1v3h3" stroke="var(--accent)" strokeWidth="1.2" />
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate capitalize" style={{ color: '#0E0E0C' }}>
+                        <p className="text-xs font-medium truncate capitalize" style={{ color: 'var(--ink)' }}>
                           {request.document_type ?? 'Document'} original
                         </p>
-                        <p className="text-xs" style={{ color: '#9A9A93' }}>
+                        <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
                           {fmtShort(request.created_at)}
                         </p>
                       </div>
@@ -237,7 +232,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 transition-opacity hover:opacity-70"
-                        style={{ color: '#9A9A93' }}
+                        style={{ color: 'var(--ink-3)' }}
                       >
                         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                           <path d="M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5M1 11h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -247,26 +242,26 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                   ) : null}
                   {/* Contrat de location — placeholder */}
                   <div className="px-4 py-3 flex items-center gap-3 opacity-40">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F5F5F4' }}>
+                    <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0" style={{ background: 'var(--raised)' }}>
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M3 1h6l3 3v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1Z" stroke="#9A9A93" strokeWidth="1.2" />
-                        <path d="M9 1v3h3" stroke="#9A9A93" strokeWidth="1.2" />
+                        <path d="M3 1h6l3 3v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1Z" stroke="var(--ink-3)" strokeWidth="1.2" />
+                        <path d="M9 1v3h3" stroke="var(--ink-3)" strokeWidth="1.2" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium" style={{ color: '#0E0E0C' }}>Contrat de location</p>
-                      <p className="text-xs" style={{ color: '#9A9A93' }}>À venir</p>
+                      <p className="text-xs font-medium" style={{ color: 'var(--ink)' }}>Contrat de location</p>
+                      <p className="text-xs" style={{ color: 'var(--ink-3)' }}>À venir</p>
                     </div>
                   </div>
                 </div>
               </section>
 
               {/* Détails du contrat */}
-              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
-                <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Détails du contrat</h2>
+              <section className="ev-card overflow-hidden">
+                <div className="px-4 py-3.5 border-b" style={{ borderColor: 'var(--line)' }}>
+                  <h2 className="ev-kicker">Détails du contrat</h2>
                 </div>
-                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
+                <div className="divide-y divide-[var(--line)]">
                   {[
                     { label: 'Leaser', value: leaserName },
                     { label: 'Taux nominal', value: rate },
@@ -275,19 +270,19 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     { label: 'Référent leaser', value: leaser?.referent_name ?? null },
                   ].filter(row => row.value).map(row => (
                     <div key={row.label} className="px-4 py-2.5 flex items-center justify-between">
-                      <span className="text-xs" style={{ color: '#9A9A93' }}>{row.label}</span>
-                      <span className="text-xs font-medium" style={{ color: '#0E0E0C' }}>{row.value}</span>
+                      <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{row.label}</span>
+                      <span className="ev-mono text-xs font-medium" style={{ color: 'var(--ink)' }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
               </section>
 
               {/* Actions */}
-              <section className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
-                <div className="px-4 py-3.5 border-b" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>Actions</h2>
+              <section className="ev-card overflow-hidden">
+                <div className="px-4 py-3.5 border-b" style={{ borderColor: 'var(--line)' }}>
+                  <h2 className="ev-kicker">Actions</h2>
                 </div>
-                <div className="divide-y divide-[#E5E5E3]" style={{ background: '#fff' }}>
+                <div className="divide-y divide-[var(--line)]">
                   {[
                     {
                       label: 'Contacter Everlease',
@@ -325,10 +320,10 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     <a
                       key={action.label}
                       href={action.href}
-                      className="px-4 py-3 flex items-center gap-2.5 text-sm transition-colors hover:bg-[#FAFAF9]"
-                      style={{ color: action.danger ? '#DC2626' : '#0E0E0C' }}
+                      className="px-4 py-3 flex items-center gap-2.5 text-sm transition-colors hover:bg-[var(--paper)]"
+                      style={{ color: action.danger ? 'var(--danger)' : 'var(--ink)' }}
                     >
-                      <span style={{ color: action.danger ? '#DC2626' : '#9A9A93' }}>{action.icon}</span>
+                      <span style={{ color: action.danger ? 'var(--danger)' : 'var(--ink-3)' }}>{action.icon}</span>
                       {action.label}
                     </a>
                   ))}

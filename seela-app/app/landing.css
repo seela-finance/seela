@@ -777,3 +777,27 @@
 .lp .mk-measure { max-width: 860px; }
 .lp .mk-measure--sm { max-width: 760px; }
 .lp .mk-cta-center { text-align: center; margin-top: 56px; }
+
+/* ---------- Marketing (mk-*) : alignement design system v2 ----------
+   Kickers en mono capitales, titres de ligne en Bricolage, aucune ombre,
+   mentions légales des blocs chiffrés. Surcharges volontairement groupées
+   ici (même spécificité, déclarées après : elles gagnent). */
+.lp .mk-facts__title, .lp .mk-mobile__label, .lp .mk-related__label, .lp .mk-footer__label, .lp .mk-fit__arrow {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3);
+}
+.lp .mk-step__title { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
+.lp .mk-fit__equip, .lp .mk-example__label { font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; }
+.lp .mk-eqcard__cat { font-size: 15px; }
+.lp .mk-example__total { font-size: 13px; }
+.lp .mk-legal { font-size: 12.5px; line-height: 1.5; color: var(--ink-3); margin: 0; }
+.lp .mk-section-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.lp .mk-dropdown { border-color: var(--line-strong); box-shadow: none; }
+.lp .mk-dropdown__lead { color: var(--accent-ink); border-radius: var(--radius-sm); }
+.lp .mk-dropdown__item { border-radius: var(--radius-sm); }
+.lp .mk-burger { border-radius: var(--radius); }
+.lp .mk-imgslot__ic { border-radius: var(--radius); }
+.lp .mk-hubcard { transition: border-color var(--d-fast) var(--ease), transform var(--d-fast) var(--ease); }
+.lp .mk-hubcard:hover { border-color: var(--line-strong); box-shadow: none; }
+.lp .mk-related__card { transition: border-color var(--d-fast) var(--ease), transform var(--d-fast) var(--ease), color var(--d-fast) var(--ease); }
+.lp .mk-related__card:hover { border-color: var(--line-strong); }
+.lp .mk-nav__trigger, .lp .mk-dropdown__item, .lp .mk-crumbs__link, .lp .mk-footer__link, .lp .mk-table__collink { transition-duration: var(--d-fast); transition-timing-function: var(--ease); }

@@ -22,29 +22,28 @@ export default async function ContratsPage() {
   const allRequests = requests ?? []
 
   return (
-    <div className="min-h-screen" style={{ background: '#FAFAF9' }}>
+    <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <Sidebar />
       <main style={{ marginLeft: 220 }}>
         {/* Top nav */}
-        <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Contrats</span>
+        <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
+          <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Contrats</span>
           <TopActions />
         </div>
 
         <div className="px-8 py-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
+              <h1 className="ev-display mb-0.5" style={{ fontSize: 24, color: 'var(--ink)' }}>
                 Mes contrats
               </h1>
-              <p className="text-sm" style={{ color: '#9A9A93' }}>
+              <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
                 {allRequests.length} contrat{allRequests.length !== 1 ? 's' : ''}
               </p>
             </div>
             <Link
               href="/app/nouveau"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ background: '#4F46E5', color: '#fff', borderRadius: 8 }}
+              className="ev-btn ev-btn--primary"
             >
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -54,29 +53,24 @@ export default async function ContratsPage() {
           </div>
 
           {allRequests.length === 0 ? (
-            <div
-              className="text-center py-16 rounded-xl border border-dashed"
-              style={{ borderColor: '#E5E5E3' }}
-            >
-              <p className="text-sm mb-4" style={{ color: '#9A9A93' }}>Aucun contrat actif pour l&apos;instant.</p>
+            <div className="ev-card ev-card--dashed text-center py-16">
+              <p className="text-sm mb-4" style={{ color: 'var(--ink-3)' }}>Aucun contrat actif pour l&apos;instant.</p>
               <Link
                 href="/app/nouveau"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ background: '#0E0E0C', color: '#FAFAF9', borderRadius: 8 }}
+                className="ev-btn ev-btn--primary"
               >
                 Créer ma première demande
               </Link>
             </div>
           ) : (
-            <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', borderRadius: 12 }}>
+            <div className="ev-card overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
+                  <tr style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
                     {REQUESTS_TABLE_HEADERS.map((h, i) => (
                       <th
                         key={i}
-                        className="px-4 py-3 text-left"
-                        style={{ fontSize: 11, fontWeight: 500, color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                        className="ev-kicker px-4 py-3 text-left"
                       >
                         {h}
                       </th>

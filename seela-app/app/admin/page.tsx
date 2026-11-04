@@ -69,28 +69,28 @@ export default async function AdminRequestsPage({
 
   return (
     <div>
-      <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Dossiers</span>
+      <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Dossiers</span>
       </div>
 
       <div className="px-6 py-6">
         {/* Onglets */}
-        <div className="flex items-center gap-1 border-b" style={{ borderColor: '#E5E5E3' }}>
+        <div className="flex items-center gap-1 pb-3 border-b" style={{ borderColor: 'var(--line)' }}>
           {tabs.map(t => {
             const active = params.tab === t.tab
             return (
               <Link
                 key={t.tab}
                 href={listHref(params, { tab: t.tab, status: null, page: 1 })}
-                className="px-3 py-2 text-sm -mb-px border-b-2 transition-colors"
+                className="px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-[var(--raised)]"
                 style={{
-                  borderColor: active ? '#0E0E0C' : 'transparent',
-                  color: active ? '#0E0E0C' : '#9A9A93',
+                  background: active ? 'var(--raised)' : undefined,
+                  color: active ? 'var(--ink)' : 'var(--ink-3)',
                   fontWeight: active ? 500 : 400,
                 }}
               >
                 {t.label}
-                <span className="ml-1.5 text-xs" style={{ color: '#9A9A93' }}>{t.count}</span>
+                <span className="ml-1.5 text-xs" style={{ color: 'var(--ink-3)' }}>{t.count}</span>
               </Link>
             )
           })}
@@ -104,16 +104,16 @@ export default async function AdminRequestsPage({
             name="q"
             defaultValue={params.query}
             placeholder="Référence, raison sociale ou SIREN"
-            className="h-9 w-72 max-w-full px-3 rounded-lg border text-sm outline-none focus:border-[#9A9A93]"
-            style={{ background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C' }}
+            className="ev-input"
+            style={{ width: '18rem', maxWidth: '100%' }}
           />
           {params.tab === 'all' && (
             <select
               name="status"
               defaultValue={params.status ?? ''}
               aria-label="Statut"
-              className="h-9 px-2 rounded-lg border text-sm"
-              style={{ background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C' }}
+              className="ev-input"
+              style={{ width: 'auto' }}
             >
               <option value="">Tous les statuts</option>
               {REQUEST_STATUSES.map(s => (
@@ -123,31 +123,30 @@ export default async function AdminRequestsPage({
           )}
           <button
             type="submit"
-            className="h-9 px-3 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: '#0E0E0C', color: '#fff' }}
+            className="ev-btn ev-btn--ghost"
           >
             Rechercher
           </button>
           {(params.query || params.status) && (
-            <Link href={listHref(params, { query: '', status: null, page: 1 })} className="text-xs hover:opacity-70" style={{ color: '#9A9A93' }}>
+            <Link href={listHref(params, { query: '', status: null, page: 1 })} className="text-xs hover:opacity-70" style={{ color: 'var(--ink-3)' }}>
               Effacer
             </Link>
           )}
         </form>
 
         {(error || !configured) && (
-          <p className="mt-4 text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>
+          <p className="ev-alert ev-alert--danger mt-4">
             {configured ? 'Impossible de charger les dossiers. Réessayez dans un instant.' : SERVICE_ROLE_MISSING_MESSAGE}
           </p>
         )}
 
         {/* Tableau (défile horizontalement sur mobile) */}
-        <div className="mt-4 rounded-xl border overflow-x-auto" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
+        <div className="ev-card mt-4 overflow-x-auto">
           <table className="w-full min-w-[960px] text-left">
             <thead>
-              <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+              <tr style={{ borderBottom: '1px solid var(--line)' }}>
                 {HEADERS.map(h => (
-                  <th key={h} className="px-4 py-2.5 text-xs font-medium whitespace-nowrap" style={{ color: '#9A9A93' }}>{h}</th>
+                  <th key={h} className="ev-kicker px-4 py-2.5 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -155,47 +154,44 @@ export default async function AdminRequestsPage({
               {items.map(r => {
                 const badge = requestStatusInfo(r.status)
                 return (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #F5F5F4' }}>
-                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <Link href={`/admin/dossiers/${r.id}`} className="underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>
+                  <tr key={r.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                    <td className="ev-mono px-4 py-3 text-sm font-medium whitespace-nowrap">
+                      <Link href={`/admin/dossiers/${r.id}`} className="underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>
                         {r.ref}
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm max-w-[220px]">
                       {r.userId ? (
-                        <Link href={`/admin/societes/${r.userId}`} className="block truncate underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>
+                        <Link href={`/admin/societes/${r.userId}`} className="block truncate underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>
                           {r.companyName ?? 'Société sans nom'}
                         </Link>
                       ) : (
-                        <span className="block truncate" style={{ color: '#0E0E0C' }}>{r.companyName ?? '—'}</span>
+                        <span className="block truncate" style={{ color: 'var(--ink)' }}>{r.companyName ?? '—'}</span>
                       )}
-                      {r.siren && <span className="block text-xs" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>{r.siren}</span>}
+                      {r.siren && <span className="ev-mono block text-xs" style={{ color: 'var(--ink-3)' }}>{r.siren}</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.amount)}</td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{r.duration ? `${r.duration} mois` : '—'}</td>
+                    <td className="ev-mono px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{fmt(r.amount)}</td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{r.duration ? `${r.duration} mois` : '—'}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                        style={{ background: badge.bg, color: badge.color }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: badge.dot }} />
+                      <span className="ev-tag" style={{ background: badge.bg, color: badge.color }}>
+                        <span className="ev-tag__dot" style={{ background: badge.dot }} />
                         {badge.label}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       {r.leaserName ? (
                         <>
-                          <span className="block" style={{ color: '#0E0E0C' }}>{r.leaserName}</span>
-                          <span className="block text-xs" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.monthly)}/mois</span>
+                          <span className="block" style={{ color: 'var(--ink)' }}>{r.leaserName}</span>
+                          <span className="ev-mono block text-xs" style={{ color: 'var(--ink-3)' }}>{fmt(r.monthly)}/mois</span>
                         </>
                       ) : (
-                        <span style={{ color: '#9A9A93' }}>—</span>
+                        <span style={{ color: 'var(--ink-3)' }}>—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }} title={fmtDate(r.lastActionAt)}>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }} title={fmtDate(r.lastActionAt)}>
                       {sinceLabel(r.lastActionAt, now)}
                     </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(r.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(r.createdAt)}</td>
                   </tr>
                 )
               })}
@@ -203,7 +199,7 @@ export default async function AdminRequestsPage({
           </table>
 
           {items.length === 0 && !error && configured && (
-            <p className="px-4 py-10 text-sm text-center" style={{ color: '#9A9A93' }}>
+            <p className="px-4 py-10 text-sm text-center" style={{ color: 'var(--ink-3)' }}>
               {params.query || params.status
                 ? 'Aucun dossier ne correspond à cette recherche.'
                 : params.tab === 'todo'
@@ -215,16 +211,16 @@ export default async function AdminRequestsPage({
 
         {/* Pagination */}
         {pageCount > 1 && (
-          <div className="mt-4 flex items-center justify-between text-sm" style={{ color: '#9A9A93' }}>
+          <div className="mt-4 flex items-center justify-between text-sm" style={{ color: 'var(--ink-3)' }}>
             <span>{total} dossiers · page {page} / {pageCount}</span>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={listHref(params, { page: page - 1 })} className="px-3 py-1.5 rounded-lg border hover:opacity-70" style={{ borderColor: '#E5E5E3', background: '#fff', color: '#0E0E0C' }}>
+                <Link href={listHref(params, { page: page - 1 })} className="ev-btn ev-btn--ghost ev-btn--sm">
                   Précédent
                 </Link>
               )}
               {page < pageCount && (
-                <Link href={listHref(params, { page: page + 1 })} className="px-3 py-1.5 rounded-lg border hover:opacity-70" style={{ borderColor: '#E5E5E3', background: '#fff', color: '#0E0E0C' }}>
+                <Link href={listHref(params, { page: page + 1 })} className="ev-btn ev-btn--ghost ev-btn--sm">
                   Suivant
                 </Link>
               )}

@@ -42,8 +42,8 @@ function StepIndicator({ step }: { step: number }) {
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all"
             style={{
-              background: step >= n ? '#0E0E0C' : '#F5F5F4',
-              border: step < n ? '1px solid #E5E5E3' : 'none',
+              background: step > n ? 'var(--ink)' : step === n ? 'var(--accent)' : 'var(--raised)',
+              border: step < n ? '1px solid var(--line)' : 'none',
             }}
           >
             {step > n ? (
@@ -53,7 +53,7 @@ function StepIndicator({ step }: { step: number }) {
             ) : (
               <span
                 className="text-xs font-semibold"
-                style={{ color: step === n ? '#FAFAF9' : '#9A9A93' }}
+                style={{ color: step === n ? '#fff' : 'var(--ink-3)' }}
               >
                 {n}
               </span>
@@ -62,7 +62,7 @@ function StepIndicator({ step }: { step: number }) {
           {i < 3 && (
             <div
               className="flex-1 h-px mx-1 transition-all"
-              style={{ background: step > n ? '#0E0E0C' : '#E5E5E3' }}
+              style={{ background: step > n ? 'var(--accent)' : 'var(--line)' }}
             />
           )}
         </div>
@@ -99,26 +99,29 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
   return (
     <div>
       <h1
-        className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        className="ev-display mb-2"
+        style={{ fontSize: 28, color: 'var(--ink)' }}
       >
         Où est établie votre entreprise ?
       </h1>
-      <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
+      <p className="text-sm mb-8" style={{ color: 'var(--ink-3)' }}>
         Everlease opère actuellement en France.
       </p>
 
-      <label className="block text-sm font-medium mb-2" style={{ color: '#0E0E0C' }}>
+      <label className="ev-label">
         Pays d&apos;établissement
       </label>
       <div className="relative" ref={dropRef}>
         <button
           onClick={() => setOpen(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-all"
+          className="ev-input text-sm"
           style={{
-            background: '#fff',
-            borderColor: open ? '#0E0E0C' : '#E5E5E3',
-            color: '#0E0E0C',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            textAlign: 'left',
+            cursor: 'pointer',
+            borderColor: open ? 'var(--accent)' : 'var(--line-strong)',
           }}
         >
           <span className="flex items-center gap-2">
@@ -129,14 +132,13 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
             width="16" height="16" viewBox="0 0 16 16" fill="none"
             style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }}
           >
-            <path d="M4 6l4 4 4-4" stroke="#9A9A93" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4 6l4 4 4-4" stroke="var(--ink-3)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
 
         {open && (
           <div
-            className="absolute left-0 right-0 top-[calc(100%+4px)] rounded-xl border overflow-hidden z-50"
-            style={{ background: '#fff', borderColor: '#E5E5E3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+            className="ev-card absolute left-0 right-0 top-[calc(100%+4px)] overflow-hidden z-50"
           >
             {COUNTRIES.map(c => (
               <button
@@ -145,24 +147,21 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
                 onClick={() => { if (c.enabled) { setSelected(c.code); setOpen(false) } }}
                 className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors"
                 style={{
-                  background: c.code === selected && c.enabled ? '#F5F5FF' : '#fff',
+                  background: c.code === selected && c.enabled ? 'var(--accent-soft)' : '#fff',
                   cursor: c.enabled ? 'pointer' : 'default',
                   opacity: c.enabled ? 1 : 0.7,
                 }}
               >
-                <span className="flex items-center gap-2" style={{ color: '#0E0E0C' }}>
+                <span className="flex items-center gap-2" style={{ color: 'var(--ink)' }}>
                   <span>{c.flag}</span>
                   <span>{c.label}</span>
                 </span>
                 {c.code === selected && c.enabled ? (
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : !c.enabled ? (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: '#F5F5F4', color: '#9A9A93' }}
-                  >
+                  <span className="ev-tag">
                     Bientôt disponible
                   </span>
                 ) : null}
@@ -174,8 +173,7 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
 
       <button
         onClick={() => onNext(selected)}
-        className="w-full mt-8 py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-        style={{ background: '#0E0E0C', color: '#fff' }}
+        className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full mt-8"
       >
         Continuer
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -239,33 +237,30 @@ function Step2Company({
   return (
     <div>
       <h1
-        className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        className="ev-display mb-2"
+        style={{ fontSize: 28, color: 'var(--ink)' }}
       >
         Trouvez votre entreprise
       </h1>
-      <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
+      <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
         Entrez votre SIREN ou le nom de votre société.
       </p>
 
       {selected ? (
         // Confirmation card
-        <div
-          className="rounded-xl border p-5 mb-3"
-          style={{ background: '#fff', borderColor: '#E5E5E3' }}
-        >
-          <div className="flex items-start gap-3 pb-4 border-b" style={{ borderColor: '#F5F5F4' }}>
+        <div className="ev-card p-5 mb-3">
+          <div className="flex items-start gap-3 pb-4 border-b" style={{ borderColor: 'var(--line)' }}>
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+              style={{ background: 'var(--ok-soft)', border: '1px solid var(--ok-soft)' }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6l3 3 5-5" stroke="#16A34A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 6l3 3 5-5" stroke="var(--ok)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm" style={{ color: '#0E0E0C' }}>{selected.name}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
+              <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{selected.name}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
                 {[selected.siren_formatted, selected.legal_form, selected.year_created && `Créée en ${selected.year_created}`]
                   .filter(Boolean).join(' · ')}
               </p>
@@ -274,10 +269,10 @@ function Step2Company({
           {selected.address && (
             <div className="flex items-start gap-2 pt-3">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 mt-0.5">
-                <path d="M7 1C4.79 1 3 2.79 3 5c0 3 4 8 4 8s4-5 4-8c0-2.21-1.79-4-4-4Z" stroke="#9A9A93" strokeWidth="1.2" />
-                <circle cx="7" cy="5" r="1.5" stroke="#9A9A93" strokeWidth="1.2" />
+                <path d="M7 1C4.79 1 3 2.79 3 5c0 3 4 8 4 8s4-5 4-8c0-2.21-1.79-4-4-4Z" stroke="var(--ink-3)" strokeWidth="1.2" />
+                <circle cx="7" cy="5" r="1.5" stroke="var(--ink-3)" strokeWidth="1.2" />
               </svg>
-              <p className="text-sm" style={{ color: '#9A9A93' }}>{selected.address}</p>
+              <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{selected.address}</p>
             </div>
           )}
         </div>
@@ -285,12 +280,12 @@ function Step2Company({
         // Search input
         <div className="relative mb-4">
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all"
-            style={{ background: '#fff', borderColor: '#4F46E5' }}
+            className="ev-input"
+            style={{ display: 'flex', alignItems: 'center', gap: 12, borderColor: 'var(--accent)' }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-              <circle cx="7" cy="7" r="5.5" stroke="#9A9A93" strokeWidth="1.3" />
-              <path d="M11 11l3 3" stroke="#9A9A93" strokeWidth="1.3" strokeLinecap="round" />
+              <circle cx="7" cy="7" r="5.5" stroke="var(--ink-3)" strokeWidth="1.3" />
+              <path d="M11 11l3 3" stroke="var(--ink-3)" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
             <input
               ref={inputRef}
@@ -300,35 +295,34 @@ function Step2Company({
               onChange={e => setQuery(e.target.value)}
               placeholder="Nom de société ou SIREN"
               className="flex-1 text-sm outline-none"
-              style={{ background: 'transparent', color: '#0E0E0C' }}
+              style={{ background: 'transparent', color: 'var(--ink)' }}
             />
             {searching && (
-              <div className="w-4 h-4 rounded-full border-2 border-t-[#4F46E5] animate-spin shrink-0" style={{ borderColor: '#E5E5E3', borderTopColor: '#4F46E5' }} />
+              <div className="w-4 h-4 rounded-full border-2 border-t-[var(--accent)] animate-spin shrink-0" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--accent)' }} />
             )}
           </div>
 
           {showDropdown && (
             <div
-              className="absolute left-0 right-0 top-[calc(100%+4px)] rounded-xl border overflow-hidden z-50"
-              style={{ background: '#fff', borderColor: '#E5E5E3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+              className="ev-card absolute left-0 right-0 top-[calc(100%+4px)] overflow-hidden z-50"
             >
               {results.map((c, i) => (
                 <button
                   key={c.siren}
                   onClick={() => handleSelect(c)}
-                  className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-[#FAFAF9]"
-                  style={{ borderBottom: i < results.length - 1 ? '1px solid #F5F5F4' : 'none' }}
+                  className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-[var(--raised)]"
+                  style={{ borderBottom: i < results.length - 1 ? '1px solid var(--line)' : 'none' }}
                 >
                   <div>
-                    <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{c.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
                       {[c.legal_form, c.address.split(',').slice(-2).join(',').trim(), c.year_created && `Créée en ${c.year_created}`]
                         .filter(Boolean).join(' · ')}
                     </p>
                   </div>
                   <span
-                    className="text-xs font-mono shrink-0 ml-4"
-                    style={{ color: '#9A9A93', letterSpacing: '0.05em' }}
+                    className="ev-mono text-xs shrink-0 ml-4"
+                    style={{ color: 'var(--ink-3)' }}
                   >
                     {c.siren_formatted}
                   </span>
@@ -343,7 +337,7 @@ function Step2Company({
         <button
           onClick={handleReset}
           className="text-sm transition-opacity hover:opacity-70 mb-6 block"
-          style={{ color: '#9A9A93' }}
+          style={{ color: 'var(--ink-3)' }}
         >
           Ce n&apos;est pas mon entreprise ?
         </button>
@@ -352,12 +346,7 @@ function Step2Company({
       <button
         onClick={() => selected && onNext(selected)}
         disabled={!selected}
-        className="w-full py-3.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
-        style={{
-          background: selected ? '#0E0E0C' : '#F5F5F4',
-          color: selected ? '#fff' : '#9A9A93',
-          cursor: selected ? 'pointer' : 'default',
-        }}
+        className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full"
       >
         Confirmer cette entreprise
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -391,25 +380,17 @@ function Step3Contact({
   const [phone, setPhone] = useState('')
   const [role, setRole] = useState('dirigeant')
 
-  const inputStyle = {
-    background: '#fff',
-    border: '1px solid #E5E5E3',
-    borderRadius: 10,
-    color: '#0E0E0C',
-    fontSize: 14,
-  }
-
   const canContinue = firstName.trim() && lastName.trim() && phone.trim()
 
   return (
     <div>
       <h1
-        className="font-semibold mb-2"
-        style={{ fontSize: 28, color: '#0E0E0C', letterSpacing: '-0.6px', lineHeight: 1.2 }}
+        className="ev-display mb-2"
+        style={{ fontSize: 28, color: 'var(--ink)' }}
       >
         Qui êtes-vous ?
       </h1>
-      <p className="text-sm mb-6" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
+      <p className="text-sm mb-6" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
         Ces informations permettent au leaser d&apos;identifier le signataire du contrat.
       </p>
 
@@ -417,7 +398,7 @@ function Step3Contact({
         {/* First name + Last name */}
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label className="ev-label">
               Prénom
             </label>
             <input
@@ -425,12 +406,11 @@ function Step3Contact({
               value={firstName}
               onChange={e => setFirstName(e.target.value)}
               placeholder="Camille"
-              className="w-full px-3.5 py-2.5 outline-none text-sm"
-              style={inputStyle}
+              className="ev-input"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label className="ev-label">
               Nom
             </label>
             <input
@@ -438,15 +418,14 @@ function Step3Contact({
               value={lastName}
               onChange={e => setLastName(e.target.value)}
               placeholder="Verdier"
-              className="w-full px-3.5 py-2.5 outline-none text-sm"
-              style={inputStyle}
+              className="ev-input"
             />
           </div>
         </div>
 
         {/* Phone */}
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label className="ev-label">
             Téléphone direct
           </label>
           <input
@@ -454,31 +433,30 @@ function Step3Contact({
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder="06 00 00 00 00"
-            className="w-full px-3.5 py-2.5 outline-none text-sm"
-            style={inputStyle}
+            className="ev-input"
           />
         </div>
 
         {/* Email (read-only) */}
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label className="ev-label">
             Email professionnel
           </label>
           <div
-            className="flex items-center px-3.5 py-2.5"
-            style={{ ...inputStyle, background: '#FAFAF9' }}
+            className="ev-input"
+            style={{ display: 'flex', alignItems: 'center', background: 'var(--raised)' }}
           >
-            <span className="flex-1 text-sm" style={{ color: '#9A9A93' }}>{userEmail}</span>
+            <span className="flex-1 text-sm" style={{ color: 'var(--ink-3)' }}>{userEmail}</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="2" y="5" width="10" height="8" rx="1.5" stroke="#D1D1CE" strokeWidth="1.2" />
-              <path d="M5 5V3.5a2 2 0 114 0V5" stroke="#D1D1CE" strokeWidth="1.2" strokeLinecap="round" />
+              <rect x="2" y="5" width="10" height="8" rx="1.5" stroke="var(--line-strong)" strokeWidth="1.2" />
+              <path d="M5 5V3.5a2 2 0 114 0V5" stroke="var(--line-strong)" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
 
         {/* Role selector */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label className="ev-label">
             Votre rôle dans l&apos;entreprise
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -486,22 +464,22 @@ function Step3Contact({
               <button
                 key={r.key}
                 onClick={() => setRole(r.key)}
-                className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm transition-all text-left"
+                className={`ev-card ${role === r.key ? 'ev-card--selected' : 'ev-card--interactive'} flex items-center gap-2.5 px-3.5 py-3 text-sm text-left`}
                 style={{
-                  background: role === r.key ? '#F0F0FF' : '#fff',
-                  borderColor: role === r.key ? '#4F46E5' : '#E5E5E3',
-                  color: '#0E0E0C',
+                  background: role === r.key ? 'var(--accent-soft)' : undefined,
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
                 }}
               >
                 <div
                   className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                  style={{ borderColor: role === r.key ? '#4F46E5' : '#D1D1CE' }}
+                  style={{ borderColor: role === r.key ? 'var(--accent)' : 'var(--line-strong)' }}
                 >
                   {role === r.key && (
-                    <div className="w-2 h-2 rounded-full" style={{ background: '#4F46E5' }} />
+                    <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
                   )}
                 </div>
-                <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{r.label}</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{r.label}</span>
               </button>
             ))}
           </div>
@@ -511,8 +489,7 @@ function Step3Contact({
       <button
         onClick={() => canContinue && onNext({ first_name: firstName, last_name: lastName, phone, role })}
         disabled={!canContinue}
-        className="w-full mt-6 py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40"
-        style={{ background: '#0E0E0C', color: '#fff' }}
+        className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full mt-6"
       >
         Continuer
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -526,11 +503,11 @@ function Step3Contact({
 // ─── Step 4: Score Everlease ──────────────────────────────────────────────────────
 
 const GRADE_COLORS: Record<string, string> = {
-  A: '#16A34A',
-  'B+': '#65A30D',
-  B: '#CA8A04',
-  'C+': '#EA580C',
-  C: '#DC2626',
+  A: 'var(--ok)',
+  'B+': 'var(--ok)',
+  B: 'var(--warning)',
+  'C+': 'var(--warning)',
+  C: 'var(--danger)',
 }
 
 const GRADE_POSITION: Record<string, number> = {
@@ -542,18 +519,18 @@ const GRADE_POSITION: Record<string, number> = {
 }
 
 function ScoreCircle({ grade, score }: { grade: string; score: number }) {
-  const color = GRADE_COLORS[grade] ?? '#9A9A93'
+  const color = GRADE_COLORS[grade] ?? 'var(--ink-3)'
   return (
     <div className="flex flex-col items-center mb-4">
       <div
         className="w-36 h-36 rounded-full flex items-center justify-center mb-3"
-        style={{ border: `3px solid ${color}`, background: '#fff' }}
+        style={{ border: '3px solid var(--line)', background: 'var(--surface)' }}
       >
-        <span style={{ fontSize: 48, fontWeight: 700, color, letterSpacing: '-1px', lineHeight: 1 }}>
+        <span className="ev-display" style={{ fontSize: 48, color, lineHeight: 1 }}>
           {grade}
         </span>
       </div>
-      <p className="text-xs" style={{ color: '#9A9A93' }}>
+      <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
         Score Everlease · Basé sur vos données légales
       </p>
     </div>
@@ -564,23 +541,24 @@ function ScoreBar({ score }: { score: number }) {
   const pos = Math.max(2, Math.min(98, score))
   return (
     <div className="mt-4 mb-1">
-      <div className="relative h-2 rounded-full overflow-visible" style={{
-        background: 'linear-gradient(to right, #DC2626 0%, #EF4444 15%, #F97316 30%, #EAB308 50%, #84CC16 68%, #22C55E 82%, #16A34A 100%)'
-      }}>
+      <div className="relative h-2 rounded-full overflow-visible" style={{ background: 'var(--line)' }}>
+        <div
+          className="absolute left-0 top-0 h-full rounded-full transition-all"
+          style={{ width: `${pos}%`, background: 'var(--accent)' }}
+        />
         <div
           className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-all"
           style={{
             left: `${pos}%`,
             transform: 'translate(-50%, -50%)',
             background: '#fff',
-            borderColor: '#0E0E0C',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+            borderColor: 'var(--ink)',
           }}
         />
       </div>
       <div className="flex justify-between mt-3">
         {['D', 'C', 'B', 'A', 'A+'].map(g => (
-          <span key={g} className="text-xs" style={{ color: '#9A9A93' }}>{g}</span>
+          <span key={g} className="text-xs" style={{ color: 'var(--ink-3)' }}>{g}</span>
         ))}
       </div>
     </div>
@@ -594,23 +572,20 @@ function UnlockItem({ label, locked, badge }: { label: string; locked?: boolean;
         <div
           className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
           style={{
-            background: locked ? '#F5F5F4' : '#F0FDF4',
-            border: locked ? '1px solid #E5E5E3' : '1px solid #BBF7D0',
+            background: locked ? 'var(--raised)' : 'var(--ok-soft)',
+            border: locked ? '1px solid var(--line)' : '1px solid var(--ok-soft)',
           }}
         >
           {!locked && (
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 5l2.5 2.5 4-4" stroke="#16A34A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 5l2.5 2.5 4-4" stroke="var(--ok)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </div>
-        <span className="text-sm" style={{ color: locked ? '#9A9A93' : '#0E0E0C' }}>{label}</span>
+        <span className="text-sm" style={{ color: locked ? 'var(--ink-3)' : 'var(--ink)' }}>{label}</span>
       </div>
       {badge && (
-        <span
-          className="text-xs px-2 py-0.5 rounded-full ml-2"
-          style={{ background: '#F5F5F4', color: '#9A9A93' }}
-        >
+        <span className="ev-tag ml-2">
           {badge}
         </span>
       )}
@@ -705,14 +680,14 @@ function Step4Score({
 
   const grade = score?.grade ?? 'B'
   const scoreVal = score?.score ?? 0
-  const gradeColor = GRADE_COLORS[grade] ?? '#9A9A93'
+  const gradeColor = GRADE_COLORS[grade] ?? 'var(--ink-3)'
   const isHighGrade = grade === 'A' || grade === 'B+'
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
-        <p className="text-sm" style={{ color: '#9A9A93' }}>Calcul de votre score Everlease…</p>
+        <div className="w-10 h-10 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
+        <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Calcul de votre score Everlease…</p>
       </div>
     )
   }
@@ -720,8 +695,8 @@ function Step4Score({
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm mb-4" style={{ color: '#DC2626' }}>{error}</p>
-        <button onClick={onSkip} className="text-sm underline" style={{ color: '#9A9A93' }}>
+        <p className="text-sm mb-4" style={{ color: 'var(--danger)' }}>{error}</p>
+        <button onClick={onSkip} className="text-sm underline" style={{ color: 'var(--ink-3)' }}>
           Continuer sans score
         </button>
       </div>
@@ -731,28 +706,28 @@ function Step4Score({
   return (
     <div>
       <h1
-        className="font-semibold mb-1"
-        style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px', lineHeight: 1.2 }}
+        className="ev-display mb-1"
+        style={{ fontSize: 26, color: 'var(--ink)' }}
       >
         Votre profil Everlease
       </h1>
-      <p className="text-sm mb-6" style={{ color: '#9A9A93' }}>
+      <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
         Basé sur les données officielles de votre entreprise.
       </p>
 
       {/* Score card */}
-      <div className="rounded-2xl border p-6 mb-5" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
+      <div className="ev-card p-6 mb-5">
         <ScoreCircle grade={grade} score={scoreVal} />
         <ScoreBar score={scoreVal} />
       </div>
 
       {/* What your score unlocks */}
       <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9A9A93', letterSpacing: '0.08em' }}>
+        <p className="ev-kicker mb-3">
           Ce que votre score débloque
         </p>
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-          <div className="px-4 divide-y divide-[#F5F5F4]">
+        <div className="ev-card overflow-hidden">
+          <div className="px-4 divide-y divide-[var(--line)]">
             <UnlockItem label="Accès à 3 leasers partenaires" />
             <UnlockItem label={isHighGrade ? 'Financement jusqu\'à 150 000 €' : 'Financement jusqu\'à 50 000 €'} />
             {!isHighGrade && (
@@ -770,21 +745,18 @@ function Step4Score({
 
       {/* Upload bilans */}
       {!bilansUploaded && (
-        <div
-          className="flex items-start gap-4 p-4 rounded-xl mb-6"
-          style={{ background: '#F5F5F4', border: '1px solid #E5E5E3' }}
-        >
+        <div className="ev-card ev-card--dashed flex items-start gap-4 p-4 mb-6">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: '#fff', border: '1px solid #E5E5E3' }}
+            className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: 'var(--raised)', border: '1px solid var(--line)' }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="#9A9A93" strokeWidth="1.2" strokeLinejoin="round" />
-              <path d="M10 2v4h4" stroke="#9A9A93" strokeWidth="1.2" strokeLinejoin="round" />
+              <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="var(--ink-3)" strokeWidth="1.2" strokeLinejoin="round" />
+              <path d="M10 2v4h4" stroke="var(--ink-3)" strokeWidth="1.2" strokeLinejoin="round" />
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm mb-2" style={{ color: '#0E0E0C', lineHeight: 1.5 }}>
+            <p className="text-sm mb-2" style={{ color: 'var(--ink)', lineHeight: 1.5 }}>
               Uploadez vos <strong>2 derniers bilans</strong> pour améliorer votre score et accéder à plus d&apos;offres
             </p>
             <input
@@ -798,12 +770,11 @@ function Step4Score({
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-all hover:border-[#0E0E0C] disabled:opacity-50"
-              style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
+              className="ev-btn ev-btn--ghost ev-btn--sm"
             >
               {uploading ? (
                 <>
-                  <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
                   Import en cours…
                 </>
               ) : (
@@ -820,14 +791,11 @@ function Step4Score({
       )}
 
       {bilansUploaded && (
-        <div
-          className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6"
-          style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
-        >
+        <div className="ev-alert ev-alert--ok flex items-center gap-2 mb-6">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7l3.5 3.5L12 4" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2 7l3.5 3.5L12 4" stroke="var(--ok)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="text-sm font-medium" style={{ color: '#15803D' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--ok)' }}>
             Bilans importés — score mis à jour
           </p>
         </div>
@@ -836,8 +804,7 @@ function Step4Score({
       {/* CTA */}
       <button
         onClick={onNext}
-        className="w-full py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 mb-3"
-        style={{ background: '#0E0E0C', color: '#fff' }}
+        className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full mb-3"
       >
         {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à Everlease'}
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -849,7 +816,7 @@ function Step4Score({
         <button
           onClick={onSkip}
           className="w-full text-center text-sm transition-opacity hover:opacity-70"
-          style={{ color: '#9A9A93' }}
+          style={{ color: 'var(--ink-3)' }}
         >
           Je complèterai mon profil plus tard
         </button>
@@ -932,23 +899,23 @@ export default function OnboardingPage() {
 
   if (!initialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF9' }}>
-        <div className="w-8 h-8 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E3', borderTopColor: '#0E0E0C' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--paper)' }}>
+        <div className="w-8 h-8 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FAFAF9' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--paper)' }}>
       {/* Header */}
       <div className="px-6 py-5 shrink-0">
         <Link href="/" style={{ display: 'inline-block' }}>
           <div className="flex items-center gap-2">
             <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-              <rect width="100" height="100" rx="23" fill="#0E0E0C" />
-              <path transform="translate(13 9) scale(0.61)" d="M16 100 A44 44 0 0 1 104 100 L67.86 100 L78.29 86.72 Q82 82 77.15 78.47 L64.85 69.53 Q60 66 55.15 69.53 L42.85 78.47 Q38 82 41.71 86.72 L52.14 100 Z" fill="#FAFAF9" />
+              <rect width="100" height="100" rx="23" fill="var(--ink)" />
+              <path transform="translate(13 9) scale(0.61)" d="M16 100 A44 44 0 0 1 104 100 L67.86 100 L78.29 86.72 Q82 82 77.15 78.47 L64.85 69.53 Q60 66 55.15 69.53 L42.85 78.47 Q38 82 41.71 86.72 L52.14 100 Z" fill="var(--paper)" />
             </svg>
-            <span style={{ fontSize: 20, fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.03em' }}>everlease</span>
+            <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.03em' }}>everlease</span>
           </div>
         </Link>
       </div>
@@ -960,8 +927,7 @@ export default function OnboardingPage() {
           {step > 1 && !alreadyCompleted && (
             <button
               onClick={() => setStep(s => (s - 1) as 1 | 2 | 3 | 4)}
-              className="flex items-center gap-1.5 text-sm mb-6 transition-opacity hover:opacity-70"
-              style={{ color: '#9A9A93' }}
+              className="ev-btn ev-btn--ghost ev-btn--sm mb-6"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

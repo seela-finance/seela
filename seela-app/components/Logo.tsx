@@ -6,7 +6,7 @@ export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   return (
     <div className="flex items-center gap-2.5">
       <EverleaseIcon size={s[0]} />
-      <span style={{ fontSize: s[1], fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.03em', lineHeight: 1 }}>
+      <span style={{ fontSize: s[1], fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1 }}>
         everlease
       </span>
     </div>

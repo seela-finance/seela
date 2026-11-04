@@ -9,7 +9,7 @@ function Logo({ size = 20 }: { size?: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: 'var(--text)', display: 'grid', placeItems: 'center' }}>
-        <EverleaseMark size={size + 4} color="#FAFAF9" />
+        <EverleaseMark size={size + 4} color="var(--paper)" />
       </div>
       <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--text)' }}>everlease</div>
     </div>
@@ -50,7 +50,7 @@ export default function MarketingFooter() {
         </div>
         <div className="mk-footer__bottom">
           <span>© 2026 Everlease SAS — Tous droits réservés.</span>
-          <span>Conçu et hébergé en France 🇫🇷</span>
+          <span>Sous réserve d&apos;acceptation du dossier par le financeur.</span>
         </div>
       </div>
     </footer>
