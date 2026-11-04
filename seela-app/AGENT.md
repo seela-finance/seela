@@ -15,7 +15,7 @@ déploiement).
    Ignorer les issues `human` (actions réservées à Louis) et `needs-info`.
    Une seule issue à la fois.
 2. **La réserver** : ajouter le label `agent:in-progress` et commenter "Je prends".
-3. **Brancher** depuis `main` à jour : `agent/<numéro-issue>-<slug-court>`.
+3. **Brancher** depuis `develop` à jour : `agent/<numéro-issue>-<slug-court>`.
 4. **Lire avant d'écrire** : les fichiers cités dans l'issue, les pages voisines, `lib/`.
    Reproduire les conventions existantes (voir §4).
 5. **Développer** le plus petit changement qui remplit les critères d'acceptation.
@@ -25,12 +25,15 @@ déploiement).
    ```bash
    npm run check        # typecheck + lint + build
    npm run test:e2e     # tests Playwright
+   npm run test:staging # parcours connectés sur staging (voir §6)
    ```
    Tout doit être vert. Ne jamais désactiver, `skip` ou affaiblir un test existant pour passer.
-7. **Ouvrir une PR** vers `main` (format §5), liée à l'issue (`Closes #N`).
-8. **Vérifier la preview Vercel** de la PR : parcourir la fonctionnalité, joindre
-   1 à 3 captures (desktop + mobile si UI) en commentaire de PR.
-9. **Retirer** `agent:in-progress`, ajouter `agent:done` sur l'issue.
+7. **Ouvrir une PR** vers `develop` (format §5), liée à l'issue (`Refs #N` : `Closes` ne ferme
+   l'issue qu'à l'arrivée sur `main`).
+8. **Vérifier les captures** de `test-results/screens/` (desktop et mobile) : parcourir ce qui a
+   changé à l'écran, compléter `e2e/flows/` si le parcours n'y est pas.
+9. **Merger dans `develop`** quand la CI est verte (§2).
+10. **Retirer** `agent:in-progress`, ajouter `agent:done` sur l'issue.
 
 ### Si bloqué
 Critère ambigu, info manquante, choix produit/design non tranché, test impossible
@@ -42,15 +45,26 @@ retirer `agent:in-progress`. Ne pas deviner.
 
 ## 2. Niveaux de risque et merge
 
+Circuit validé par Louis le 04/11/2026 :
+
+- **`develop`** : l'agent y merge ses PR quand la CI est verte, sans attendre. Rien n'y atteint la prod.
+  Sa preview Vercel est branchée sur le staging.
+- **`main`** : la prod. Une fois par jour, Louis teste `develop`, puis l'agent ouvre **une** PR
+  `develop` → `main` avec le récapitulatif et la liste de ce qu'il reste à juger à l'œil.
+  **Seul l'accord explicite de Louis pour cette PR permet de la merger.**
+- **Migration SQL** : l'agent ne l'exécute jamais. Une PR qui en contient une attend que Louis
+  l'ait appliquée sur staging avant d'entrer dans `develop`, et le récapitulatif quotidien rappelle
+  de l'appliquer en prod avant le merge dans `main`.
+
 Chaque issue porte un label de risque. En l'absence de label → traiter comme `risk:high`.
 
-| Label | Exemples | Merge |
+| Label | Exemples | Revue |
 |---|---|---|
-| `risk:low` | pages marketing/SEO, contenu, copy, styles, composants UI sans logique métier | **Auto-merge** autorisé quand la CI est verte |
-| `risk:high` | tout le reste, et **obligatoirement** les zones ci-dessous | **PR seulement** — Louis valide et merge |
+| `risk:low` | pages marketing/SEO, contenu, copy, styles, composants UI sans logique métier | Récapitulatif quotidien |
+| `risk:high` | tout le reste, et **obligatoirement** les zones ci-dessous | Signalé en tête du récapitulatif : Louis le regarde en priorité avant le merge dans `main` |
 
 Zones **toujours `risk:high`**, quel que soit le label de l'issue (si la PR y touche,
-ne pas auto-merger et le signaler en tête de PR) :
+le signaler en tête de PR) :
 
 - `supabase/` et tout SQL, schéma, RLS, migration
 - `proxy.ts`, `app/auth/`, `lib/supabase/` (auth, sessions, protection des routes)
@@ -62,7 +76,8 @@ ne pas auto-merger et le signaler en tête de PR) :
 
 ## 3. Interdits
 
-- Pousser sur `main`, forcer un push, réécrire l'historique.
+- Pousser sur `main` ou `develop` hors PR, merger dans `main` sans l'accord de Louis, forcer un push, réécrire l'historique.
+- Lancer des tests connectés ailleurs que sur le staging, ou donner le rôle admin à `test@everlease.fr`.
 - Toucher à la base de **production** Supabase, ou exécuter du SQL où que ce soit.
   Toute évolution de schéma = un **nouveau** fichier `supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`
   dans la PR (jamais de modification d'une migration existante). Louis l'applique d'abord sur staging,
@@ -117,6 +132,12 @@ risk:low | risk:high — <raison si high>
 - Les tests `e2e/authenticated/` nécessitent `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` :
   un compte du projet Supabase **de staging**, onboarding terminé. Jamais un vrai client.
 - `PLAYWRIGHT_BASE_URL=<url preview Vercel> npm run test:e2e` pour tester une preview.
+- **Parcours connectés** (`e2e/flows/`, `npm run test:staging`) : lancent l'app en local sur le Supabase
+  de staging, avec `.env.staging.local` (ignoré par git) ; en CI, avec le secret
+  `STAGING_SUPABASE_SERVICE_ROLE_KEY`. Chaque run crée ses comptes (client, admin, autre client) et son
+  leaser de test, puis les supprime. L'analyse IA est simulée, et les clés Resend, Anthropic, Pappers et
+  Slack sont vidées : aucun email ni appel payant. `e2e/support/staging.ts` refuse toute autre base.
+  Captures desktop et mobile dans `test-results/screens/` (artefact `captures-parcours` en CI).
 - `SUPABASE_SERVICE_ROLE_KEY` : clé service role, lue **uniquement** par `lib/supabase/admin.ts`
   (`import 'server-only'`). Requise par les routes admin ; à définir dans Vercel (prod + preview),
   jamais préfixée `NEXT_PUBLIC_`, jamais importée depuis un composant client.
