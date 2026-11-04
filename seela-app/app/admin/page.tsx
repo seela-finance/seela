@@ -40,7 +40,7 @@ function loadRequests() {
   return createAdminClient()
     .from('financing_requests')
     .select(`
-      id, status, total_amount, duration_months, created_at, updated_at,
+      id, user_id, status, total_amount, duration_months, created_at, updated_at,
       profiles ( company_name, siren ),
       offers ( leaser_name, monthly_payment, duration_months, selected, confirmed_at, seela_validated_at, leaser_confirmed_at )
     `)
@@ -162,7 +162,13 @@ export default async function AdminRequestsPage({
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm max-w-[220px]">
-                      <span className="block truncate" style={{ color: '#0E0E0C' }}>{r.companyName ?? '—'}</span>
+                      {r.userId ? (
+                        <Link href={`/admin/societes/${r.userId}`} className="block truncate underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>
+                          {r.companyName ?? 'Société sans nom'}
+                        </Link>
+                      ) : (
+                        <span className="block truncate" style={{ color: '#0E0E0C' }}>{r.companyName ?? '—'}</span>
+                      )}
                       {r.siren && <span className="block text-xs" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>{r.siren}</span>}
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.amount)}</td>
