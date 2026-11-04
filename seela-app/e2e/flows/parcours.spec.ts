@@ -26,6 +26,25 @@ async function pageAs(browser: Browser, role: Role) {
   return context.newPage()
 }
 
+/** À 375 px, rien ne dépasse de l'écran, sauf dans une zone qui défile (tableaux) ou un menu refermé. */
+async function expectNoOverflow(page: Page, name: string) {
+  const offenders = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth
+    const scrolls = (el: Element) => ['auto', 'scroll'].includes(getComputedStyle(el).overflowX)
+    return [...document.querySelectorAll('body *')]
+      .filter(el => {
+        const box = el.getBoundingClientRect()
+        if (box.width === 0 || box.height === 0 || box.right <= width + 1) return false
+        if (getComputedStyle(el).visibility === 'hidden') return false
+        for (let p = el.parentElement; p; p = p.parentElement) if (scrolls(p)) return false
+        return true
+      })
+      .slice(0, 8)
+      .map(el => `${el.tagName.toLowerCase()} « ${(el.textContent ?? '').trim().slice(0, 40)} »`)
+  })
+  expect(offenders, `Débordement à 375 px sur ${name}`).toEqual([])
+}
+
 /** Capture desktop et mobile (375 px) : la preuve visuelle jointe aux PR et à la session de test de Louis. */
 async function shot(page: Page, name: string) {
   mkdirSync(SCREENS, { recursive: true })
@@ -33,6 +52,7 @@ async function shot(page: Page, name: string) {
   const size = page.viewportSize()
   await page.setViewportSize({ width: 375, height: 812 })
   await page.screenshot({ path: `${SCREENS}/${name}-mobile.png`, fullPage: true })
+  await expectNoOverflow(page, name)
   if (size) await page.setViewportSize(size)
 }
 
@@ -138,6 +158,34 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
     await expect(admin.locator(`a[href="/admin/dossiers/${requestId}"]`).first()).toBeVisible()
     await shot(admin, '09-admin-fiche-societe')
   })
+})
+
+test('à 375 px, chaque page tient dans l’écran et le menu s’ouvre', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const client = await pageAs(browser, 'client')
+  const admin = await pageAs(browser, 'admin')
+
+  for (const [page, path, name] of [
+    [client, '/app/dashboard', '10-dashboard'],
+    [client, '/app/offres', '11-offres-liste'],
+    [client, '/app/contrats', '12-contrats-liste'],
+    [admin, '/admin', '13-admin-dossiers'],
+    [admin, `/admin/societes?q=${run.runId}`, '14-admin-recherche'],
+  ] as const) {
+    await page.goto(path)
+    await shot(page, name)
+  }
+
+  await client.setViewportSize({ width: 375, height: 812 })
+  await client.goto('/app/dashboard')
+  await client.getByRole('button', { name: 'Ouvrir le menu' }).click()
+  await expect(client.getByRole('button', { name: 'Se déconnecter' })).toBeVisible()
+  await expect(async () => expect((await client.locator('aside').boundingBox())?.x).toBe(0)).toPass() // fin de l'animation
+  await shot(client, '15-menu-ouvert')
+  await client.locator('aside').getByRole('link', { name: 'Offres' }).click()
+  await expect(client).toHaveURL(/\/app\/offres/)
+  await expect(client.getByRole('button', { name: 'Se déconnecter' })).toBeHidden()
 })
 
 test('un autre client ne voit ni ne modifie le dossier, et le back-office lui répond 404', async ({ browser }) => {

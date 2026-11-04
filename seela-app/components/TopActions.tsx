@@ -2,7 +2,7 @@
 
 export default function TopActions() {
   return (
-    <div className="ml-auto flex items-center gap-0.5">
+    <div className="ml-auto hidden sm:flex items-center gap-0.5">
       <button
         className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
         style={{ color: '#9A9A93' }}

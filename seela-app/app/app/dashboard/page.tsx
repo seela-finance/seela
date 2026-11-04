@@ -48,7 +48,7 @@ export default async function DashboardPage() {
   return (
     <div>
       {/* Top nav */}
-      <div className="h-12 flex items-center px-6 border-b shrink-0" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+      <div className="h-12 flex items-center px-4 sm:px-6 border-b whitespace-nowrap overflow-hidden shrink-0" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
         <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Tableau de bord</span>
         <TopActions />
       </div>
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -155,7 +155,8 @@ export default async function DashboardPage() {
               </span>
             </div>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3', borderRadius: 12 }}>
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px]">
                 <thead>
                   <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
                     {REQUESTS_TABLE_HEADERS.map((h, i) => (
@@ -171,6 +172,7 @@ export default async function DashboardPage() {
                 </thead>
                 <RequestsTable requests={allRequests} />
               </table>
+              </div>
             </div>
           </div>
         )}

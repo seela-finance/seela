@@ -31,3 +31,16 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Contenu à côté du menu : décalé par le menu fixe, ou par la barre du haut sous 768 px (components/ResponsiveNav.tsx) */
+.app-main {
+  min-width: 0;
+  padding-top: 48px;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    margin-left: 220px;
+    padding-top: 0;
+  }
+}

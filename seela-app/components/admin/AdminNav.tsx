@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '../Logo'
+import ResponsiveNav from '../ResponsiveNav'
 import { createClient } from '@/lib/supabase/client'
 
 // Les sections sans href arrivent avec les issues suivantes du Lot 3
@@ -23,10 +24,7 @@ export default function AdminNav({ name, email }: { name: string; email: string 
   }
 
   return (
-    <aside
-      className="fixed left-0 top-0 h-screen flex flex-col z-40"
-      style={{ width: 220, background: '#FFFFFF', borderRight: '1px solid #E5E5E3' }}
-    >
+    <ResponsiveNav brand={<Link href="/admin"><Logo size="sm" /></Link>}>
       <div className="px-4 h-12 flex items-center gap-2 shrink-0" style={{ borderBottom: '1px solid #E5E5E3' }}>
         <Link href="/admin">
           <Logo size="sm" />
@@ -80,6 +78,6 @@ export default function AdminNav({ name, email }: { name: string; email: string 
           Se déconnecter
         </button>
       </div>
-    </aside>
+    </ResponsiveNav>
   )
 }

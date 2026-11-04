@@ -141,7 +141,7 @@ export default function SouscrireCard({
   }
 
   return (
-    <div className="rounded-xl border p-5 sticky top-6" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
+    <div className="rounded-xl border p-5 lg:sticky lg:top-6" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
       <h2 className="font-semibold text-sm mb-0.5" style={{ color: '#0E0E0C' }}>Souscrire à cette offre</h2>
       <p className="text-xs mb-5" style={{ color: '#9A9A93' }}>
         Confirmation par le leaser sous {leaserDelai}h ouvrées

@@ -86,7 +86,8 @@ function RequestTable({
   if (requests.length === 0) return null
   return (
     <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E5E3' }}>
-      <table className="w-full">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[560px]">
         <thead>
           <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
             {TABLE_HEADERS.map((h, i) => (
@@ -142,6 +143,7 @@ function RequestTable({
           })}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
@@ -279,12 +281,12 @@ export default async function OffresPage() {
 
   return (
     <div>
-      <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+      <div className="h-12 flex items-center px-4 sm:px-6 border-b whitespace-nowrap overflow-hidden" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
         <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Offres</span>
         <TopActions />
       </div>
 
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-semibold mb-0.5" style={{ fontSize: 24, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
