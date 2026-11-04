@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { OS, RS } from '@/lib/status'
 import { transitionRequest } from '@/lib/transitions'
+import { companyAgeMonths } from '@/lib/company-age'
 
 type LineItemRow = { category: string | null; selected: boolean }
 type LeaserRaw = {
@@ -72,15 +73,12 @@ export async function runMatching(supabase: SupabaseClient, requestId: string): 
   // 3. Get user profile for ancienneté
   const { data: profile } = await supabase
     .from('profiles')
-    .select('age_bracket, seela_score')
+    .select('date_creation, age_bracket, seela_score')
     .eq('id', finReq.user_id)
     .single()
 
-  // Map age_bracket → months (default 60 = most permissive if unknown)
-  let ancienneteMois = 60
-  if (profile?.age_bracket === '< 2 ans') ancienneteMois = 0
-  else if (profile?.age_bracket === '2 – 5 ans') ancienneteMois = 24
-  else if (profile?.age_bracket === '> 5 ans') ancienneteMois = 60
+  // Ancienneté réelle (année de création), jamais supposée : inconnue = 0 mois
+  const ancienneteMois = companyAgeMonths(profile)
 
   const userScore: number = (profile as { seela_score?: number | null })?.seela_score ?? 50
 

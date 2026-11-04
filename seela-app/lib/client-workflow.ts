@@ -6,6 +6,7 @@ import { TransitionError } from '@/lib/transitions'
 
 export const DURATIONS = [24, 36, 48, 60] as const
 export const PERIODICITES = ['mensuelle', 'trimestrielle', 'annuelle'] as const
+export const DOCUMENT_TYPES = ['devis', 'facture'] as const
 
 export type SubmitLine = {
   description: string | null
@@ -19,6 +20,8 @@ export type SubmitPayload = {
   lines: SubmitLine[]
   durationMonths: (typeof DURATIONS)[number]
   periodicite: (typeof PERIODICITES)[number]
+  /** Type confirmé par le client (corrigé si l'IA a détecté l'autre) ; null = garder celui du brouillon */
+  documentType: (typeof DOCUMENT_TYPES)[number] | null
   notes: string | null
   meta: {
     supplier_name: string | null
@@ -68,6 +71,7 @@ export function parseSubmitPayload(body: unknown): SubmitPayload {
     lines,
     durationMonths,
     periodicite,
+    documentType: DOCUMENT_TYPES.find(t => t === b.documentType) ?? null,
     notes: text(b.notes, 2000),
     meta: {
       supplier_name: text(meta.supplier_name),
@@ -123,6 +127,8 @@ export async function submitRequest(store: ClientStore, userId: string, requestI
       total_amount: total,
       duration_months: payload.durationMonths,
       periodicite: payload.periodicite,
+      // Le matching en déduit leasing (devis) ou lease-back (facture)
+      ...(payload.documentType ? { document_type: payload.documentType } : {}),
       notes: payload.notes,
       ...payload.meta,
     })

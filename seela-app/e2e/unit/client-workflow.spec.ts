@@ -87,6 +87,20 @@ test('soumission : statut, total et lignes ; un 2e appel ne réécrit rien', asy
   expect(getLines()).toHaveLength(2)
 })
 
+test('type de document : corrigé par le client, sinon celui du brouillon est gardé', async () => {
+  expect(parseSubmitPayload(body({ documentType: 'facture' })).documentType).toBe('facture')
+  expect(parseSubmitPayload(body({ documentType: 'bon de commande' })).documentType).toBeNull()
+  expect(parseSubmitPayload(body()).documentType).toBeNull()
+
+  const corrected = store()
+  await submitRequest(corrected.s, USER, 'r1', parseSubmitPayload(body({ documentType: 'facture' })))
+  expect(corrected.request.fields).toMatchObject({ document_type: 'facture' })
+
+  const kept = store()
+  await submitRequest(kept.s, USER, 'r1', parseSubmitPayload(body()))
+  expect(kept.request.fields).not.toHaveProperty('document_type')
+})
+
 test('soumission refusée : dossier d’un autre client, montant nul', async () => {
   await expect(submitRequest(store({ owner: 'u2' }).s, USER, 'r1', parseSubmitPayload(body()))).rejects.toMatchObject({ status: 404 })
   await expect(submitRequest(store().s, USER, 'r1', parseSubmitPayload(body({ lines: [{ total_price: 0 }] })))).rejects.toMatchObject({ status: 400 })

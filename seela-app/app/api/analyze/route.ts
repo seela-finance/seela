@@ -15,12 +15,14 @@ EXCLURE impérativement des "items" : éco-participations, remises, avoirs, serv
 Pour chaque ligne retenue dans "items" : description (string), quantité (number), prix unitaire HT (number), prix total HT (number), category (string parmi : "Informatique" | "Mobilier" | "Véhicule" | "Médical" | "Industrie" | "Téléphonie" | "Audiovisuel" | "Autre").
 
 Extrait aussi :
+- "document_kind" : "devis" si le document est un devis, une proposition commerciale ou une facture pro forma ; "facture" si c'est une facture définitive ; null si tu ne peux pas trancher (avoir, bon de commande, document illisible)
 - "supplier" : l'entreprise émettrice du document (nom, adresse, numéro SIREN/SIRET si présent)
 - "document_number" : le numéro de devis ou de facture (ex: DEV-2026-0142, FA-2024-00891)
 - "document_date" : la date d'émission au format YYYY-MM-DD
 
 Réponds UNIQUEMENT en JSON valide avec exactement ce format :
 {
+  "document_kind": "devis",
   "supplier": { "name": "", "address": "", "siren": "" },
   "document_number": "",
   "document_date": "",

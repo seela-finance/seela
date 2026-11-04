@@ -368,16 +368,22 @@ function Step1Upload({
 
 // ─── Step 2: AI Analysis ──────────────────────────────────────────────────────
 
+type DocumentType = 'devis' | 'facture'
+
 function Step2Lines({
   requestId,
   documentUrl,
   mimeType,
+  documentType,
+  onDocumentTypeChange,
   onBack,
   onNext,
 }: {
   requestId: string
   documentUrl: string
   mimeType: string
+  documentType: DocumentType
+  onDocumentTypeChange: (t: DocumentType) => void
   onBack: () => void
   onNext: (items: LineItem[], selected: string[], meta: DocumentMeta) => void
 }) {
@@ -386,6 +392,8 @@ function Step2Lines({
   const [items, setItems] = useState<LineItem[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  // Type lu sur le document par l'IA : s'il contredit le choix de l'étape 1, on le signale
+  const [detectedType, setDetectedType] = useState<DocumentType | null>(null)
   const analyzed = useRef(false)
 
   const [meta, setMeta] = useState<DocumentMeta>({ supplier_name: null, supplier_address: null, supplier_siren: null, document_number: null, document_date: null })
@@ -430,6 +438,7 @@ function Step2Lines({
         document_date: data.document_date ?? null,
       }
       setMeta(parsedMeta)
+      if (data.document_kind === 'devis' || data.document_kind === 'facture') setDetectedType(data.document_kind)
 
       const withIds: LineItem[] = (data.items || []).map((i: Omit<LineItem, 'id'>) => ({ ...i, id: genId() }))
       setItems(withIds)
@@ -468,6 +477,36 @@ function Step2Lines({
       <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
         Sélectionnez les équipements que vous souhaitez financer
       </p>
+
+      {/* Devis = leasing de matériel neuf, facture = lease-back : un mauvais choix fausse les offres */}
+      {!analyzing && detectedType && detectedType !== documentType && (
+        <div role="alert" className="mb-6 p-4 rounded-xl border text-sm" style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E' }}>
+          <p>
+            Ce document ressemble à {detectedType === 'facture' ? 'une facture' : 'un devis'}, alors que vous avez indiqué {documentType === 'facture' ? 'une facture' : 'un devis'}.
+            {' '}{detectedType === 'facture'
+              ? 'Un matériel déjà acheté se finance en lease-back.'
+              : 'Un matériel pas encore acheté se finance en leasing.'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onDocumentTypeChange(detectedType)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: '#92400E', color: '#fff' }}
+            >
+              C&apos;est {detectedType === 'facture' ? 'une facture' : 'un devis'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetectedType(null)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+              style={{ borderColor: '#FDE68A', color: '#92400E' }}
+            >
+              Non, c&apos;est bien {documentType === 'facture' ? 'une facture' : 'un devis'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {analyzing ? (
         <div className="py-16 flex flex-col items-center gap-4">
@@ -757,12 +796,18 @@ function Step4Confirmation({
           })),
           durationMonths: duration,
           periodicite,
+          documentType,
           notes,
           meta,
         }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error ?? 'Erreur lors de la soumission')
+      if (!res.ok) throw new Error(data.error ?? `Erreur lors de la soumission (${res.status})`)
+      // Offres déjà calculées (ou dossier déjà soumis) : directement sur la page du dossier
+      if (data.status === 'already' || (typeof data.offers === 'number' && data.offers > 0)) {
+        router.push(`/app/offres/${requestId}`)
+        return
+      }
       setSubmitted(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la soumission')
@@ -805,10 +850,10 @@ function Step4Confirmation({
           Votre demande est transmise
         </h2>
         <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: '#9A9A93', lineHeight: 1.7 }}>
-          Everlease est en train d&apos;obtenir des offres de financement pour votre {documentType}.
-          Vous serez notifié dès que les offres sont disponibles.
+          Aucune offre automatique ne correspond encore à votre {documentType} : un conseiller Everlease étudie votre dossier
+          et revient vers vous sous 48h ouvrées.
         </p>
-        <p className="text-xs mb-8" style={{ color: '#9A9A93' }}>Délai estimé : 24 à 48h ouvrées</p>
+        <p className="text-xs mb-8" style={{ color: '#9A9A93' }}>Vous retrouverez son avancement dans « Offres ».</p>
         <button
           onClick={() => router.push('/app/offres')}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
@@ -833,6 +878,7 @@ function Step4Confirmation({
       </p>
       <dl className="rounded-xl border divide-y divide-[#E5E5E2] mb-6" style={{ background: '#fff', borderColor: '#E5E5E2' }}>
         {[
+          ['Document', documentType === 'facture' ? 'Facture (lease-back)' : 'Devis (leasing)'],
           ['Lignes financées', String(items.length)],
           ['Montant HT', eur(totalAmount)],
           ['Durée', `${duration} mois`],
@@ -923,6 +969,8 @@ export default function NouveauPage() {
             requestId={requestId}
             documentUrl={documentUrl}
             mimeType={documentMime}
+            documentType={documentType}
+            onDocumentTypeChange={setDocumentType}
             onBack={() => setStep(1)}
             onNext={handleStep2}
           />
