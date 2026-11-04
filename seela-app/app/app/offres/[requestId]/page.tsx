@@ -73,18 +73,18 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+      <div className="h-12 flex items-center px-4 sm:px-6 border-b whitespace-nowrap overflow-hidden gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
         <Link href="/app/offres" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
           Offres
         </Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{ref}</span>
+        <span className="text-sm font-medium truncate min-w-0" style={{ color: '#0E0E0C' }}>{ref}</span>
         <TopActions />
       </div>
 
-      <div className="px-8 py-8 max-w-3xl">
+      <div className="px-4 sm:px-8 py-6 sm:py-8 max-w-3xl">
           {/* Header */}
           <h1 className="font-semibold mb-1" style={{ fontSize: 26, color: '#0E0E0C', letterSpacing: '-0.5px' }}>
             {assetTitle}{extraCount > 0 ? ` et ${extraCount} autre${extraCount > 1 ? 's' : ''}` : ''}
@@ -101,11 +101,12 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                 Votre demande
               </h2>
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
-                  {['Description', 'Qté', 'Prix unit. HT', 'Total HT'].map(h => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: '#9A9A93' }}>{h}</th>
+                  {[['Description', ''], ['Qté', 'hidden sm:table-cell'], ['Prix unit. HT', 'hidden sm:table-cell'], ['Total HT', 'whitespace-nowrap']].map(([h, cls]) => (
+                    <th key={h} className={`px-5 py-3 text-left text-xs font-medium ${cls}`} style={{ color: '#9A9A93' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -117,17 +118,18 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                     style={{ borderColor: '#E5E5E3', background: i % 2 === 0 ? '#fff' : '#FAFAF9' }}
                   >
                     <td className="px-5 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.description ?? '—'}</td>
-                    <td className="px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>{item.quantity ?? '—'}</td>
-                    <td className="px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
+                    <td className="hidden sm:table-cell px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>{item.quantity ?? '—'}</td>
+                    <td className="hidden sm:table-cell px-5 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
                       {item.unit_price != null ? fmt(item.unit_price) : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C' }}>
+                    <td className="px-5 py-3.5 text-sm font-medium whitespace-nowrap" style={{ color: '#0E0E0C' }}>
                       {item.total_price != null ? fmt(item.total_price) : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="px-5 py-3 flex items-center justify-between border-t" style={{ background: '#FAFAF9', borderColor: '#E5E5E3' }}>
               <span className="text-xs" style={{ color: '#9A9A93' }}>
                 {request.duration_months ? `${request.duration_months} mois` : '—'}
@@ -259,7 +261,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                   return (
                     <div
                       key={offer.id}
-                      className="flex items-center gap-4 px-5 py-4 rounded-xl border"
+                      className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-3 px-5 py-4 rounded-xl border"
                       style={{ background: '#fff', borderColor: '#E5E5E3' }}
                     >
                       <div
@@ -268,7 +270,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                       >
                         {leaserInitials(offer.leaser_name)}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-[calc(100%-3.25rem)] sm:min-w-0">
                         <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</p>
                         <p className="text-xs mt-0.5" style={{ color: '#9A9A93' }}>
                           {offer.duration_months} mois{rate ? ` · taux indicatif ${rate}` : ''}
@@ -279,7 +281,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                           </span>
                         )}
                       </div>
-                      <div className="shrink-0 text-right">
+                      <div className="shrink-0 sm:text-right">
                         <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Mensualité</p>
                         <p className="font-semibold text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(offer.monthly_payment)}
@@ -287,7 +289,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                       </div>
                       <Link
                         href={`/app/offres/${requestId}/${offer.id}`}
-                        className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-[#0E0E0C]"
+                        className="shrink-0 ml-auto sm:ml-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-[#0E0E0C]"
                         style={{ borderColor: '#E5E5E3', color: '#0E0E0C', background: 'transparent', borderRadius: 8 }}
                       >
                         Voir le détail

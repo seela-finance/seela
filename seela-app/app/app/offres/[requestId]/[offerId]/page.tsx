@@ -125,16 +125,16 @@ export default async function OfferDetailPage({
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="h-12 flex items-center px-6 border-b gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+      <div className="h-12 flex items-center px-4 sm:px-6 border-b whitespace-nowrap overflow-hidden gap-2" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
         <Link href="/app/offres" className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>Offres</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
         <Link href={`/app/offres/${requestId}`} className="text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>{reqRef}</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</span>
+        <span className="text-sm font-medium truncate min-w-0" style={{ color: '#0E0E0C' }}>{offer.leaser_name}</span>
         <TopActions />
       </div>
 
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-6 sm:py-8">
         {/* Back link */}
         <Link
           href={`/app/offres/${requestId}`}
@@ -147,7 +147,7 @@ export default async function OfferDetailPage({
           Retour aux offres
         </Link>
 
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 items-stretch lg:items-start">
           {/* LEFT COLUMN */}
           <div className="flex-1 min-w-0">
             {/* Leaser header */}
@@ -186,7 +186,7 @@ export default async function OfferDetailPage({
             )}
 
             {/* 4 KPIs */}
-            <div className="grid grid-cols-4 gap-3 mt-6 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 mb-8">
               {[
                 { label: 'Mensualité', value: fmt(monthly) },
                 { label: 'Durée', value: `${duration} mois` },
@@ -227,6 +227,7 @@ export default async function OfferDetailPage({
                   Conditions du contrat
                 </h2>
               </div>
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <tbody>
                   {contractConditions.map((row, i) => (
@@ -241,6 +242,7 @@ export default async function OfferDetailPage({
                   ))}
                 </tbody>
               </table>
+              </div>
             </section>
 
             {/* Échéancier prévisionnel */}
@@ -258,7 +260,8 @@ export default async function OfferDetailPage({
                   {duration} échéances au total
                 </span>
               </div>
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr style={{ background: '#FAFAF9', borderBottom: '1px solid #E5E5E3' }}>
                     {['Échéance', 'Loyer HT', 'TVA (20 %)', 'Total TTC'].map(h => (
@@ -281,11 +284,12 @@ export default async function OfferDetailPage({
                   ))}
                 </tbody>
               </table>
+              </div>
             </section>
           </div>
 
           {/* RIGHT COLUMN — Souscrire */}
-          <div className="shrink-0 w-72">
+          <div className="w-full lg:w-72 lg:shrink-0">
             <SouscrireCard
               offerId={offerId}
               requestId={requestId}

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from './Logo'
+import ResponsiveNav from './ResponsiveNav'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -84,10 +85,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
     .join('')
 
   return (
-    <aside
-      className="fixed left-0 top-0 h-screen flex flex-col z-40"
-      style={{ width: 220, background: '#FFFFFF', borderRight: '1px solid #E5E5E3' }}
-    >
+    <ResponsiveNav brand={<Link href="/app/dashboard"><Logo size="sm" /></Link>}>
       {/* Logo */}
       <div className="px-4 h-12 flex items-center shrink-0" style={{ borderBottom: '1px solid #E5E5E3' }}>
         <Link href="/app/dashboard">
@@ -182,6 +180,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
             className="shrink-0 transition-colors hover:text-[#0E0E0C]"
             style={{ color: '#9A9A93' }}
             title="Se déconnecter"
+            aria-label="Se déconnecter"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M5 7h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -189,6 +188,6 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
           </button>
         </div>
       </div>
-    </aside>
+    </ResponsiveNav>
   )
 }

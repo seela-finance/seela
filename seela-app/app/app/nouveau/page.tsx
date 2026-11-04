@@ -556,12 +556,14 @@ function Step2Lines({
           )}
 
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#E5E5E2' }}>
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b" style={{ background: '#F0F0EE', borderColor: '#E5E5E2' }}>
                   <th className="px-4 py-3 w-10"></th>
-                  {['Description', 'Qté', 'Prix unit. HT', 'Total HT'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: '#9A9A93' }}>{h}</th>
+                  {/* Sur mobile : description et total, l'essentiel pour choisir */}
+                  {[['Description', ''], ['Qté', 'hidden sm:table-cell'], ['Prix unit. HT', 'hidden sm:table-cell'], ['Total HT', 'whitespace-nowrap']].map(([h, cls]) => (
+                    <th key={h} className={`px-4 py-3 text-left text-xs font-semibold ${cls}`} style={{ color: '#9A9A93' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -594,17 +596,18 @@ function Step2Lines({
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.quantity ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>
+                    <td className="hidden sm:table-cell px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.quantity ?? '—'}</td>
+                    <td className="hidden sm:table-cell px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>
                       {item.unit_price != null ? fmt(item.unit_price) : '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C' }}>
+                    <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap" style={{ color: '#0E0E0C' }}>
                       {item.total_price != null ? fmt(item.total_price) : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {selected.size > 0 && (
