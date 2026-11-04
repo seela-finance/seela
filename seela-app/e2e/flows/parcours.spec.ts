@@ -188,6 +188,82 @@ test('à 375 px, chaque page tient dans l’écran et le menu s’ouvre', async 
   await expect(client.getByRole('button', { name: 'Se déconnecter' })).toBeHidden()
 })
 
+test('sans offre : l’admin voit pourquoi, note le dossier et relance le matching après correction', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const longAgo = '2026-01-05T10:00:00Z'
+
+  // Montant sous le minimum du leaser de test : aucune offre de sa part
+  const { data: request, error } = await db
+    .from('financing_requests')
+    .insert({ user_id: run.users.client.id, status: RS.no_match, document_type: 'devis', total_amount: 100, duration_months: 36, created_at: longAgo, updated_at: longAgo })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  const { error: lineError } = await db
+    .from('line_items')
+    .insert({ request_id: request!.id, description: 'Serveur', quantity: 1, unit_price: 12000, total_price: 12000, category: 'Informatique', selected: true })
+  if (lineError) throw new Error(lineError.message)
+  const { data: draft, error: draftError } = await db
+    .from('financing_requests')
+    .insert({ user_id: run.users.client.id, status: RS.draft })
+    .select('id')
+    .single()
+  if (draftError) throw new Error(draftError.message)
+
+  const admin = await pageAs(browser, 'admin')
+  const draftLink = admin.locator(`a[href="/admin/dossiers/${draft!.id}"]`)
+  const noMatchLink = admin.locator(`a[href="/admin/dossiers/${request!.id}"]`)
+  const note = `Note E2E ${run.runId}`
+
+  await test.step('la liste signale le retard et masque les brouillons', async () => {
+    await admin.goto(`/admin?tab=all&q=${encodeURIComponent(run.companyName)}`)
+    await expect(noMatchLink).toBeVisible()
+    await expect(admin.getByRole('row').filter({ has: noMatchLink }).getByText('En retard')).toBeVisible()
+    await expect(draftLink).toHaveCount(0)
+    await shot(admin, '16-admin-retard')
+    await admin.goto(`/admin?tab=all&status=${RS.draft}&q=${encodeURIComponent(run.companyName)}`)
+    await expect(draftLink).toBeVisible()
+  })
+
+  const row = admin.getByRole('listitem').filter({ hasText: run.leaser.name })
+
+  await test.step('la fiche donne la raison, leaser par leaser', async () => {
+    await admin.goto(`/admin/dossiers/${request!.id}`)
+    await expect(row).toContainText(/Montant 100\s€ sous le minimum de 1\s000\s€/)
+    await shot(admin, '17-admin-sans-offre')
+  })
+
+  await test.step('une note interne rejoint l’historique', async () => {
+    await admin.getByLabel('Note interne').fill(note)
+    await admin.getByRole('button', { name: 'Ajouter la note' }).click()
+    await expect(admin.getByText(note)).toBeVisible({ timeout: 30_000 })
+  })
+
+  await test.step('après correction du dossier, la relance crée l’offre', async () => {
+    await db.from('financing_requests').update({ total_amount: 12000 }).eq('id', request!.id)
+    await admin.reload()
+    await expect(row).toContainText('Éligible')
+    admin.once('dialog', dialog => dialog.accept())
+    await admin.getByRole('button', { name: 'Relancer le matching' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: /aucun email envoyé/ })).toBeVisible({ timeout: 30_000 })
+
+    const { data: after } = await db.from('financing_requests').select('status').eq('id', request!.id).single()
+    expect(after?.status).toBe(RS.offers_available)
+    const { data: offers } = await db.from('offers').select('monthly_payment').eq('request_id', request!.id).eq('leaser_name', run.leaser.name)
+    expect(offers?.map(o => Number(o.monthly_payment))).toEqual([372]) // 12 000 € × 0,031
+    await expect(admin.getByRole('button', { name: 'Relancer le matching' })).toHaveCount(0)
+  })
+
+  await test.step('le client voit l’offre, jamais la note', async () => {
+    const client = await pageAs(browser, 'client')
+    await client.goto(`/app/offres/${request!.id}`)
+    await expect(client.getByText(run.leaser.name).first()).toBeVisible()
+    await expect(client.getByText(note)).toHaveCount(0)
+  })
+})
+
 test('un autre client ne voit ni ne modifie le dossier, et le back-office lui répond 404', async ({ browser }) => {
   test.setTimeout(120_000)
   const run = readContext()

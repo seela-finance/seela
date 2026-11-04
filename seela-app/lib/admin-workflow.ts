@@ -42,6 +42,7 @@ export interface WorkflowStore {
   /** Retour arrière après un échec : seulement si la ligne est toujours dans `current`. */
   restoreOffer(id: string, current: string, values: Record<string, unknown>): Promise<void>
   restoreRequest(id: string, current: string, status: string): Promise<void>
+  runMatching(requestId: string): Promise<{ offers: number }>
 }
 
 export type Email = { to: string; subject: string; html: string; cc?: string }
@@ -197,6 +198,39 @@ export async function recordLeaserDecision(deps: WorkflowDeps, offerId: string, 
   await sendLogged(deps, request.id, decision === 'confirmed'
     ? emailClientLeaserConfirmed({ ...common, monthlyPayment: offer.monthly_payment, durationMonths: offer.duration_months })
     : emailClientLeaserRefused(common))
+}
+
+/** Relance possible sur un dossier sans offre, ou resté `submitted` après un matching en échec. */
+export function canRerunMatching(status: string | null | undefined): boolean {
+  return status === RS.no_match || status === RS.submitted
+}
+
+/** Relance le matching (la grille ou le dossier a changé). Les offres existantes sont conservées ; aucun email au client. */
+export async function rerunMatching(deps: WorkflowDeps, requestId: string): Promise<{ offers: number }> {
+  const ctx = await deps.store.loadRequest(requestId)
+  if (!ctx) throw new WorkflowError('Dossier introuvable.')
+  const { request } = ctx
+  if (!canRerunMatching(request.status)) throw new WorkflowError('Le matching ne peut plus être relancé sur ce dossier.')
+
+  // Repasser par `submitted` : un double clic échoue en 409 avant de créer des offres
+  if (request.status === RS.no_match) await deps.store.transitionRequest(request.id, request.status, RS.submitted)
+  const { offers } = await deps.store.runMatching(request.id)
+
+  await deps.log({
+    action: 'Matching relancé',
+    requestId: request.id,
+    before: { request: request.status },
+    after: { offers },
+    note: offers > 0 ? `${offers} nouvelle${offers > 1 ? 's' : ''} offre${offers > 1 ? 's' : ''}` : 'Aucune nouvelle offre',
+  })
+  return { offers }
+}
+
+/** Note interne de l'équipe : dans le journal du dossier, jamais visible par le client. */
+export async function addRequestNote(deps: WorkflowDeps, requestId: string, note: string) {
+  if (!note.trim()) throw new WorkflowError('Écrivez la note avant de l’enregistrer.')
+  if (!(await deps.store.loadRequest(requestId))) throw new WorkflowError('Dossier introuvable.')
+  await deps.log({ action: 'Note interne', requestId, note: note.trim() })
 }
 
 /** Refus du dossier par l'équipe (tout statut avant active). Message au client facultatif. */

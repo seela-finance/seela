@@ -35,9 +35,11 @@ async function transition(
   const label = table === 'offers' ? 'Offre' : 'Dossier'
   if (!allowed) throw new TransitionError(`${label} : transition ${from} → ${to} interdite`, 409)
 
+  // Aucun trigger en base : « dernière action » du back-office lit cette date
+  const touched = table === 'financing_requests' ? { updated_at: new Date().toISOString() } : {}
   const { data, error } = await db
     .from(table)
-    .update({ status: to, ...extra })
+    .update({ status: to, ...touched, ...extra })
     .eq('id', id)
     .eq('status', from)
     .select('id')

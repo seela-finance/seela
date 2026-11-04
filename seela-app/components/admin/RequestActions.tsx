@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import {
   leaserDecisionAction,
   refuseRequestAction,
+  rerunMatchingAction,
   validateOfferAction,
   type ActionState,
 } from '@/app/admin/dossiers/[id]/actions'
@@ -16,6 +17,7 @@ type Props = {
   canValidate: boolean
   awaitingLeaser: boolean
   canRefuse: boolean
+  canRerun: boolean
   offer: { id: string; leaserName: string } | null
   leaserPreview: Preview | null
 }
@@ -42,14 +44,15 @@ function Button({ pending, children, tone = 'dark' }: { pending: boolean; childr
   )
 }
 
-export default function RequestActions({ requestId, canValidate, awaitingLeaser, canRefuse, offer, leaserPreview }: Props) {
+export default function RequestActions({ requestId, canValidate, awaitingLeaser, canRefuse, canRerun, offer, leaserPreview }: Props) {
+  const [rerunState, rerun, rerunning] = useActionState(rerunMatchingAction, null)
   const [validateState, validate, validating] = useActionState(validateOfferAction, null)
   const [decisionState, decide, deciding] = useActionState(leaserDecisionAction, null)
   const [refuseState, refuse, refusing] = useActionState(refuseRequestAction, null)
   const [showRefuse, setShowRefuse] = useState(false)
 
   // Le succès s'affiche hors des formulaires : le changement de statut fait disparaître celui qui vient d'être envoyé
-  const success = [refuseState, decisionState, validateState].find(s => s?.ok)
+  const success = [refuseState, decisionState, validateState, rerunState].find(s => s?.ok)
 
   return (
     <div className="px-4 py-4 space-y-6">
@@ -108,6 +111,22 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
             </button>
           </div>
           <ErrorFeedback state={decisionState} />
+        </form>
+      )}
+
+      {canRerun && (
+        <form
+          action={rerun}
+          onSubmit={e => { if (!window.confirm('Relancer le matching ? Les nouvelles offres seront visibles par le client, sans email.')) e.preventDefault() }}
+          className="space-y-3"
+        >
+          <input type="hidden" name="requestId" value={requestId} />
+          <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Relancer le matching</p>
+          <p className="text-xs" style={{ color: '#9A9A93' }}>
+            À faire après une correction de la grille d&apos;un leaser. Les offres existantes sont conservées.
+          </p>
+          <Button pending={rerunning} tone="light">Relancer le matching</Button>
+          <ErrorFeedback state={rerunState} />
         </form>
       )}
 

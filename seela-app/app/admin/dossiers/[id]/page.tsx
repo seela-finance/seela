@@ -13,8 +13,10 @@ import {
   type DetailAdminEvent,
   type DetailOffer,
 } from '@/lib/admin-request-detail'
-import { leaserValidationEmail, WorkflowError, type OfferContext } from '@/lib/admin-workflow'
+import { canRerunMatching, leaserValidationEmail, WorkflowError, type OfferContext } from '@/lib/admin-workflow'
+import { diagnoseMatching } from '@/lib/matching'
 import RequestActions from '@/components/admin/RequestActions'
+import RequestNote from '@/components/admin/RequestNote'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { fetchRegistry } from '@/lib/company-registry'
 import { companyAlert } from '@/lib/admin-company'
@@ -96,6 +98,10 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
     && canTransitionRequest(request.status, RS.seela_validated, 'admin')
   const awaitingLeaser = !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
   const canRefuse = canTransitionRequest(request.status, RS.refused, 'admin')
+  const canRerun = canRerunMatching(request.status)
+
+  // Réponse de chaque leaser avec la grille actuelle : une panne de lecture n'empêche pas d'ouvrir la fiche
+  const diagnostic = canRerun ? await diagnoseMatching(db, id).catch(err => { console.error('[admin] diagnostic', err); return null }) : null
 
   // Aperçu de l'email au leaser, construit par la même fonction que l'envoi
   let leaserPreview: { to: string; cc?: string; subject: string; html: string } | { error: string } | null = null
@@ -265,6 +271,28 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           )}
         </Section>
 
+        {/* Réponse de chaque leaser : calculée à l'ouverture de la fiche, pas enregistrée */}
+        {canRerun && (
+          <Section title="Réponse de chaque leaser" right={<span className="text-xs" style={{ color: '#9A9A93' }}>Selon la grille actuelle</span>}>
+            {!diagnostic ? (
+              <p className="px-4 py-6 text-sm" style={{ color: '#991B1B' }}>Lecture des leasers impossible. Rechargez la page.</p>
+            ) : diagnostic.length === 0 ? (
+              <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucun leaser actif.</p>
+            ) : (
+              <ul>
+                {diagnostic.map(d => (
+                  <li key={d.name} className="px-4 py-2.5 flex flex-col sm:flex-row sm:gap-4" style={{ borderBottom: '1px solid #F5F5F4' }}>
+                    <span className="text-sm font-medium sm:w-56 sm:shrink-0" style={{ color: '#0E0E0C' }}>{d.name}</span>
+                    <span className="text-sm" style={{ color: d.reasons.length ? '#9A9A93' : '#166534' }}>
+                      {d.reasons.length ? d.reasons.join(' · ') : 'Éligible : la relance créerait une offre'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+        )}
+
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Historique */}
           <Section title="Historique">
@@ -273,7 +301,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
                 <li key={i} className="flex gap-3">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#D1D1CE' }} />
                   <div className="min-w-0">
-                    <p className="text-sm" style={{ color: '#0E0E0C' }}>
+                    <p className="text-sm whitespace-pre-line" style={{ color: '#0E0E0C' }}>
                       {t.label}
                       {t.detail && <span style={{ color: '#9A9A93' }}> · {t.detail}</span>}
                     </p>
@@ -287,15 +315,17 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             <p className="px-4 pb-4 text-xs" style={{ color: '#9A9A93' }}>
               Les emails envoyés depuis le back-office sont journalisés ici ; la date de soumission n&apos;est pas encore enregistrée.
             </p>
+            <RequestNote requestId={request.id} />
           </Section>
 
-          {/* Actions : valider et transmettre, réponse du leaser, refus */}
+          {/* Actions : valider et transmettre, réponse du leaser, relance du matching, refus */}
           <Section title="Actions">
             <RequestActions
               requestId={request.id}
               canValidate={canValidate}
               awaitingLeaser={awaitingLeaser}
               canRefuse={canRefuse}
+              canRerun={canRerun}
               offer={selected ? { id: selected.id, leaserName: selected.leaser_name ?? 'le leaser' } : null}
               leaserPreview={leaserPreview}
             />

@@ -6,6 +6,7 @@ import { signedDocumentUrl } from '@/lib/documents'
 import { sendEmail } from '@/lib/email'
 import { logAdminEvent, type Admin } from '@/lib/admin'
 import { OS } from '@/lib/status'
+import { runMatching } from '@/lib/matching'
 import type { OfferContext, RequestContext, WorkflowDeps, WorkflowStore } from '@/lib/admin-workflow'
 
 // Lien vers le document envoyé au leaser
@@ -60,6 +61,7 @@ export function supabaseWorkflowStore(db: SupabaseClient): WorkflowStore {
     async restoreRequest(id, current, status) {
       await db.from('financing_requests').update({ status }).eq('id', id).eq('status', current)
     },
+    runMatching: requestId => runMatching(db, requestId),
   }
 }
 

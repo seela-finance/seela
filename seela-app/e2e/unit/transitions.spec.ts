@@ -47,3 +47,12 @@ test('le client ne peut pas faire une transition réservée à l’admin', async
   const { db } = fakeDb({ data: [{ id: 'o1' }], error: null })
   expect(await statusOf(transitionOffer(db, 'o1', 'client_confirmed', 'seela_validated', {}, 'client'))).toBe(409)
 })
+
+test('un changement de statut du dossier date sa dernière action, pas celui d’une offre', async () => {
+  const request = fakeDb({ data: [{ id: 'r1' }], error: null })
+  await transitionRequest(request.db, 'r1', 'offer_selected', 'seela_validated')
+  expect(Date.parse(String(request.calls.values?.updated_at))).not.toBeNaN()
+  const offer = fakeDb({ data: [{ id: 'o1' }], error: null })
+  await transitionOffer(offer.db, 'o1', 'client_confirmed', 'seela_validated')
+  expect(offer.calls.values).toEqual({ status: 'seela_validated' })
+})

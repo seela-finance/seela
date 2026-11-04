@@ -133,6 +133,27 @@ export function listAdminRequests(requests: AdminRequest[], params: AdminListPar
   }
 }
 
+// Délai avant « en retard », en jours ouvrés (lundi à vendredi, sans les jours fériés).
+// 1 jour : le rappel sous 24 h ouvrées promis au client. 2 jours : réponse attendue du leaser.
+const OVERDUE_BUSINESS_DAYS: Partial<Record<RequestStatus, number>> = {
+  [RS.submitted]: 1,
+  [RS.no_match]: 1,
+  [RS.offer_selected]: 1,
+  [RS.seela_validated]: 2,
+}
+
+/** Dossier en attente de l'équipe depuis plus longtemps que le délai de son statut. */
+export function isOverdue(status: string | null, lastAction: string, now: Date = new Date()): boolean {
+  const days = isRequestStatus(status) ? OVERDUE_BUSINESS_DAYS[status] : undefined
+  if (!days) return false
+  const deadline = new Date(lastAction)
+  for (let left = days; left > 0;) {
+    deadline.setUTCDate(deadline.getUTCDate() + 1)
+    if (deadline.getUTCDay() !== 0 && deadline.getUTCDay() !== 6) left--
+  }
+  return now.getTime() > deadline.getTime()
+}
+
 /** « aujourd'hui », « hier », « il y a 3 j » ; au-delà de 60 jours, en mois. */
 export function sinceLabel(iso: string, now: Date = new Date()): string {
   const days = Math.floor((now.getTime() - Date.parse(iso)) / 86_400_000)

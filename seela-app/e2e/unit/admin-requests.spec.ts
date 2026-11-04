@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
   ADMIN_PAGE_SIZE,
+  isOverdue,
   lastActionAt,
   listAdminRequests,
   matchesSearch,
@@ -106,4 +107,25 @@ test('libellé de dernière action', () => {
   expect(sinceLabel(daysAgo(1), NOW)).toBe('hier')
   expect(sinceLabel(daysAgo(3), NOW)).toBe('il y a 3 j')
   expect(sinceLabel(daysAgo(90), NOW)).toBe('il y a 3 mois')
+})
+
+test('en retard : 1 jour ouvré pour l’équipe, le week-end ne compte pas', () => {
+  const friday = '2026-11-06T15:00:00Z'
+  expect(isOverdue('submitted', friday, new Date('2026-11-07T16:00:00Z'))).toBe(false) // samedi
+  expect(isOverdue('submitted', friday, new Date('2026-11-09T14:00:00Z'))).toBe(false) // lundi, avant 15 h
+  expect(isOverdue('submitted', friday, new Date('2026-11-09T16:00:00Z'))).toBe(true)
+  expect(isOverdue('no_match', '2026-11-03T10:00:00Z', new Date('2026-11-04T11:00:00Z'))).toBe(true)
+})
+
+test('en retard : 2 jours ouvrés pour la réponse du leaser', () => {
+  const tuesday = '2026-11-03T10:00:00Z'
+  expect(isOverdue('seela_validated', tuesday, new Date('2026-11-04T11:00:00Z'))).toBe(false)
+  expect(isOverdue('seela_validated', tuesday, new Date('2026-11-05T11:00:00Z'))).toBe(true)
+})
+
+test('jamais en retard quand le dossier n’attend pas l’équipe', () => {
+  const old = '2026-01-01T10:00:00Z'
+  for (const status of ['draft', 'offers_available', 'counter_offer', 'leaser_confirmed', 'active', 'refused', 'inconnu', null]) {
+    expect(isOverdue(status, old, new Date('2026-11-04T10:00:00Z'))).toBe(false)
+  }
 })

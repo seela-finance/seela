@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
-import { REQUEST_STATUSES, requestStatusInfo } from '@/lib/status'
+import { REQUEST_STATUSES, RS, requestStatusInfo } from '@/lib/status'
 import {
   ADMIN_TODO_STATUSES,
+  isOverdue,
   listAdminRequests,
   parseAdminListParams,
   sinceLabel,
@@ -36,14 +37,16 @@ function listHref(params: AdminListParams, patch: Partial<AdminListParams>) {
 }
 
 // Service role : l'équipe voit les dossiers de tous les clients (la RLS les limite à leur propriétaire)
-function loadRequests() {
-  return createAdminClient()
+// Les brouillons, nombreux et sans action possible, ne sont chargés que si on filtre dessus.
+function loadRequests(status: AdminListParams['status']) {
+  const query = createAdminClient()
     .from('financing_requests')
     .select(`
       id, user_id, status, total_amount, duration_months, created_at, updated_at,
       profiles ( company_name, siren ),
       offers ( leaser_name, monthly_payment, duration_months, selected, confirmed_at, seela_validated_at, leaser_confirmed_at )
     `)
+  return status === RS.draft ? query : query.or(`status.is.null,status.neq.${RS.draft}`)
 }
 
 export default async function AdminRequestsPage({
@@ -55,7 +58,7 @@ export default async function AdminRequestsPage({
   const params = parseAdminListParams(await searchParams)
 
   const configured = isServiceRoleConfigured()
-  const { data, error } = configured ? await loadRequests() : { data: null, error: null }
+  const { data, error } = configured ? await loadRequests(params.tab === 'all' ? params.status : null) : { data: null, error: null }
 
   const requests = ((data ?? []) as unknown as AdminRequestRow[]).map(toAdminRequest)
   const { items, total, page, pageCount } = listAdminRequests(requests, params)
@@ -194,6 +197,9 @@ export default async function AdminRequestsPage({
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }} title={fmtDate(r.lastActionAt)}>
                       {sinceLabel(r.lastActionAt, now)}
+                      {isOverdue(r.status, r.lastActionAt, now) && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: '#FEF2F2', color: '#991B1B' }}>En retard</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(r.createdAt)}</td>
                   </tr>
