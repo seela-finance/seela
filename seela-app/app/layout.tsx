@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     default: 'Everlease — Financement locatif professionnel',
     template: `%s | ${SITE_NAME}`,
   },
-  description: 'Financez votre équipement professionnel. Uploadez votre devis, configurez votre financement, recevez des offres sous 48h.',
+  description: 'Financement locatif d\'équipements professionnels. Déposez un devis, Everlease prépare votre dossier et le présente aux financeurs adaptés à votre projet.',
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',

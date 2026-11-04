@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Landing', () => {
   test('affiche le hero et mène vers /auth', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('financer vos équipements')
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Payez vos équipements')
 
     await page.locator('a[href="/auth"]:visible').first().click()
     await expect(page).toHaveURL(/\/auth$/)
