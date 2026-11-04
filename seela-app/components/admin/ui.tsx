@@ -17,9 +17,9 @@ export function fmtDateTime(s: string) {
 
 export function Section({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <section className="rounded-xl border" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-      <div className="px-4 py-3 flex items-center justify-between gap-3 border-b" style={{ borderColor: '#E5E5E3' }}>
-        <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9A9A93' }}>{title}</h2>
+    <section className="ev-card">
+      <div className="px-4 py-3 flex items-center justify-between gap-3 border-b" style={{ borderColor: 'var(--line)' }}>
+        <h2 className="ev-kicker">{title}</h2>
         {right}
       </div>
       {children}
@@ -30,16 +30,16 @@ export function Section({ title, children, right }: { title: string; children: R
 export function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs" style={{ color: '#9A9A93' }}>{label}</dt>
-      <dd className="mt-0.5 text-sm break-words" style={{ color: '#0E0E0C' }}>{value ?? '—'}</dd>
+      <dt className="text-xs" style={{ color: 'var(--ink-3)' }}>{label}</dt>
+      <dd className="mt-0.5 text-sm break-words" style={{ color: 'var(--ink)' }}>{value ?? '—'}</dd>
     </div>
   )
 }
 
 export function Badge({ info }: { info: { label: string; color: string; bg: string; dot: string } }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap" style={{ background: info.bg, color: info.color }}>
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: info.dot }} />
+    <span className="ev-tag" style={{ background: info.bg, color: info.color }}>
+      <span className="ev-tag__dot" style={{ background: info.dot }} />
       {info.label}
     </span>
   )
@@ -48,22 +48,22 @@ export function Badge({ info }: { info: { label: string; color: string; bg: stri
 /** Bandeau rouge en tête de fiche (société radiée, etc.). */
 export function AlertBanner({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="text-sm px-3 py-2 rounded-lg font-medium" style={{ background: '#FEF2F2', color: '#991B1B' }}>
+    <p role="alert" className="ev-alert ev-alert--danger font-medium">
       {children}
     </p>
   )
 }
 
-export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
+export function Breadcrumb({ items }: { items: { label: string; href?: string; mono?: boolean }[] }) {
   return (
-    <div className="h-12 flex items-center gap-2 px-6 border-b text-sm" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
+    <div className="h-12 flex items-center gap-2 px-6 border-b text-sm" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-2 min-w-0">
-          {i > 0 && <span style={{ color: '#D1D1CE' }}>/</span>}
+          {i > 0 && <span style={{ color: 'var(--line-strong)' }}>/</span>}
           {item.href ? (
-            <Link href={item.href} className="hover:opacity-70" style={{ color: '#9A9A93' }}>{item.label}</Link>
+            <Link href={item.href} className="hover:opacity-70" style={{ color: 'var(--ink-3)' }}>{item.label}</Link>
           ) : (
-            <span className="font-medium truncate" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{item.label}</span>
+            <span className={`font-medium truncate${item.mono ? ' ev-mono' : ''}`} style={{ color: 'var(--ink)' }}>{item.label}</span>
           )}
         </span>
       ))}

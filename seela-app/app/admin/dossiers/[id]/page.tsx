@@ -36,7 +36,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
 
   if (!isServiceRoleConfigured()) {
     return (
-      <p className="m-6 text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>
+      <p className="ev-alert ev-alert--danger m-6">
         {SERVICE_ROLE_MISSING_MESSAGE}
       </p>
     )
@@ -123,14 +123,14 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
 
   return (
     <div>
-      <Breadcrumb items={[{ label: 'Dossiers', href: '/admin' }, { label: ref }]} />
+      <Breadcrumb items={[{ label: 'Dossiers', href: '/admin' }, { label: ref, mono: true }]} />
 
       <div className="px-6 py-6 max-w-6xl space-y-4">
         {alert && <AlertBanner>{alert}</AlertBanner>}
 
         {/* En-tête */}
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold" style={{ color: '#0E0E0C', letterSpacing: '-0.02em' }}>
+          <h1 className="ev-display text-xl" style={{ color: 'var(--ink)' }}>
             <Link href={`/admin/societes/${request.user_id}`} className="underline-offset-4 hover:underline">
               {profile?.company_name?.trim() || 'Société sans nom'}
             </Link>
@@ -140,11 +140,11 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
 
         <Section title="Dossier">
           <dl className="px-4 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Field label="Référence" value={ref} />
-            <Field label="SIREN" value={profile?.siren} />
+            <Field label="Référence" value={<span className="ev-mono">{ref}</span>} />
+            <Field label="SIREN" value={profile?.siren ? <span className="ev-mono">{profile.siren}</span> : null} />
             <Field label="Contact" value={contactName} />
             <Field label="Email / téléphone" value={[profile?.email, profile?.phone].filter(Boolean).join(' · ') || null} />
-            <Field label="Montant HT" value={eur(request.total_amount)} />
+            <Field label="Montant HT" value={<span className="ev-mono">{eur(request.total_amount)}</span>} />
             <Field label="Durée" value={request.duration_months ? `${request.duration_months} mois` : null} />
             <Field label="Périodicité" value={request.periodicite} />
             <Field label="Document" value={request.document_type ? request.document_type.charAt(0).toUpperCase() + request.document_type.slice(1) : null} />
@@ -152,8 +152,8 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           </dl>
           {request.notes?.trim() && (
             <div className="px-4 pb-4">
-              <p className="text-xs" style={{ color: '#9A9A93' }}>Remarques du client</p>
-              <p className="mt-0.5 text-sm whitespace-pre-line" style={{ color: '#0E0E0C' }}>{request.notes}</p>
+              <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Remarques du client</p>
+              <p className="mt-0.5 text-sm whitespace-pre-line" style={{ color: 'var(--ink)' }}>{request.notes}</p>
             </div>
           )}
         </Section>
@@ -163,23 +163,23 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           <Section
             title="Document d'origine"
             right={docUrl && (
-              <a href={docUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:opacity-70" style={{ color: '#0E0E0C' }}>
+              <a href={docUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:opacity-70" style={{ color: 'var(--ink)' }}>
                 Ouvrir / télécharger
               </a>
             )}
           >
             {!docUrl ? (
-              <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>
+              <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>
                 {request.document_url ? 'Document introuvable dans le stockage.' : 'Aucun document uploadé.'}
               </p>
             ) : previewKind === 'pdf' ? (
-              <iframe src={docUrl} title={`Document ${ref}`} className="w-full rounded-b-xl" style={{ height: 420 }} />
+              <iframe src={docUrl} title={`Document ${ref}`} className="w-full" style={{ height: 420, borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }} />
             ) : previewKind === 'image' ? (
               // Aperçu d'un fichier privé via lien signé : next/image n'apporte rien ici
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={docUrl} alt={`Document ${ref}`} className="w-full max-h-[420px] object-contain rounded-b-xl" />
+              <img src={docUrl} alt={`Document ${ref}`} className="w-full max-h-[420px] object-contain" style={{ borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }} />
             ) : (
-              <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aperçu indisponible pour ce format.</p>
+              <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aperçu indisponible pour ce format.</p>
             )}
           </Section>
 
@@ -187,7 +187,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           <Section title="Fournisseur (extrait du document)">
             <dl className="px-4 py-4 grid grid-cols-2 gap-4">
               <Field label="Nom" value={request.supplier_name} />
-              <Field label="SIREN" value={request.supplier_siren} />
+              <Field label="SIREN" value={request.supplier_siren ? <span className="ev-mono">{request.supplier_siren}</span> : null} />
               <Field label="Adresse" value={request.supplier_address} />
               <Field label="N° de document" value={request.document_number} />
               <Field label="Date du document" value={fmtDate(request.document_date)} />
@@ -196,28 +196,28 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         </div>
 
         {/* Lignes */}
-        <Section title="Lignes extraites" right={<span className="text-xs" style={{ color: '#9A9A93' }}>Total sélectionné : {eur(selectedTotal, 2)}</span>}>
+        <Section title="Lignes extraites" right={<span className="text-xs" style={{ color: 'var(--ink-3)' }}>Total sélectionné : <span className="ev-mono">{eur(selectedTotal, 2)}</span></span>}>
           {lines.length === 0 ? (
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucune ligne extraite.</p>
+            <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aucune ligne extraite.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+                  <tr style={{ borderBottom: '1px solid var(--line)' }}>
                     {['Financée', 'Description', 'Catégorie', 'Qté', 'PU HT', 'Total HT'].map(h => (
-                      <th key={h} className="px-4 py-2 text-xs font-medium" style={{ color: '#9A9A93' }}>{h}</th>
+                      <th key={h} className="ev-kicker px-4 py-2">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {lines.map(l => (
-                    <tr key={l.id} style={{ borderBottom: '1px solid #F5F5F4', opacity: l.selected ? 1 : 0.5 }}>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>{l.selected ? 'Oui' : 'Non'}</td>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>{l.description ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#9A9A93' }}>{l.category ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{l.quantity ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{eur(l.unit_price, 2)}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{eur(l.total_price, 2)}</td>
+                    <tr key={l.id} style={{ borderBottom: '1px solid var(--line)', opacity: l.selected ? 1 : 0.5 }}>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>{l.selected ? 'Oui' : 'Non'}</td>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>{l.description ?? '—'}</td>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink-3)' }}>{l.category ?? '—'}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>{l.quantity ?? '—'}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{eur(l.unit_price, 2)}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{eur(l.total_price, 2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -229,34 +229,34 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         {/* Offres */}
         <Section title="Offres">
           {offers.length === 0 ? (
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>
+            <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>
               {request.status === RS.no_match ? 'Aucune offre — matching sans résultat.' : 'Aucune offre.'}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[820px] text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+                  <tr style={{ borderBottom: '1px solid var(--line)' }}>
                     {['Leaser', 'Loyer HT', 'Durée', 'Taux', 'Statut', 'Choisie', 'Confirmée client', 'Validée', 'Confirmée leaser'].map(h => (
-                      <th key={h} className="px-4 py-2 text-xs font-medium whitespace-nowrap" style={{ color: '#9A9A93' }}>{h}</th>
+                      <th key={h} className="ev-kicker px-4 py-2 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {offers.map(o => (
-                    <tr key={o.id} style={{ borderBottom: '1px solid #F5F5F4' }}>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>
+                    <tr key={o.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>
                         {o.leaser_name ?? '—'}
-                        {o.notes && <span className="block text-xs" style={{ color: '#9A9A93' }}>{o.notes}</span>}
+                        {o.notes && <span className="block text-xs" style={{ color: 'var(--ink-3)' }}>{o.notes}</span>}
                       </td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{eur(o.monthly_payment, 2)}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{o.duration_months ? `${o.duration_months} mois` : '—'}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{formatRate(o.rate) ?? '—'}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{eur(o.monthly_payment, 2)}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{o.duration_months ? `${o.duration_months} mois` : '—'}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{formatRate(o.rate) ?? '—'}</td>
                       <td className="px-4 py-2.5"><Badge info={offerStatusInfo(o.status)} /></td>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>{o.selected ? 'Oui' : '—'}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(o.confirmed_at)}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(o.seela_validated_at)}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(o.leaser_confirmed_at)}</td>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>{o.selected ? 'Oui' : '—'}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(o.confirmed_at)}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(o.seela_validated_at)}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(o.leaser_confirmed_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -271,20 +271,20 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             <ol className="px-4 py-4 space-y-3">
               {timeline.map((t, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#D1D1CE' }} />
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--line-strong)' }} />
                   <div className="min-w-0">
-                    <p className="text-sm" style={{ color: '#0E0E0C' }}>
+                    <p className="text-sm" style={{ color: 'var(--ink)' }}>
                       {t.label}
-                      {t.detail && <span style={{ color: '#9A9A93' }}> · {t.detail}</span>}
+                      {t.detail && <span style={{ color: 'var(--ink-3)' }}> · {t.detail}</span>}
                     </p>
-                    <p className="text-xs" style={{ color: '#9A9A93' }}>
+                    <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
                       {fmtDateTime(t.at)}{t.author ? ` · ${t.author}` : ''}
                     </p>
                   </div>
                 </li>
               ))}
             </ol>
-            <p className="px-4 pb-4 text-xs" style={{ color: '#9A9A93' }}>
+            <p className="px-4 pb-4 text-xs" style={{ color: 'var(--ink-3)' }}>
               Les emails envoyés depuis le back-office sont journalisés ici ; la date de soumission n&apos;est pas encore enregistrée.
             </p>
           </Section>

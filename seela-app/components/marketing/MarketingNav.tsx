@@ -14,7 +14,7 @@ function Logo({ size = 20 }: { size?: number }) {
   return (
     <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label="Everlease — accueil">
       <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: 'var(--text)', display: 'grid', placeItems: 'center' }}>
-        <EverleaseMark size={size + 4} color="#FAFAF9" />
+        <EverleaseMark size={size + 4} color="var(--paper)" />
       </div>
       <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--text)' }}>everlease</div>
     </Link>

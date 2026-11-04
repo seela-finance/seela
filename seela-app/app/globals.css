@@ -1,25 +1,98 @@
 @import "tailwindcss";
 
+/* ===================================================================
+   Design system everlease v2 — app authentifiée, /auth et back-office.
+   Source : design system publié (project/tokens.json) ; même palette que
+   `.lp` dans app/landing.css, mais les deux fichiers restent séparés
+   (règle du projet : pas de CSS partagé entre la landing et l'app).
+   =================================================================== */
+
+:root {
+  /* surfaces */
+  --paper: #F2F3F4;
+  --surface: #FFFFFF;
+  --raised: #E9EBED;
+  --line: #DCDEE1;
+  --line-strong: #C3C6CB;
+  /* encres */
+  --ink: #141517;
+  --ink-2: #45484D;
+  --ink-3: #6B6F76;
+  /* cobalt : réservé à l'action (boutons primaires, cases cochées, étape
+     active, focus) et à la jauge. Jamais en fond de bloc ni en dégradé. */
+  --accent: #1F3BFF;
+  --accent-hover: #1630D9;
+  --accent-soft: #E9ECFF;
+  --accent-ink: #1226B0;
+  --accent-light: #7D8CFF;
+  /* bande sombre */
+  --dark: #0F1012;
+  --dark-2: #1A1B1E;
+  --dark-line: #2A2C31;
+  --dark-text: #F2F3F4;
+  --dark-muted: #A7ABB3;
+  /* sémantiques : toujours accompagnées d'un mot */
+  --ok: #0E7C5B;
+  --ok-soft: #E3F3EC;
+  --danger: #B42318;
+  --danger-soft: #FDF1F0;
+  --danger-line: #F0B7B2;
+  --danger-ink: #8A1F17;
+  --warning: #8A4B00;
+  --warning-soft: #FFF4E5;
+  --scrim: rgba(15, 16, 18, 0.55);
+
+  /* rayons : 6 champs/tags, 10 nœuds, 16 cartes, pilule boutons */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* aucune ombre, sauf la modale */
+  --shadow-modal: 0 24px 64px rgba(15, 16, 18, 0.25);
+
+  /* durées et courbe (aucun rebond) */
+  --d-fast: 160ms;
+  --d: 320ms;
+  --d-slow: 720ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
 @theme inline {
-  --color-background: #FAFAF9;
-  --color-foreground: #0E0E0C;
-  --color-muted: #9A9A93;
-  --color-border: #E5E5E3;
-  --color-surface: #F5F5F4;
-  --color-primary: #0E0E0C;
-  --color-accent: #4F46E5;
-  --color-accent-light: #EEF2FF;
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-danger: #DC2626;
+  /* trois rôles, trois familles (chargées via next/font dans app/layout.tsx) */
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-bricolage), 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* utilitaires Tailwind : bg-paper, text-ink-3, border-line, bg-accent-soft… */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-dark: var(--dark);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
 }
 
 body {
-  background-color: #FAFAF9;
-  color: #0E0E0C;
-  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01";
   font-size: 14px;
   line-height: 1.5;
 }
@@ -28,6 +101,190 @@ body {
   box-sizing: border-box;
 }
 
+/* Focus visible partout, en cobalt (hors landing : `.lp` a sa propre règle) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Typographie ---------- */
+
+/* Titres de page et de section : Bricolage Grotesque 600 */
+.ev-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+/* Montants, références, index : JetBrains Mono en chiffres tabulaires */
+.ev-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Micro-libellé en capitales (le seul texte en capitales du système) */
+.ev-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---------- Boutons : pilule, cobalt réservé à l'action principale ---------- */
+
+.ev-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease),
+    opacity var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease);
+}
+.ev-btn:active { transform: translateY(1px); }
+.ev-btn:disabled, .ev-btn[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.ev-btn--primary { background: var(--accent); color: #fff; }
+.ev-btn--primary:hover:not(:disabled) { background: var(--accent-hover); color: #fff; }
+
+.ev-btn--ink { background: var(--ink); color: #fff; }
+.ev-btn--ink:hover:not(:disabled) { background: #000; color: #fff; }
+
+.ev-btn--ghost { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+.ev-btn--ghost:hover:not(:disabled) { background: var(--surface); border-color: var(--ink); color: var(--ink); }
+
+.ev-btn--danger { background: transparent; border-color: var(--danger-line); color: var(--danger); }
+.ev-btn--danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); }
+
+.ev-btn--sm { min-height: 32px; padding: 0 14px; font-size: 13px; gap: 6px; }
+.ev-btn--lg { min-height: 48px; padding: 0 22px; font-size: 15px; }
+.ev-btn--full { width: 100%; }
+
+/* ---------- Cartes : filet 1px `line`, rayon 16, aucune ombre ---------- */
+
+.ev-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.ev-card--paper { background: var(--paper); }
+.ev-card--dashed { border-style: dashed; border-color: var(--line-strong); }
+.ev-card--interactive { transition: border-color var(--d-fast) var(--ease); }
+.ev-card--interactive:hover { border-color: var(--line-strong); }
+.ev-card--selected { border-color: var(--accent); }
+
+/* ---------- Champs : 40px, rayon 6, bordure line-strong, focus cobalt ---------- */
+
+.ev-input {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--d-fast) var(--ease), outline-color var(--d-fast) var(--ease);
+}
+.ev-input::placeholder { color: var(--ink-3); }
+.ev-input:focus, .ev-input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 0;
+  border-radius: var(--radius-sm);
+}
+.ev-input:disabled { background: var(--raised); color: var(--ink-3); cursor: not-allowed; }
+.ev-input--invalid, .ev-input[aria-invalid="true"] { border-color: var(--danger); }
+textarea.ev-input { min-height: 96px; padding: 10px 12px; resize: vertical; }
+select.ev-input { padding-right: 32px; }
+
+.ev-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+/* ---------- Tags : mono capitales, rayon 6 (statuts, catégories, exemples) ---------- */
+
+.ev-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  white-space: nowrap;
+  background: var(--raised);
+  color: var(--ink-2);
+}
+.ev-tag--accent { background: var(--accent-soft); color: var(--accent-ink); }
+.ev-tag--ok { background: var(--ok-soft); color: var(--ok); }
+.ev-tag--warning { background: var(--warning-soft); color: var(--warning); }
+.ev-tag--danger { background: var(--danger-soft); color: var(--danger); }
+.ev-tag--dark { background: var(--ink); color: var(--dark-text); }
+.ev-tag__dot { width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; flex-shrink: 0; }
+
+/* ---------- Alertes de formulaire ---------- */
+
+.ev-alert {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--raised);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ev-alert--danger { background: var(--danger-soft); border-color: var(--danger-line); color: var(--danger-ink); }
+.ev-alert--ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.ev-alert--warning { background: var(--warning-soft); border-color: transparent; color: var(--warning); }
+.ev-alert--accent { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+
+/* ---------- Modale : la seule ombre du système ---------- */
+
+.ev-scrim { position: fixed; inset: 0; background: var(--scrim); }
+.ev-modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ev-btn, .ev-card--interactive, .ev-input { transition-duration: 1ms; }
 }

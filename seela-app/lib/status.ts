@@ -6,12 +6,14 @@ export type Actor = 'client' | 'admin' | 'system'
 
 type Badge = { label: string; color: string; bg: string; dot: string }
 
-const GRAY = { color: '#9A9A93', bg: '#F5F5F4', dot: '#D1D1CE' }
-const YELLOW = { color: '#854D0E', bg: '#FEF9C3', dot: '#D97706' }
-const INDIGO = { color: '#3730A3', bg: '#EEF2FF', dot: '#4F46E5' }
-const ORANGE = { color: '#92400E', bg: '#FFF7ED', dot: '#D97706' }
-const GREEN = { color: '#166534', bg: '#F0FDF4', dot: '#16A34A' }
-const RED = { color: '#991B1B', bg: '#FEF2F2', dot: '#DC2626' }
+// Cinq tons du design system v2 (tags `ev-tag`) : neutre, cobalt, warning, ok, danger.
+// YELLOW et ORANGE partagent le ton warning (le sens est porté par le libellé, pas par la nuance).
+const GRAY = { color: 'var(--ink-2)', bg: 'var(--raised)', dot: 'var(--line-strong)' }
+const YELLOW = { color: 'var(--warning)', bg: 'var(--warning-soft)', dot: 'var(--warning)' }
+const INDIGO = { color: 'var(--accent-ink)', bg: 'var(--accent-soft)', dot: 'var(--accent)' }
+const ORANGE = YELLOW
+const GREEN = { color: 'var(--ok)', bg: 'var(--ok-soft)', dot: 'var(--ok)' }
+const RED = { color: 'var(--danger)', bg: 'var(--danger-soft)', dot: 'var(--danger)' }
 
 // ── Dossiers ─────────────────────────────────────────────────────────
 

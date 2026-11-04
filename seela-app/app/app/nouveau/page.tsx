@@ -42,17 +42,6 @@ const STEP_LABELS = [
   'Confirmation',
 ]
 
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  'Informatique': { bg: '#DBEAFE', color: '#1E40AF' },
-  'Mobilier': { bg: '#FEF3C7', color: '#92400E' },
-  'Véhicule': { bg: '#D1FAE5', color: '#065F46' },
-  'Médical': { bg: '#EDE9FE', color: '#5B21B6' },
-  'Industrie': { bg: '#FFEDD5', color: '#9A3412' },
-  'Téléphonie': { bg: '#CFFAFE', color: '#164E63' },
-  'Audiovisuel': { bg: '#FCE7F3', color: '#9D174D' },
-  'Autre': { bg: '#F0F0EE', color: '#9A9A93' },
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
@@ -70,12 +59,12 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
     <div className="mb-10">
       <div className="relative flex items-start justify-between">
         {/* Background line */}
-        <div className="absolute left-3.5 right-3.5 top-3.5 h-px" style={{ background: '#E5E5E3', zIndex: 0 }} />
+        <div className="absolute left-3.5 right-3.5 top-3.5 h-px" style={{ background: 'var(--line)', zIndex: 0 }} />
         {/* Progress line */}
         <div
           className="absolute top-3.5 h-px transition-all duration-500"
           style={{
-            background: '#0E0E0C',
+            background: 'var(--accent)',
             left: '14px',
             width: `calc(${((step - 1) / (total - 1)) * 100}% - 28px * ${(step - 1) / (total - 1)})`,
             zIndex: 1,
@@ -89,9 +78,9 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
                 style={{
-                  background: done || active ? '#0E0E0C' : '#F5F5F4',
-                  color: done || active ? '#FAFAF9' : '#9A9A93',
-                  border: !done && !active ? '1px solid #E5E5E3' : 'none',
+                  background: active ? 'var(--accent)' : done ? 'var(--ink)' : 'var(--surface)',
+                  color: done || active ? '#fff' : 'var(--ink-3)',
+                  border: !done && !active ? '1px solid var(--line-strong)' : 'none',
                 }}
               >
                 {done ? (
@@ -102,7 +91,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
               </div>
               <span
                 className="text-xs hidden sm:block text-center"
-                style={{ color: active ? '#0E0E0C' : '#9A9A93', fontWeight: active ? 500 : 400 }}
+                style={{ color: active ? 'var(--ink)' : 'var(--ink-3)', fontWeight: active ? 500 : 400 }}
               >
                 {label}
               </span>
@@ -130,9 +119,9 @@ function NavButtons({
   hideBack?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: '#E5E5E2' }}>
+    <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: 'var(--line)' }}>
       {!hideBack && onBack ? (
-        <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors hover:text-[#0E0E0C]" style={{ color: '#9A9A93' }}>
+        <button onClick={onBack} className="ev-btn ev-btn--ghost">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -143,8 +132,7 @@ function NavButtons({
         <button
           onClick={onNext}
           disabled={disabled || loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
-          style={{ background: '#4F46E5', color: '#fff', borderRadius: 8 }}
+          className="ev-btn ev-btn--primary"
         >
           {loading ? 'Chargement…' : nextLabel}
           {!loading && (
@@ -222,25 +210,25 @@ function Step1Upload({
       {/* Assistant label */}
       <div className="flex items-center gap-1.5 mb-5">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="#4F46E5" />
+          <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="var(--ink-3)" />
         </svg>
-        <span style={{ color: '#4F46E5', fontSize: 13, fontWeight: 500 }}>Assistant Everlease</span>
+        <span className="ev-kicker">Assistant Everlease</span>
       </div>
 
-      <h2 style={{ fontSize: 28, fontWeight: 600, color: '#0E0E0C', letterSpacing: '-0.6px', marginBottom: 10 }}>
+      <h2 className="ev-display" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 10 }}>
         Démarrez un nouveau financement.
       </h2>
-      <p style={{ fontSize: 15, color: '#9A9A93', lineHeight: 1.6, marginBottom: 28 }}>
+      <p style={{ fontSize: 15, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 28 }}>
         Déposez un devis ou une facture. Everlease en extrait les lignes financables,
         vous pose quelques questions, puis consulte ses partenaires leasers.
       </p>
 
       {/* Type selector */}
       <div className="mb-2">
-        <p className="text-xs font-medium mb-2" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <p className="ev-kicker mb-2">
           Type de document
         </p>
-        <div className="inline-flex p-1 rounded-xl gap-1" style={{ background: '#F5F5F4' }}>
+        <div className="inline-flex p-1 rounded-full gap-1" style={{ background: 'var(--raised)' }}>
           {([
             { key: 'devis', label: 'Devis — matériel à acheter' },
             { key: 'facture', label: 'Facture — déjà acheté (lease-back)' },
@@ -248,10 +236,10 @@ function Step1Upload({
             <button
               key={t.key}
               onClick={() => setDocumentType(t.key)}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all"
               style={{
-                background: documentType === t.key ? '#0E0E0C' : 'transparent',
-                color: documentType === t.key ? '#fff' : '#9A9A93',
+                background: documentType === t.key ? 'var(--ink)' : 'transparent',
+                color: documentType === t.key ? '#fff' : 'var(--ink-3)',
               }}
             >
               {t.label}
@@ -266,43 +254,41 @@ function Step1Upload({
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
         onClick={() => fileRef.current?.click()}
-        className="mt-5 text-center cursor-pointer transition-all"
+        className={`ev-card ev-card--dashed ${dragging || file ? 'ev-card--selected' : ''} mt-5 text-center cursor-pointer transition-all`}
         style={{
-          border: `2px dashed ${dragging ? '#4F46E5' : file ? '#4F46E5' : '#E5E5E3'}`,
-          borderRadius: 12,
           padding: '48px 24px',
-          background: dragging ? '#EEF2FF' : file ? '#EEF2FF' : '#FAFAF9',
+          background: dragging ? 'var(--accent-soft)' : file ? 'var(--accent-soft)' : 'var(--paper)',
         }}
       >
         <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
         {file ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-1" style={{ background: '#EEF2FF' }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-1" style={{ background: 'var(--surface)' }}>
               <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                <path d="M7 4h10l6 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2Z" stroke="#4F46E5" strokeWidth="1.5" />
-                <path d="M17 4v6h6M10 14l3 3 5-5" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M7 4h10l6 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2Z" stroke="var(--accent)" strokeWidth="1.5" />
+                <path d="M17 4v6h6M10 14l3 3 5-5" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <p className="font-medium text-sm" style={{ color: '#0E0E0C' }}>{file.name}</p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>{(file.size / 1024 / 1024).toFixed(1)} Mo · Prêt à analyser</p>
+            <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{file.name}</p>
+            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{(file.size / 1024 / 1024).toFixed(1)} Mo · Prêt à analyser</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-1" style={{ background: '#F5F5F4' }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-1" style={{ background: 'var(--raised)' }}>
               <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                <path d="M14 18V6M9 11l5-5 5 5" stroke="#9A9A93" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 20v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="#9A9A93" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M14 18V6M9 11l5-5 5 5" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 20v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Glissez votre devis ici</p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Glissez votre devis ici</p>
+            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
               ou cliquez pour parcourir — PDF, JPG, PNG jusqu&apos;à 25 Mo
             </p>
             <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
               <button
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors"
-                style={{ background: '#fff', color: '#0E0E0C', borderColor: '#E5E5E3', borderRadius: 8 }}
+                className="ev-btn ev-btn--ghost ev-btn--sm"
+                style={{ background: 'var(--surface)' }}
               >
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M7 9V2M4 5l3-3 3 3M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -310,8 +296,8 @@ function Step1Upload({
                 Parcourir
               </button>
               <button
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors"
-                style={{ background: '#fff', color: '#9A9A93', borderColor: '#E5E5E3', borderRadius: 8 }}
+                className="ev-btn ev-btn--ghost ev-btn--sm"
+                style={{ background: 'var(--surface)', color: 'var(--ink-3)' }}
                 onClick={() => {}}
               >
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -332,8 +318,8 @@ function Step1Upload({
           { label: 'ISO 27001' },
           { label: "Vos données ne quittent jamais l'UE" },
         ].map((b, i) => (
-          <span key={b.label} className="flex items-center gap-1" style={{ color: '#9A9A93', fontSize: 12 }}>
-            {i > 0 && <span style={{ color: '#D1D1CE' }}>·</span>}
+          <span key={b.label} className="flex items-center gap-1" style={{ color: 'var(--ink-3)', fontSize: 12 }}>
+            {i > 0 && <span style={{ color: 'var(--line-strong)' }}>·</span>}
             {b.lock ? (
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                 <rect x="2" y="5" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
@@ -350,7 +336,7 @@ function Step1Upload({
       </div>
 
       {error && (
-        <div className="mt-4 text-sm px-4 py-3 rounded-xl" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+        <div className="ev-alert ev-alert--danger mt-4">
           {error}
         </div>
       )}
@@ -471,16 +457,16 @@ function Step2Lines({
 
   return (
     <div>
-      <h2 className="font-semibold text-xl mb-1" style={{ color: '#0E0E0C', letterSpacing: '-0.3px' }}>
+      <h2 className="ev-display text-xl mb-1" style={{ color: 'var(--ink)' }}>
         Lignes à financer
       </h2>
-      <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
+      <p className="text-sm mb-8" style={{ color: 'var(--ink-3)' }}>
         Sélectionnez les équipements que vous souhaitez financer
       </p>
 
       {/* Devis = leasing de matériel neuf, facture = lease-back : un mauvais choix fausse les offres */}
       {!analyzing && detectedType && detectedType !== documentType && (
-        <div role="alert" className="mb-6 p-4 rounded-xl border text-sm" style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E' }}>
+        <div role="alert" className="ev-alert ev-alert--warning mb-6">
           <p>
             Ce document ressemble à {detectedType === 'facture' ? 'une facture' : 'un devis'}, alors que vous avez indiqué {documentType === 'facture' ? 'une facture' : 'un devis'}.
             {' '}{detectedType === 'facture'
@@ -491,16 +477,14 @@ function Step2Lines({
             <button
               type="button"
               onClick={() => onDocumentTypeChange(detectedType)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-              style={{ background: '#92400E', color: '#fff' }}
+              className="ev-btn ev-btn--primary ev-btn--sm"
             >
               C&apos;est {detectedType === 'facture' ? 'une facture' : 'un devis'}
             </button>
             <button
               type="button"
               onClick={() => setDetectedType(null)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
-              style={{ borderColor: '#FDE68A', color: '#92400E' }}
+              className="ev-btn ev-btn--ghost ev-btn--sm"
             >
               Non, c&apos;est bien {documentType === 'facture' ? 'une facture' : 'un devis'}
             </button>
@@ -510,58 +494,58 @@ function Step2Lines({
 
       {analyzing ? (
         <div className="py-16 flex flex-col items-center gap-4">
-          <div className="w-8 h-8 rounded-full border-2 border-t-[#0E0E0C] animate-spin" style={{ borderColor: '#E5E5E2', borderTopColor: '#0E0E0C' }} />
-          <p className="text-sm" style={{ color: '#9A9A93' }}>Analyse IA en cours…</p>
+          <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--accent)' }} />
+          <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Analyse IA en cours…</p>
         </div>
       ) : error ? (
         <div>
-          <div className="text-sm px-4 py-3 rounded-xl mb-4" style={{ background: '#FEF2F2', color: '#DC2626' }}>{error}</div>
-          <button onClick={() => { analyzed.current = false; setAnalyzing(true); setError(null); analyze() }} className="text-sm underline" style={{ color: '#0E0E0C' }}>
+          <div className="ev-alert ev-alert--danger mb-4">{error}</div>
+          <button onClick={() => { analyzed.current = false; setAnalyzing(true); setError(null); analyze() }} className="ev-btn ev-btn--ghost ev-btn--sm">
             Réessayer
           </button>
         </div>
       ) : (
         <>
           {(meta.supplier_name || meta.document_number) && (
-            <div className="flex items-start gap-4 px-5 py-4 rounded-xl border mb-4" style={{ background: '#FAFAF9', borderColor: '#E5E5E2' }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#E5E5E3' }}>
+            <div className="ev-card ev-card--paper flex items-start gap-4 px-5 py-4 mb-4">
+              <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0" style={{ background: 'var(--raised)' }}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="#9A9A93" strokeWidth="1.3" strokeLinejoin="round" />
-                  <path d="M10 2v4h4" stroke="#9A9A93" strokeWidth="1.3" strokeLinejoin="round" />
+                  <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="var(--ink-3)" strokeWidth="1.3" strokeLinejoin="round" />
+                  <path d="M10 2v4h4" stroke="var(--ink-3)" strokeWidth="1.3" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
                 {meta.supplier_name && (
-                  <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{meta.supplier_name}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{meta.supplier_name}</p>
                 )}
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
                   {meta.document_number && (
-                    <span className="text-xs" style={{ color: '#9A9A93' }}>N° {meta.document_number}</span>
+                    <span className="text-xs ev-mono" style={{ color: 'var(--ink-3)' }}>N° {meta.document_number}</span>
                   )}
                   {meta.document_date && (
-                    <span className="text-xs" style={{ color: '#9A9A93' }}>{meta.document_date}</span>
+                    <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{meta.document_date}</span>
                   )}
                   {meta.supplier_siren && (
-                    <span className="text-xs" style={{ color: '#9A9A93' }}>SIREN {meta.supplier_siren}</span>
+                    <span className="text-xs ev-mono" style={{ color: 'var(--ink-3)' }}>SIREN {meta.supplier_siren}</span>
                   )}
                 </div>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>Montant total</p>
-                <p className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--ink-3)' }}>Montant total</p>
+                <p className="text-sm font-semibold ev-mono" style={{ color: 'var(--ink)' }}>
                   {fmt(items.reduce((s, i) => s + (i.total_price ?? 0), 0))}
                 </p>
               </div>
             </div>
           )}
 
-          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#E5E5E2' }}>
+          <div className="ev-card overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b" style={{ background: '#F0F0EE', borderColor: '#E5E5E2' }}>
+                <tr className="border-b" style={{ background: 'var(--raised)', borderColor: 'var(--line)' }}>
                   <th className="px-4 py-3 w-10"></th>
                   {['Description', 'Qté', 'Prix unit. HT', 'Total HT'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: '#9A9A93' }}>{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--ink-3)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -569,8 +553,8 @@ function Step2Lines({
                 {items.map((item, i) => (
                   <tr
                     key={item.id}
-                    className="border-b last:border-0 cursor-pointer transition-colors hover:bg-[#F8F8F6]"
-                    style={{ borderColor: '#E5E5E2', background: i % 2 === 0 ? '#fff' : '#FAFAF9' }}
+                    className="border-b last:border-0 cursor-pointer transition-colors hover:bg-[var(--paper)]"
+                    style={{ borderColor: 'var(--line)', background: i % 2 === 0 ? '#fff' : 'var(--paper)' }}
                     onClick={() => toggle(item.id)}
                   >
                     <td className="px-4 py-3.5">
@@ -579,26 +563,23 @@ function Step2Lines({
                         checked={selected.has(item.id)}
                         onChange={() => toggle(item.id)}
                         className="w-4 h-4 rounded"
-                        style={{ accentColor: '#0E0E0C' }}
+                        style={{ accentColor: 'var(--accent)' }}
                         onClick={e => e.stopPropagation()}
                       />
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="text-sm" style={{ color: '#0E0E0C' }}>{item.description ?? '—'}</div>
-                      {item.category && (() => {
-                        const c = CATEGORY_COLORS[item.category] ?? CATEGORY_COLORS['Autre']
-                        return (
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.color }}>
-                            {item.category}
-                          </span>
-                        )
-                      })()}
+                      <div className="text-sm" style={{ color: 'var(--ink)' }}>{item.description ?? '—'}</div>
+                      {item.category && (
+                        <span className="ev-tag mt-1">
+                          {item.category}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>{item.quantity ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#0E0E0C' }}>
+                    <td className="px-4 py-3.5 text-sm ev-mono" style={{ color: 'var(--ink)' }}>{item.quantity ?? '—'}</td>
+                    <td className="px-4 py-3.5 text-sm ev-mono" style={{ color: 'var(--ink)' }}>
                       {item.unit_price != null ? fmt(item.unit_price) : '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C' }}>
+                    <td className="px-4 py-3.5 text-sm font-medium ev-mono" style={{ color: 'var(--ink)' }}>
                       {item.total_price != null ? fmt(item.total_price) : '—'}
                     </td>
                   </tr>
@@ -609,8 +590,8 @@ function Step2Lines({
 
           {selected.size > 0 && (
             <div className="mt-4 flex justify-end">
-              <div className="text-sm font-semibold" style={{ color: '#0E0E0C' }}>
-                Total sélectionné&nbsp;: <span className="text-base">{fmt(total)}</span>
+              <div className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                Total sélectionné&nbsp;: <span className="text-base ev-mono">{fmt(total)}</span>
               </div>
             </div>
           )}
@@ -654,25 +635,24 @@ function Step3Config({
 
   return (
     <div>
-      <h2 className="font-semibold text-xl mb-1" style={{ color: '#0E0E0C', letterSpacing: '-0.3px' }}>
+      <h2 className="ev-display text-xl mb-1" style={{ color: 'var(--ink)' }}>
         Configuration du financement
       </h2>
-      <p className="text-sm mb-8" style={{ color: '#9A9A93' }}>
-        Montant total sélectionné : <strong style={{ color: '#0E0E0C' }}>{fmt(totalAmount)}</strong>
+      <p className="text-sm mb-8" style={{ color: 'var(--ink-3)' }}>
+        Montant total sélectionné : <strong className="ev-mono" style={{ color: 'var(--ink)' }}>{fmt(totalAmount)}</strong>
       </p>
 
       <div className="mb-8">
-        <p className="text-sm font-medium mb-3" style={{ color: '#0E0E0C' }}>Durée souhaitée</p>
+        <p className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Durée souhaitée</p>
         <div className="flex gap-3 flex-wrap">
           {([24, 36, 48, 60] as Duration[]).map(d => (
             <button
               key={d}
               onClick={() => setDuration(d)}
-              className="px-5 py-2.5 rounded-xl border text-sm font-medium transition-all"
+              className={`ev-card ${duration === d ? 'ev-card--selected' : 'ev-card--interactive'} px-5 py-2.5 text-sm font-medium transition-all`}
               style={{
-                background: duration === d ? '#0E0E0C' : '#fff',
-                color: duration === d ? '#FAFAF9' : '#0E0E0C',
-                borderColor: duration === d ? '#0E0E0C' : '#E5E5E2',
+                background: duration === d ? 'var(--accent-soft)' : 'var(--surface)',
+                color: duration === d ? 'var(--accent-ink)' : 'var(--ink)',
               }}
             >
               {d} mois
@@ -682,15 +662,14 @@ function Step3Config({
       </div>
 
       <div className="mb-8">
-        <p className="text-sm font-medium mb-3" style={{ color: '#0E0E0C' }}>Périodicité de paiement</p>
+        <p className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Périodicité de paiement</p>
         <div className="flex flex-col gap-2">
           {PERIODICITE_OPTIONS.map(o => (
             <label
               key={o.key}
-              className="flex items-start gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all"
+              className={`ev-card ${periodicite === o.key ? 'ev-card--selected' : 'ev-card--interactive'} flex items-start gap-3 px-4 py-3 cursor-pointer transition-all`}
               style={{
-                borderColor: periodicite === o.key ? '#0E0E0C' : '#E5E5E2',
-                background: periodicite === o.key ? '#F5F5F4' : '#fff',
+                background: periodicite === o.key ? 'var(--accent-soft)' : 'var(--surface)',
               }}
             >
               <input
@@ -700,11 +679,11 @@ function Step3Config({
                 checked={periodicite === o.key}
                 onChange={() => setPeriodicite(o.key)}
                 className="mt-0.5 shrink-0"
-                style={{ accentColor: '#0E0E0C' }}
+                style={{ accentColor: 'var(--accent)' }}
               />
               <div>
-                <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>{o.label}</p>
-                <p className="text-xs" style={{ color: '#9A9A93' }}>{o.sub}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{o.label}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{o.sub}</p>
               </div>
             </label>
           ))}
@@ -712,33 +691,32 @@ function Step3Config({
       </div>
 
       {/* Estimate */}
-      <div className="p-6 rounded-2xl border mb-8" style={{ background: '#F0F0EE', borderColor: '#E5E5E2' }}>
-        <p className="text-xs font-medium mb-1" style={{ color: '#9A9A93' }}>Loyer estimé</p>
-        <p className="font-semibold" style={{ fontSize: '2rem', color: '#0E0E0C', letterSpacing: '-1px' }}>
+      <div className="ev-card ev-card--paper p-6 mb-8">
+        <p className="ev-kicker mb-1">Loyer estimé</p>
+        <p className="ev-mono" style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.03em' }}>
           {fmt(periodAmount)}
-          <span className="text-base font-normal ml-1" style={{ color: '#9A9A93' }}>{periodLabel}</span>
+          <span className="text-base font-normal ml-1 font-sans" style={{ color: 'var(--ink-3)', letterSpacing: 0 }}>{periodLabel}</span>
         </p>
         {periodicite !== 'mensuelle' && (
-          <p className="text-xs mt-1" style={{ color: '#9A9A93' }}>
-            soit {fmt(monthly)}/mois équivalent
+          <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>
+            soit <span className="ev-mono">{fmt(monthly)}</span>/mois équivalent
           </p>
         )}
-        <p className="text-xs mt-2" style={{ color: '#9A9A93' }}>
+        <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
           Sur {duration} mois — estimation indicative
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#0E0E0C' }}>
-          Remarques <span style={{ color: '#9A9A93', fontWeight: 400 }}>(optionnel)</span>
+        <label className="ev-label">
+          Remarques <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(optionnel)</span>
         </label>
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Informations complémentaires pour votre conseiller Everlease…"
           rows={3}
-          className="w-full px-4 py-3 rounded-xl border text-sm outline-none focus:border-[#0E0E0C] resize-none transition-colors"
-          style={{ background: '#fff', borderColor: '#E5E5E2', color: '#0E0E0C' }}
+          className="ev-input"
         />
       </div>
 
@@ -819,18 +797,17 @@ function Step4Confirmation({
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: '#FEF2F2' }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'var(--danger-soft)' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 8v4M12 16h.01" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 8v4M12 16h.01" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </div>
-        <h2 className="font-semibold text-xl mb-3" style={{ color: '#0E0E0C' }}>Erreur lors de la soumission</h2>
-        <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: '#DC2626' }}>{error}</p>
+        <h2 className="ev-display text-xl mb-3" style={{ color: 'var(--ink)' }}>Erreur lors de la soumission</h2>
+        <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: 'var(--danger)' }}>{error}</p>
         <button
           onClick={submit}
           disabled={submitting}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          style={{ background: '#0E0E0C', color: '#FAFAF9' }}
+          className="ev-btn ev-btn--primary"
         >
           Réessayer
         </button>
@@ -841,23 +818,22 @@ function Step4Confirmation({
   if (submitted) {
     return (
       <div className="text-center py-8">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: '#EEF2FF' }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'var(--accent-soft)' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12l5 5L20 7" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M5 12l5 5L20 7" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h2 className="font-semibold mb-3" style={{ fontSize: 22, color: '#0E0E0C', letterSpacing: '-0.4px' }}>
+        <h2 className="ev-display mb-3" style={{ fontSize: 22, color: 'var(--ink)' }}>
           Votre demande est transmise
         </h2>
-        <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: '#9A9A93', lineHeight: 1.7 }}>
+        <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: 'var(--ink-3)', lineHeight: 1.7 }}>
           Aucune offre automatique ne correspond encore à votre {documentType} : un conseiller Everlease étudie votre dossier
           et revient vers vous sous 48h ouvrées.
         </p>
-        <p className="text-xs mb-8" style={{ color: '#9A9A93' }}>Vous retrouverez son avancement dans « Offres ».</p>
+        <p className="text-xs mb-8" style={{ color: 'var(--ink-3)' }}>Vous retrouverez son avancement dans « Offres ».</p>
         <button
           onClick={() => router.push('/app/offres')}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          style={{ background: '#0E0E0C', color: '#FAFAF9' }}
+          className="ev-btn ev-btn--primary"
         >
           Voir mes demandes de financement
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -872,11 +848,11 @@ function Step4Confirmation({
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <h2 className="font-semibold text-xl mb-2 text-center" style={{ color: '#0E0E0C' }}>Transmettre votre demande</h2>
-      <p className="text-sm mb-6 text-center" style={{ color: '#9A9A93' }}>
+      <h2 className="ev-display text-xl mb-2 text-center" style={{ color: 'var(--ink)' }}>Transmettre votre demande</h2>
+      <p className="text-sm mb-6 text-center" style={{ color: 'var(--ink-3)' }}>
         Vérifiez le récapitulatif : Everlease interroge ensuite ses leasers partenaires.
       </p>
-      <dl className="rounded-xl border divide-y divide-[#E5E5E2] mb-6" style={{ background: '#fff', borderColor: '#E5E5E2' }}>
+      <dl className="ev-card divide-y divide-[var(--line)] mb-6">
         {[
           ['Document', documentType === 'facture' ? 'Facture (lease-back)' : 'Devis (leasing)'],
           ['Lignes financées', String(items.length)],
@@ -885,16 +861,15 @@ function Step4Confirmation({
           ['Périodicité', periodicite.charAt(0).toUpperCase() + periodicite.slice(1)],
         ].map(([label, value]) => (
           <div key={label} className="flex items-center justify-between px-4 py-3 text-sm">
-            <dt style={{ color: '#9A9A93' }}>{label}</dt>
-            <dd className="font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{value}</dd>
+            <dt style={{ color: 'var(--ink-3)' }}>{label}</dt>
+            <dd className={label === 'Montant HT' || label === 'Durée' ? 'font-medium ev-mono' : 'font-medium'} style={{ color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>{value}</dd>
           </div>
         ))}
       </dl>
       <button
         onClick={submit}
         disabled={submitting || items.length === 0}
-        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-        style={{ background: '#0E0E0C', color: '#FAFAF9' }}
+        className="ev-btn ev-btn--primary ev-btn--full"
       >
         {submitting ? 'Transmission de votre dossier…' : 'Transmettre ma demande'}
       </button>
@@ -951,12 +926,12 @@ export default function NouveauPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="border-b h-12 flex items-center px-6 shrink-0" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <Link href="/app/dashboard" className="text-sm transition-colors" style={{ color: '#9A9A93' }}>Tableau de bord</Link>
+      <div className="border-b h-12 flex items-center px-6 shrink-0" style={{ borderColor: 'var(--line)', background: '#fff' }}>
+        <Link href="/app/dashboard" className="text-sm transition-colors" style={{ color: 'var(--ink-3)' }}>Tableau de bord</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="mx-1.5">
-          <path d="M4 2l4 4-4 4" stroke="#D1D1CE" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4 2l4 4-4 4" stroke="var(--line-strong)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Nouveau financement</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Nouveau financement</span>
         <TopActions />
       </div>
 

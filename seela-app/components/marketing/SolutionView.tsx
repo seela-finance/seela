@@ -159,11 +159,12 @@ export default function SolutionView({ solution }: { solution: Solution }) {
           <div className="mk-cta-center">
             <h2 className="lp-h2">Estimez votre financement en quelques minutes.</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
-              Déposez un devis, comparez les offres de nos partenaires financeurs, recevez une estimation sous 48h.
+              Déposez un devis : Everlease prépare votre dossier et le présente à des financeurs adaptés à votre projet.
             </p>
             <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
             </div>
+            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
           </div>
         </div>
       </section>

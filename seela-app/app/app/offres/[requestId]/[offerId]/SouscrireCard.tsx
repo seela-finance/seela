@@ -27,7 +27,7 @@ function StepIcon({ state, n }: { state: StepState; n: number }) {
     return (
       <div
         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: '#16A34A' }}
+        style={{ background: 'var(--ink)' }}
       >
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
           <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -39,11 +39,11 @@ function StepIcon({ state, n }: { state: StepState; n: number }) {
     return (
       <div
         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: '#EEF2FF' }}
+        style={{ background: 'var(--accent-soft)' }}
       >
         <div
           className="w-3 h-3 rounded-full border-2 animate-spin"
-          style={{ borderColor: '#C7D2FE', borderTopColor: '#4F46E5' }}
+          style={{ borderColor: 'var(--accent-soft)', borderTopColor: 'var(--accent)' }}
         />
       </div>
     )
@@ -52,7 +52,7 @@ function StepIcon({ state, n }: { state: StepState; n: number }) {
     return (
       <div
         className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5"
-        style={{ background: '#4F46E5', color: '#fff' }}
+        style={{ background: 'var(--accent)', color: '#fff' }}
       >
         {n}
       </div>
@@ -61,7 +61,7 @@ function StepIcon({ state, n }: { state: StepState; n: number }) {
   return (
     <div
       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5 border"
-      style={{ background: '#F5F5F4', color: '#9A9A93', borderColor: '#E5E5E3' }}
+      style={{ background: 'var(--raised)', color: 'var(--ink-3)', borderColor: 'var(--line)' }}
     >
       {n}
     </div>
@@ -141,22 +141,22 @@ export default function SouscrireCard({
   }
 
   return (
-    <div className="rounded-xl border p-5 sticky top-6" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
-      <h2 className="font-semibold text-sm mb-0.5" style={{ color: '#0E0E0C' }}>Souscrire à cette offre</h2>
-      <p className="text-xs mb-5" style={{ color: '#9A9A93' }}>
+    <div className="ev-card p-5 sticky top-6">
+      <h2 className="font-semibold text-sm mb-0.5" style={{ color: 'var(--ink)' }}>Souscrire à cette offre</h2>
+      <p className="text-xs mb-5" style={{ color: 'var(--ink-3)' }}>
         Confirmation par le leaser sous {leaserDelai}h ouvrées
       </p>
 
       {/* Refused state */}
       {status === OS.refused && (
-        <div className="rounded-xl p-4 mb-5" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
-          <p className="text-sm font-medium mb-2" style={{ color: '#92400E' }}>
+        <div className="ev-alert ev-alert--warning mb-5">
+          <p className="text-sm font-medium mb-2" style={{ color: 'var(--warning)' }}>
             {leaserName} n&apos;a pas pu donner suite.
           </p>
           <Link
             href={`/app/offres/${requestId}`}
             className="text-sm font-medium transition-opacity hover:opacity-70"
-            style={{ color: '#4F46E5' }}
+            style={{ color: 'var(--accent)' }}
           >
             Voir les autres offres →
           </Link>
@@ -165,20 +165,20 @@ export default function SouscrireCard({
 
       {/* Confirmed state */}
       {status === OS.leaser_confirmed && (
-        <div className="rounded-xl p-4 mb-5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+        <div className="ev-alert ev-alert--ok mb-5">
           <div className="flex items-center gap-2 mb-1">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 7l4 4 6-6" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 7l4 4 6-6" stroke="var(--ok)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-sm font-semibold" style={{ color: '#166534' }}>Financement confirmé</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ok)' }}>Financement confirmé</p>
           </div>
-          <p className="text-xs" style={{ color: '#166534' }}>
+          <p className="text-xs" style={{ color: 'var(--ok)' }}>
             Votre contrat est en préparation.
           </p>
           <Link
             href={`/app/contrats/${requestId}`}
             className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-opacity hover:opacity-70"
-            style={{ color: '#166534' }}
+            style={{ color: 'var(--ok)' }}
           >
             Voir mon contrat →
           </Link>
@@ -191,17 +191,17 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s1 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s1} n={1} />
           <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Vérification</p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>Informations du dossier</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Vérification</p>
+            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Informations du dossier</p>
             {s1 === 'active' && (
-              <div className="mt-3 p-3 rounded-xl border" style={{ background: '#FAFAF9', borderColor: '#E5E5E3' }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: '#0E0E0C' }}>
+              <div className="ev-card ev-card--paper mt-3 p-3">
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink)' }}>
                   {companyName || userEmail.split('@')[0]}
                 </p>
                 {siren && (
-                  <p className="text-xs mb-0.5" style={{ color: '#9A9A93' }}>SIREN {siren}</p>
+                  <p className="text-xs mb-0.5" style={{ color: 'var(--ink-3)' }}>SIREN <span className="ev-mono">{siren}</span></p>
                 )}
-                <p className="text-xs" style={{ color: '#9A9A93' }}>{userEmail}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{userEmail}</p>
               </div>
             )}
           </div>
@@ -211,10 +211,10 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s2 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s2} n={2} />
           <div>
-            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Validation Everlease</p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>Examen par un conseiller</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Validation Everlease</p>
+            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Examen par un conseiller</p>
             {s2 === 'loading' && (
-              <p className="text-xs mt-1" style={{ color: '#4F46E5' }}>Votre sélection est enregistrée. Notre équipe examine votre dossier.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>Votre sélection est enregistrée. Notre équipe examine votre dossier.</p>
             )}
           </div>
         </div>
@@ -223,24 +223,24 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s3 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s3} n={3} />
           <div>
-            <p className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Confirmation leaser</p>
-            <p className="text-xs" style={{ color: '#9A9A93' }}>Contrat de location</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Confirmation leaser</p>
+            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Contrat de location</p>
             {s3 === 'loading' && (
-              <p className="text-xs mt-1" style={{ color: '#4F46E5' }}>Le leaser examine votre dossier…</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>Le leaser examine votre dossier…</p>
             )}
           </div>
         </div>
       </div>
 
       {referentName && status !== OS.refused && (
-        <p className="text-xs mb-4" style={{ color: '#9A9A93' }}>
+        <p className="text-xs mb-4" style={{ color: 'var(--ink-3)' }}>
           Référent : {referentName}
         </p>
       )}
 
       {/* Confirm button — only when indicative */}
       {status === OS.indicative && !canConfirm && (
-        <p className="text-xs" style={{ color: '#9A9A93', lineHeight: 1.6 }}>
+        <p className="text-xs" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
           Une autre offre est déjà en cours de traitement pour ce dossier.
         </p>
       )}
@@ -250,8 +250,7 @@ export default function SouscrireCard({
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="w-full py-3.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: '#4F46E5', color: '#fff', borderRadius: 10 }}
+            className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full"
           >
             {loading ? (
               <>
@@ -271,14 +270,14 @@ export default function SouscrireCard({
             )}
           </button>
           {error && (
-            <p className="mt-3 text-xs px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>{error}</p>
+            <p className="ev-alert ev-alert--danger mt-3">{error}</p>
           )}
           <div className="flex items-center justify-center gap-1.5 mt-3">
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-              <rect x="2" y="5" width="8" height="6" rx="1" stroke="#9A9A93" strokeWidth="1.2" />
-              <path d="M4 5V3.5a2 2 0 114 0V5" stroke="#9A9A93" strokeWidth="1.2" />
+              <rect x="2" y="5" width="8" height="6" rx="1" stroke="var(--ink-3)" strokeWidth="1.2" />
+              <path d="M4 5V3.5a2 2 0 114 0V5" stroke="var(--ink-3)" strokeWidth="1.2" />
             </svg>
-            <span className="text-xs" style={{ color: '#9A9A93' }}>
+            <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
               Offre indicative — confirmation par le leaser sous 48h
             </span>
           </div>
