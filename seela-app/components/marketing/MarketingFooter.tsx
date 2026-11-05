@@ -1,56 +1,50 @@
-// Marketing footer with internal links to the solution pages — reinforces the
-// SEO silo (every page links to every sibling) and mirrors the landing footer.
+// Pied de page commun (landing, Solutions, Secteurs), structure du canvas v2.
+// Liens internes vers toutes les pages Solutions et Secteurs (silo SEO), rendus
+// côté serveur. Les mentions non connues restent marquées « À COMPLÉTER ».
 import Link from 'next/link'
-import { EverleaseMark } from '@/components/landing/icons'
+import Brand from '@/components/landing/Brand'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import { SECTORS } from '@/lib/seo/sectors'
 
-function Logo({ size = 20 }: { size?: number }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ width: size + 4, height: size + 4, borderRadius: 7, background: 'var(--text)', display: 'grid', placeItems: 'center' }}>
-        <EverleaseMark size={size + 4} color="#FAFAF9" />
-      </div>
-      <div style={{ fontSize: size * 0.74, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--text)' }}>everlease</div>
-    </div>
-  )
-}
-
 export default function MarketingFooter() {
   return (
-    <footer className="lp-footer">
-      <div className="lp-wrap">
-        <div className="mk-footer__cols">
-          <div>
-            <Logo size={20} />
-            <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 12, maxWidth: 280, lineHeight: 1.5 }}>
-              Le financement locatif des équipements professionnels, en quelques minutes.
-            </p>
+    <footer className="foot">
+      <div className="wrap">
+        <div className="foot__grid">
+          <div className="foot__col">
+            <Brand />
+            <p className="small" style={{ margin: '8px 0 0', color: 'var(--ink-2)', maxWidth: 300 }}>Financement locatif d&apos;équipements professionnels. Un seul dossier, présenté aux financeurs adaptés.</p>
+            <p className="legal" style={{ margin: '6px 0 0' }}>Location financière · Crédit-bail · LLD · LOA · Lease-back</p>
           </div>
-          <div>
-            <div className="mk-footer__label">Solutions</div>
-            <Link className="mk-footer__link" href="/solutions">Tous les financements</Link>
+          <div className="foot__col">
+            <div className="foot__lbl">Solutions</div>
+            <Link href="/solutions">Tous les financements</Link>
             {SOLUTIONS.map((s) => (
-              <Link key={s.slug} className="mk-footer__link" href={`/solutions/${s.slug}`}>{s.nav}</Link>
+              <Link key={s.slug} href={`/solutions/${s.slug}`}>{s.nav}</Link>
             ))}
           </div>
-          <div>
-            <div className="mk-footer__label">Secteurs</div>
-            <Link className="mk-footer__link" href="/secteurs">Tous les secteurs</Link>
+          <div className="foot__col">
+            <div className="foot__lbl">Secteurs</div>
+            <Link href="/secteurs">Tous les secteurs</Link>
             {SECTORS.map((s) => (
-              <Link key={s.slug} className="mk-footer__link" href={`/secteurs/${s.slug}`}>{s.name}</Link>
+              <Link key={s.slug} href={`/secteurs/${s.slug}`}>{s.nav}</Link>
             ))}
           </div>
-          <div>
-            <div className="mk-footer__label">Everlease</div>
-            <Link className="mk-footer__link" href="/">Accueil</Link>
-            <Link className="mk-footer__link" href="/auth">Se connecter</Link>
-            <Link className="mk-footer__link" href="/auth">Financer un équipement</Link>
+          <div className="foot__col">
+            <div className="foot__lbl">Everlease</div>
+            <Link href="/">Accueil</Link>
+            <Link href="/#comment">Comment ça marche</Link>
+            <Link href="/#financeurs">Financeurs</Link>
+            <Link href="/auth">Se connecter</Link>
+            <Link href="/auth">Déposer un devis</Link>
           </div>
         </div>
-        <div className="mk-footer__bottom">
-          <span>© 2026 Everlease SAS — Tous droits réservés.</span>
-          <span>Conçu et hébergé en France 🇫🇷</span>
+        <div className="foot__legal">
+          <p className="legal" style={{ margin: 0 }}>Les montants affichés sur cette page sont des exemples illustratifs, hors assurance et services. Tout financement est soumis à l&apos;acceptation du dossier par le financeur, qui fixe seul ses conditions.</p>
+        </div>
+        <div className="foot__bottom legal">
+          <span>© 2026 Everlease SAS · <span className="todo">[À COMPLÉTER : RCS et siège]</span></span>
+          <span><Link href="/mentions-legales">Mentions légales</Link> · <Link href="/confidentialite">Confidentialité</Link></span>
         </div>
       </div>
     </footer>
