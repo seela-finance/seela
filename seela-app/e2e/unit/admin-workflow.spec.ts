@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test'
 import {
+  addRequestNote,
+  canRerunMatching,
   recordLeaserDecision,
   refuseRequest,
+  rerunMatching,
   validateAndTransmit,
   WorkflowError,
   type Email,
@@ -14,7 +17,7 @@ import { canTransitionOffer, canTransitionRequest, type OfferStatus, type Reques
 import type { AdminEvent } from '../../lib/admin-events'
 
 // Base en mémoire : un dossier, ses offres, le profil et les leasers ; transitions atomiques comme en prod.
-function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers?: string[]; referent?: string | null; sendOk?: (e: Email) => boolean } = {}) {
+function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers?: string[]; referent?: string | null; sendOk?: (e: Email) => boolean; matched?: number } = {}) {
   const offers: Record<string, { status: string; selected: boolean; extra: Record<string, unknown> }> = {
     o1: { status: opts.offerStatus ?? 'client_confirmed', selected: true, extra: {} },
   }
@@ -49,6 +52,10 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
     },
     async restoreRequest(_id, current, status) {
       if (request.status === current) request.status = status
+    },
+    async runMatching() {
+      request.status = opts.matched ? 'offers_available' : 'no_match'
+      return { offers: opts.matched ?? 0 }
     },
   }
 
@@ -143,4 +150,37 @@ test('refuser le dossier : motif obligatoire, email seulement avec un message', 
 test('un contrat actif ne peut pas être refusé', async () => {
   const { deps } = setup({ requestStatus: 'active' })
   await expect(refuseRequest(deps, 'r1aaaaaa-0000', 'x', '')).rejects.toBeInstanceOf(WorkflowError)
+})
+
+test('relance du matching : sans offre, le dossier repasse par submitted et le journal le note', async () => {
+  const { deps, request, sent, events } = setup({ requestStatus: 'no_match', matched: 2 })
+  expect(await rerunMatching(deps, 'r1aaaaaa-0000')).toEqual({ offers: 2 })
+  expect(request.status).toBe('offers_available')
+  expect(sent).toHaveLength(0)
+  expect(events[0]).toMatchObject({ action: 'Matching relancé', note: '2 nouvelles offres', before: { request: 'no_match' } })
+})
+
+test('relance du matching : possible sur un dossier resté submitted, sans nouvelle offre le journal le dit', async () => {
+  const { deps, request, events } = setup({ requestStatus: 'submitted' })
+  expect(await rerunMatching(deps, 'r1aaaaaa-0000')).toEqual({ offers: 0 })
+  expect(request.status).toBe('no_match')
+  expect(events[0].note).toBe('Aucune nouvelle offre')
+})
+
+test('relance du matching : refusée une fois les offres présentées au client', async () => {
+  for (const status of ['offers_available', 'offer_selected', 'seela_validated', 'active', 'refused']) {
+    expect(canRerunMatching(status)).toBe(false)
+    const { deps, events } = setup({ requestStatus: status, matched: 1 })
+    await expect(rerunMatching(deps, 'r1aaaaaa-0000')).rejects.toBeInstanceOf(WorkflowError)
+    expect(events).toHaveLength(0)
+  }
+})
+
+test('note interne : ajoutée au journal, vide refusée, aucun email', async () => {
+  const { deps, sent, events } = setup()
+  await addRequestNote(deps, 'r1aaaaaa-0000', '  Rappeler lundi  ')
+  expect(events).toEqual([{ action: 'Note interne', requestId: 'r1aaaaaa-0000', note: 'Rappeler lundi' }])
+  expect(sent).toHaveLength(0)
+  await expect(addRequestNote(deps, 'r1aaaaaa-0000', '   ')).rejects.toBeInstanceOf(WorkflowError)
+  await expect(addRequestNote(deps, 'inconnu', 'Note')).rejects.toBeInstanceOf(WorkflowError)
 })

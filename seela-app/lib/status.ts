@@ -90,6 +90,7 @@ export const REQUEST_TRANSITIONS: Record<RequestStatus, Transition<RequestStatus
     { to: 'refused', by: ['admin'] },
   ],
   no_match: [
+    { to: 'submitted', by: ['admin'] }, // relance du matching
     { to: 'offers_available', by: ['admin'] },
     { to: 'refused', by: ['admin'] },
   ],
