@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import TopActions from '@/components/TopActions'
-import { RS } from '@/lib/status'
+import { MAX_DOCUMENT_BYTES, MAX_IMAGE_BYTES } from '@/lib/documents'
+import { RS, requestDestination } from '@/lib/status'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ interface LineItem {
   quantity: number | null
   unit_price: number | null
   total_price: number | null
-  category?: string
+  category?: string | null
   selected?: boolean
 }
 
@@ -46,10 +47,6 @@ const STEP_LABELS = [
 
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
-}
-
-function genId() {
-  return Math.random().toString(36).slice(2)
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -149,12 +146,19 @@ function NavButtons({
 // ─── Step 1: Upload ───────────────────────────────────────────────────────────
 
 function Step1Upload({
+  requestId,
+  hasDocument,
+  initialType,
   onNext,
 }: {
-  onNext: (data: { file: File; documentType: 'devis' | 'facture'; documentUrl: string; requestId: string }) => void
+  requestId: string
+  hasDocument: boolean
+  initialType: 'devis' | 'facture'
+  /** `replaced` : nouveau document, les lignes déjà extraites ne valent plus. */
+  onNext: (data: { documentType: 'devis' | 'facture'; requestId: string; replaced: boolean }) => void
 }) {
   const supabase = createClient()
-  const [documentType, setDocumentType] = useState<'devis' | 'facture'>('devis')
+  const [documentType, setDocumentType] = useState<'devis' | 'facture'>(initialType)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,8 +170,12 @@ function Step1Upload({
       setError('Format non supporté. Utilisez PDF, JPG ou PNG.')
       return
     }
-    if (f.size > 20 * 1024 * 1024) {
-      setError('Le fichier est trop volumineux (max 20 Mo).')
+    if (f.size > MAX_DOCUMENT_BYTES) {
+      setError('Le fichier est trop volumineux (20 Mo maximum).')
+      return
+    }
+    if (f.type !== 'application/pdf' && f.size > MAX_IMAGE_BYTES) {
+      setError('Image trop volumineuse (5 Mo maximum) : envoyez un PDF ou une image plus légère.')
       return
     }
     setFile(f)
@@ -175,7 +183,11 @@ function Step1Upload({
   }
 
   async function handleUpload() {
-    if (!file) return
+    // Sans nouveau fichier : on garde le document déjà déposé et ses lignes
+    if (!file) {
+      onNext({ documentType, requestId, replaced: false })
+      return
+    }
     setUploading(true)
     setError(null)
 
@@ -190,14 +202,33 @@ function Step1Upload({
 
       const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
 
+      if (requestId) {
+        // Même brouillon : le serveur remplace le document et retire l'ancien fichier
+        const res = await fetch(`/api/requests/${requestId}/draft`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentUrl: publicUrl, documentType }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          await supabase.storage.from('documents').remove([path])
+          throw new Error(data.error ?? 'Le document n\'a pas pu être remplacé.')
+        }
+        onNext({ documentType, requestId, replaced: true })
+        return
+      }
+
       const { data: req, error: insertErr } = await supabase
         .from('financing_requests')
         .insert({ user_id: user.id, document_url: publicUrl, document_type: documentType, status: RS.draft })
         .select('id')
         .single()
-      if (insertErr) throw insertErr
+      if (insertErr) {
+        await supabase.storage.from('documents').remove([path])
+        throw insertErr
+      }
 
-      onNext({ file, documentType, documentUrl: publicUrl, requestId: req.id })
+      onNext({ documentType, requestId: req.id, replaced: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'upload')
     } finally {
@@ -280,9 +311,11 @@ function Step1Upload({
                 <path d="M4 20v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Glissez votre devis ici</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+              {hasDocument ? 'Glissez un autre document pour remplacer le vôtre' : 'Glissez votre devis ici'}
+            </p>
             <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-              ou cliquez pour parcourir — PDF, JPG, PNG jusqu&apos;à 25 Mo
+              ou cliquez pour parcourir : PDF jusqu&apos;à 20 Mo, JPG ou PNG jusqu&apos;à 5 Mo
             </p>
             <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
               <button
@@ -294,17 +327,6 @@ function Step1Upload({
                   <path d="M7 9V2M4 5l3-3 3 3M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Parcourir
-              </button>
-              <button
-                className="ev-btn ev-btn--ghost ev-btn--sm"
-                style={{ background: 'var(--surface)', color: 'var(--ink-3)' }}
-                onClick={() => {}}
-              >
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path d="M5.5 8.5a3 3 0 004.24 0l2-2a3 3 0 00-4.24-4.24l-1 1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8.5 5.5a3 3 0 00-4.24 0l-2 2a3 3 0 004.24 4.24l1-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Coller un lien
               </button>
             </div>
           </div>
@@ -343,9 +365,9 @@ function Step1Upload({
       <NavButtons
         hideBack
         onNext={handleUpload}
-        nextLabel="Analyser le document"
+        nextLabel={file || !hasDocument ? 'Analyser le document' : 'Garder ce document'}
         loading={uploading}
-        disabled={!file}
+        disabled={!file && !hasDocument}
       />
     </div>
   )
@@ -355,88 +377,72 @@ function Step1Upload({
 
 type DocumentType = 'devis' | 'facture'
 
+const EMPTY_META: DocumentMeta = { supplier_name: null, supplier_address: null, supplier_siren: null, document_number: null, document_date: null }
+
 function Step2Lines({
   requestId,
-  documentUrl,
-  mimeType,
+  initial,
   documentType,
   onDocumentTypeChange,
   onBack,
   onNext,
 }: {
   requestId: string
-  documentUrl: string
-  mimeType: string
+  /** Lignes déjà chargées (retour depuis une autre étape) : ni lecture ni analyse. */
+  initial: { items: LineItem[]; selected: string[]; meta: DocumentMeta } | null
   documentType: DocumentType
   onDocumentTypeChange: (t: DocumentType) => void
-  onBack: () => void
+  onBack: (items: LineItem[], selected: string[], meta: DocumentMeta) => void
   onNext: (items: LineItem[], selected: string[], meta: DocumentMeta) => void
 }) {
   const supabase = useMemo(() => createClient(), [])
-  const [analyzing, setAnalyzing] = useState(true)
-  const [items, setItems] = useState<LineItem[]>([])
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [analyzing, setAnalyzing] = useState(!initial)
+  const [items, setItems] = useState<LineItem[]>(initial?.items ?? [])
+  const [selected, setSelected] = useState<Set<string>>(new Set(initial?.selected ?? []))
   const [error, setError] = useState<string | null>(null)
   // Type lu sur le document par l'IA : s'il contredit le choix de l'étape 1, on le signale
   const [detectedType, setDetectedType] = useState<DocumentType | null>(null)
-  const analyzed = useRef(false)
+  const analyzed = useRef(!!initial)
 
-  const [meta, setMeta] = useState<DocumentMeta>({ supplier_name: null, supplier_address: null, supplier_siren: null, document_number: null, document_date: null })
+  const [meta, setMeta] = useState<DocumentMeta>(initial?.meta ?? EMPTY_META)
 
   const analyze = useCallback(async () => {
     if (analyzed.current) return
     analyzed.current = true
     try {
-      // Check DB first — avoid re-calling Claude unnecessarily
-      const { data: existing } = await supabase
-        .from('line_items')
-        .select('*')
-        .eq('request_id', requestId)
+      // Lignes déjà enregistrées (reprise d'un brouillon) : aucun appel à l'IA
+      const [{ data: existing }, { data: request }] = await Promise.all([
+        supabase.from('line_items').select('*').eq('request_id', requestId),
+        supabase.from('financing_requests').select('supplier_name, supplier_address, supplier_siren, document_number, document_date').eq('id', requestId).single(),
+      ])
 
       if (existing && existing.length > 0) {
-        const withIds: LineItem[] = existing.map((i: LineItem) => ({ ...i }))
-        setItems(withIds)
-        const autoSelected = new Set(
-          withIds
-            .filter(i => i.selected && i.total_price != null && i.total_price > 0)
-            .map(i => i.id)
-        )
-        setSelected(autoSelected)
+        setItems(existing as LineItem[])
+        setSelected(new Set((existing as LineItem[]).filter(i => i.selected).map(i => i.id)))
+        if (request) setMeta(request as DocumentMeta)
         return
       }
 
-      // Fresh analysis
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentUrl, mimeType }),
+        body: JSON.stringify({ requestId }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Analyse échouée')
 
-      // Store supplier + document metadata
-      const parsedMeta: DocumentMeta = {
-        supplier_name: data.supplier?.name ?? null,
-        supplier_address: data.supplier?.address ?? null,
-        supplier_siren: data.supplier?.siren ?? null,
-        document_number: data.document_number ?? null,
-        document_date: data.document_date ?? null,
-      }
-      setMeta(parsedMeta)
+      setMeta(data.meta ?? EMPTY_META)
       if (data.document_kind === 'devis' || data.document_kind === 'facture') setDetectedType(data.document_kind)
 
-      const withIds: LineItem[] = (data.items || []).map((i: Omit<LineItem, 'id'>) => ({ ...i, id: genId() }))
-      setItems(withIds)
-      const autoSelected = new Set(
-        withIds.filter(i => i.total_price != null && i.total_price > 0).map(i => i.id)
-      )
-      setSelected(autoSelected)
+      const lines: LineItem[] = data.items ?? []
+      setItems(lines)
+      setSelected(new Set(lines.filter(i => i.selected).map(i => i.id)))
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erreur lors de l'analyse")
     } finally {
       setAnalyzing(false)
     }
-  }, [requestId, documentUrl, mimeType, supabase])
+  }, [requestId, supabase])
 
   // TODO(backlog): refacto du chargement au montage (setState synchrone dans l'effet)
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -502,6 +508,10 @@ function Step2Lines({
           <button onClick={() => { analyzed.current = false; setAnalyzing(true); setError(null); analyze() }} className="ev-btn ev-btn--ghost ev-btn--sm">
             Réessayer
           </button>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="ev-alert ev-alert--warning">
+          Aucun équipement à financer n&apos;a été trouvé dans ce document. Revenez en arrière pour en déposer un autre.
         </div>
       ) : (
         <>
@@ -601,7 +611,7 @@ function Step2Lines({
       )}
 
       <NavButtons
-        onBack={onBack}
+        onBack={() => onBack(items, Array.from(selected), meta)}
         onNext={() => onNext(items, Array.from(selected), meta)}
         disabled={selected.size === 0 || analyzing}
       />
@@ -619,16 +629,18 @@ const PERIODICITE_OPTIONS: { key: Periodicite; label: string; sub: string; mult:
 
 function Step3Config({
   totalAmount,
+  initial,
   onBack,
   onNext,
 }: {
   totalAmount: number
-  onBack: () => void
+  initial: { duration: Duration; notes: string; periodicite: Periodicite }
+  onBack: (duration: Duration, notes: string, periodicite: Periodicite) => void
   onNext: (duration: Duration, notes: string, periodicite: Periodicite) => void
 }) {
-  const [duration, setDuration] = useState<Duration>(36)
-  const [periodicite, setPeriodicite] = useState<Periodicite>('mensuelle')
-  const [notes, setNotes] = useState('')
+  const [duration, setDuration] = useState<Duration>(initial.duration)
+  const [periodicite, setPeriodicite] = useState<Periodicite>(initial.periodicite)
+  const [notes, setNotes] = useState(initial.notes)
 
   const monthly = totalAmount * COEFFICIENTS[duration]
   const opt = PERIODICITE_OPTIONS.find(o => o.key === periodicite)!
@@ -725,7 +737,7 @@ function Step3Config({
         />
       </div>
 
-      <NavButtons onBack={onBack} onNext={() => onNext(duration, notes, periodicite)} />
+      <NavButtons onBack={() => onBack(duration, notes, periodicite)} onNext={() => onNext(duration, notes, periodicite)} />
     </div>
   )
 }
@@ -884,49 +896,83 @@ function Step4Confirmation({
 
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
-export default function NouveauPage() {
+function Spinner() {
+  return (
+    <div className="py-16 flex justify-center">
+      <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--accent)' }} />
+    </div>
+  )
+}
+
+function Wizard({ resumeId }: { resumeId: string | null }) {
+  const router = useRouter()
   const [step, setStep] = useState(1)
+  const [resuming, setResuming] = useState(!!resumeId)
 
   // Step 1 data
-  const [documentUrl, setDocumentUrl] = useState('')
-  const [documentMime, setDocumentMime] = useState('')
+  const [hasDocument, setHasDocument] = useState(false)
   const [documentType, setDocumentType] = useState<'devis' | 'facture'>('devis')
   const [requestId, setRequestId] = useState('')
 
-  // Step 2 data
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
-  const [docMeta, setDocMeta] = useState<DocumentMeta>({ supplier_name: null, supplier_address: null, supplier_siren: null, document_number: null, document_date: null })
+  // Step 2 data (null tant que les lignes du document ne sont pas chargées)
+  const [lines, setLines] = useState<{ items: LineItem[]; selected: string[]; meta: DocumentMeta } | null>(null)
 
   // Step 3 data
-  const [duration, setDuration] = useState<Duration>(36)
-  const [notes, setNotes] = useState('')
-  const [periodicite, setPeriodicite] = useState<Periodicite>('mensuelle')
+  const [config, setConfig] = useState<{ duration: Duration; notes: string; periodicite: Periodicite }>({ duration: 36, notes: '', periodicite: 'mensuelle' })
 
-  const totalAmount = lineItems
-    .filter(i => selectedItems.includes(i.id))
+  // Reprise d'un brouillon : on repart de l'étape des lignes, sans rien recréer
+  useEffect(() => {
+    if (!resumeId) return
+    let cancelled = false
+    createClient()
+      .from('financing_requests')
+      .select('id, status, document_url, document_type')
+      .eq('id', resumeId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return
+        if (!data) {
+          router.replace('/app/nouveau')
+          return
+        }
+        if (data.status !== RS.draft) {
+          router.replace(requestDestination(data.id, data.status))
+          return
+        }
+        setRequestId(data.id)
+        if (data.document_type === 'facture') setDocumentType('facture')
+        setHasDocument(!!data.document_url)
+        setStep(data.document_url ? 2 : 1)
+        setResuming(false)
+      })
+    return () => { cancelled = true }
+  }, [resumeId, router])
+
+  const totalAmount = (lines?.items ?? [])
+    .filter(i => lines?.selected.includes(i.id))
     .reduce((s, i) => s + (i.total_price ?? 0), 0)
 
-  function handleStep1(data: { file: File; documentType: 'devis' | 'facture'; documentUrl: string; requestId: string }) {
-    setDocumentUrl(data.documentUrl)
-    setDocumentMime(data.file.type)
+  function handleStep1(data: { documentType: 'devis' | 'facture'; requestId: string; replaced: boolean }) {
+    // Premier dépôt : l'adresse porte le brouillon, un rechargement le retrouve
+    if (!requestId) {
+      router.replace(`/app/nouveau?request=${data.requestId}`, { scroll: false })
+      return
+    }
     setDocumentType(data.documentType)
-    setRequestId(data.requestId)
+    setHasDocument(true)
+    if (data.replaced) setLines(null)
     setStep(2)
   }
 
-  function handleStep2(items: LineItem[], selected: string[], meta: DocumentMeta) {
-    setLineItems(items)
-    setSelectedItems(selected)
-    setDocMeta(meta)
-    setStep(3)
-  }
-
-  function handleStep3(dur: Duration, n: string, p: Periodicite) {
-    setDuration(dur)
-    setNotes(n)
-    setPeriodicite(p)
-    setStep(4)
+  function keepLines(items: LineItem[], selected: string[], meta: DocumentMeta) {
+    setLines({ items, selected, meta })
+    if (items.length === 0) return
+    // Pour la reprise plus tard : la soumission renvoie de toute façon les lignes choisies
+    fetch(`/api/requests/${requestId}/draft`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selectedIds: selected }),
+    }).catch(err => console.error('[nouveau] sélection non enregistrée', err))
   }
 
   return (
@@ -943,38 +989,58 @@ export default function NouveauPage() {
       <div className="flex-1 max-w-2xl w-full mx-auto px-6 py-10">
         <ProgressBar step={step} total={4} />
 
-        {step === 1 && <Step1Upload onNext={handleStep1} />}
-        {step === 2 && (
-          <Step2Lines
-            requestId={requestId}
-            documentUrl={documentUrl}
-            mimeType={documentMime}
-            documentType={documentType}
-            onDocumentTypeChange={setDocumentType}
-            onBack={() => setStep(1)}
-            onNext={handleStep2}
-          />
-        )}
-        {step === 3 && (
-          <Step3Config
-            totalAmount={totalAmount}
-            onBack={() => setStep(2)}
-            onNext={handleStep3}
-          />
-        )}
-        {step === 4 && (
-          <Step4Confirmation
-            requestId={requestId}
-            documentType={documentType}
-            selectedItems={selectedItems}
-            lineItems={lineItems}
-            duration={duration}
-            notes={notes}
-            periodicite={periodicite}
-            meta={docMeta}
-          />
+        {resuming ? <Spinner /> : (
+          <>
+            {step === 1 && (
+              <Step1Upload requestId={requestId} hasDocument={hasDocument} initialType={documentType} onNext={handleStep1} />
+            )}
+            {step === 2 && (
+              <Step2Lines
+                requestId={requestId}
+                initial={lines}
+                documentType={documentType}
+                onDocumentTypeChange={setDocumentType}
+                onBack={(items, selected, meta) => { keepLines(items, selected, meta); setStep(1) }}
+                onNext={(items, selected, meta) => { keepLines(items, selected, meta); setStep(3) }}
+              />
+            )}
+            {step === 3 && (
+              <Step3Config
+                totalAmount={totalAmount}
+                initial={config}
+                onBack={(duration, notes, periodicite) => { setConfig({ duration, notes, periodicite }); setStep(2) }}
+                onNext={(duration, notes, periodicite) => { setConfig({ duration, notes, periodicite }); setStep(4) }}
+              />
+            )}
+            {step === 4 && lines && (
+              <Step4Confirmation
+                requestId={requestId}
+                documentType={documentType}
+                selectedItems={lines.selected}
+                lineItems={lines.items}
+                duration={config.duration}
+                notes={config.notes}
+                periodicite={config.periodicite}
+                meta={lines.meta}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
+  )
+}
+
+// La clé repart de zéro quand l'adresse change de brouillon (lien « Nouveau financement » pendant une reprise).
+function WizardFromUrl() {
+  const resumeId = useSearchParams().get('request')
+  return <Wizard key={resumeId ?? 'new'} resumeId={resumeId} />
+}
+
+export default function NouveauPage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <WizardFromUrl />
+    </Suspense>
   )
 }

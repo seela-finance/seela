@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
-import { loadStagingEnv } from './e2e/support/staging'
+import { FAKE_AI_PORT, loadStagingEnv } from './e2e/support/staging'
 
 // E2E_STAGING=1 : parcours connectés sur le Supabase de staging, avec des comptes éphémères
 // (`npm run test:staging`). Charge .env.staging.local et refuse toute autre base que le staging.
@@ -68,11 +68,16 @@ export default defineConfig({
   ],
   webServer: externalBaseURL
     ? undefined
-    : {
-        command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
-        url: baseURL,
-        // Jamais de réutilisation en mode staging : un serveur déjà lancé peut viser une autre base
-        reuseExistingServer: !process.env.CI && !stagingMode,
-        timeout: 120_000,
-      },
+    : [
+        {
+          command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
+          url: baseURL,
+          // Jamais de réutilisation en mode staging : un serveur déjà lancé peut viser une autre base
+          reuseExistingServer: !process.env.CI && !stagingMode,
+          timeout: 120_000,
+        },
+        ...(stagingMode
+          ? [{ command: `node e2e/support/fake-anthropic.mjs ${FAKE_AI_PORT}`, url: `http://localhost:${FAKE_AI_PORT}`, reuseExistingServer: false }]
+          : []),
+      ],
 })

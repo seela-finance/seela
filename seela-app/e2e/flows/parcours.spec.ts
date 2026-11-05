@@ -4,21 +4,18 @@ import { OS, RS } from '../../lib/status'
 import { readContext, stagingAdmin, stateFile, type Role } from '../support/staging'
 
 // Parcours réels sur le Supabase de staging, avec les comptes éphémères de e2e/staging.seed.ts.
-// Seul l'appel à l'IA est simulé (coût) ; aucun email ne part (voir loadStagingEnv).
+// Seule la réponse du modèle d'IA est simulée (e2e/support/fake-anthropic.mjs) ; aucun email ne part (voir loadStagingEnv).
 
 const SCREENS = 'test-results/screens'
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n')
 
-const ANALYSIS = {
-  supplier: { name: 'Fournisseur E2E', address: '1 rue du Test, Paris', siren: '987654321' },
-  document_number: 'DV-E2E-1',
-  document_date: '2026-10-01',
-  document_kind: 'facture',
-  items: [
-    { description: 'Serveur de calcul', quantity: 1, unit_price: 10000, total_price: 10000, category: 'Informatique' },
-    { description: 'Écrans 27 pouces', quantity: 4, unit_price: 500, total_price: 2000, category: 'Informatique' },
-    { description: 'Installation sur site', quantity: 1, unit_price: 1500, total_price: 1500, category: 'Autre' },
-  ],
+/** Dépose un fichier, en réessayant tant que la page n'est pas hydratée (le dépôt serait ignoré). */
+async function deposit(page: Page, name: string) {
+  const analyze = page.getByRole('button', { name: 'Analyser le document' })
+  await expect(async () => {
+    await page.locator('input[type="file"]').setInputFiles({ name, mimeType: 'application/pdf', buffer: PDF })
+    await expect(analyze).toBeEnabled({ timeout: 1_000 })
+  }).toPass({ timeout: 60_000 })
 }
 
 async function pageAs(browser: Browser, role: Role) {
@@ -63,9 +60,8 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
   const client = await pageAs(browser, 'client')
 
   await test.step('étape 1 : dépôt du devis', async () => {
-    await client.route('**/api/analyze', route => route.fulfill({ json: ANALYSIS }))
     await client.goto('/app/nouveau')
-    await client.locator('input[type="file"]').setInputFiles({ name: 'devis-e2e.pdf', mimeType: 'application/pdf', buffer: PDF })
+    await deposit(client, 'devis-e2e.pdf')
     await shot(client, '01-depot')
     await client.getByRole('button', { name: 'Analyser le document' }).click()
   })
@@ -186,6 +182,97 @@ test('à 375 px, chaque page tient dans l’écran et le menu s’ouvre', async 
   await client.locator('aside').getByRole('link', { name: 'Offres' }).click()
   await expect(client).toHaveURL(/\/app\/offres/)
   await expect(client.getByRole('button', { name: 'Se déconnecter' })).toBeHidden()
+})
+
+test('un brouillon se reprend sans nouvelle analyse, change de document sans doublon et se supprime', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const client = await pageAs(browser, 'client')
+  const analyses: string[] = []
+  // Les parcours tournent en parallèle sur le même compte : on compte les créations de cet onglet
+  const creations: string[] = []
+  client.on('request', r => {
+    if (r.url().endsWith('/api/analyze')) analyses.push(r.url())
+    if (r.method() === 'POST' && r.url().includes('/rest/v1/financing_requests')) creations.push(r.url())
+  })
+  const loadDraft = async (id: string) => (await db.from('financing_requests').select('id, document_url').eq('id', id).maybeSingle()).data
+
+  await client.goto('/app/nouveau')
+  await deposit(client, 'brouillon-e2e.pdf')
+  await client.getByRole('button', { name: 'Analyser le document' }).click()
+  const installation = client.getByRole('row', { name: /Installation sur site/ }).getByRole('checkbox')
+  await expect(installation).toBeChecked({ timeout: 30_000 })
+  expect(analyses).toHaveLength(1)
+
+  await test.step('aller-retour 2 → 3 → 2 : sélection conservée, aucune analyse', async () => {
+    await installation.uncheck()
+    await client.getByRole('button', { name: 'Continuer' }).click()
+    await expect(client.getByRole('heading', { name: 'Configuration du financement' })).toBeVisible()
+    await client.getByRole('button', { name: 'Retour' }).click()
+    await expect(installation).not.toBeChecked()
+    expect(analyses).toHaveLength(1)
+    await client.getByRole('button', { name: 'Continuer' }).click()
+    await expect(client.getByRole('heading', { name: 'Configuration du financement' })).toBeVisible()
+  })
+
+  const draftId = new URL(client.url()).searchParams.get('request')!
+  const draft = (await loadDraft(draftId))!
+  await expect.poll(async () => (await db.from('line_items').select('selected').eq('request_id', draft.id).eq('description', 'Installation sur site').single()).data?.selected).toBe(false)
+
+  await test.step('quitter puis reprendre depuis le tableau de bord : mêmes lignes, sans analyse', async () => {
+    await client.goto('/app/dashboard')
+    const row = client.getByRole('row').filter({ hasText: `C-${draft.id.slice(0, 4).toUpperCase()}` })
+    await row.getByRole('button', { name: 'Reprendre' }).click()
+    await expect(client).toHaveURL(new RegExp(`/app/nouveau\\?request=${draft.id}`))
+    await expect(client.getByText(/Total sélectionné/)).toContainText(/12\s000\s€/)
+    await expect(installation).not.toBeChecked()
+    await expect(client.getByText('Fournisseur E2E')).toBeVisible()
+    expect(analyses).toHaveLength(1)
+  })
+
+  await test.step('changer de document : même dossier, nouvelle analyse, ancien fichier retiré', async () => {
+    await client.getByRole('button', { name: 'Retour' }).click()
+    await expect(client.getByRole('button', { name: 'Garder ce document' })).toBeVisible()
+    await deposit(client, 'autre-e2e.pdf')
+    await client.getByRole('button', { name: 'Analyser le document' }).click()
+    await expect(installation).toBeChecked({ timeout: 30_000 })
+    expect(analyses).toHaveLength(2)
+
+    expect(creations).toHaveLength(1)
+    expect((await loadDraft(draft.id))!.document_url).not.toBe(draft.document_url)
+    const { count } = await db.from('line_items').select('id', { count: 'exact', head: true }).eq('request_id', draft.id)
+    expect(count).toBe(3)
+    const oldName = draft.document_url!.split('/').pop()!
+    const { data: files } = await db.storage.from('documents').list(run.users.client.id)
+    expect(files!.map(f => f.name)).not.toContain(oldName)
+  })
+
+  await test.step('un autre client ne peut ni modifier ni supprimer ce brouillon', async () => {
+    const intruder = await pageAs(browser, 'intruder')
+    await intruder.goto('/app/dashboard')
+    const res = await intruder.evaluate(async id => {
+      const del = await fetch(`/api/requests/${id}/draft`, { method: 'DELETE' })
+      const ai = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: id }) })
+      return [del.status, ai.status]
+    }, draft.id)
+    expect(res).toEqual([404, 404])
+    await intruder.context().close()
+  })
+
+  await test.step('supprimer le brouillon : dossier, lignes et fichier disparaissent', async () => {
+    await client.goto('/app/dashboard')
+    client.once('dialog', d => d.accept())
+    const row = client.getByRole('row').filter({ hasText: `C-${draft.id.slice(0, 4).toUpperCase()}` })
+    await shot(client, '18-brouillon-dashboard')
+    await row.getByRole('button', { name: 'Supprimer' }).click()
+    await expect(row).toHaveCount(0)
+    expect(await loadDraft(draft.id)).toBeNull()
+    const { count } = await db.from('line_items').select('id', { count: 'exact', head: true }).eq('request_id', draft.id)
+    expect(count).toBe(0)
+  })
+
+  await client.context().close()
 })
 
 test('sans offre : l’admin voit pourquoi, note le dossier et relance le matching après correction', async ({ browser }) => {

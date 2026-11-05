@@ -1,8 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { clientRoute } from '@/lib/client-route'
+import { ClientActionError } from '@/lib/client-workflow'
 import { fetchOwnDocument, DocumentError } from '@/lib/documents'
+import { supabaseDraftStore } from '@/lib/draft-store'
+import { analyzeDraft } from '@/lib/draft-workflow'
 
 const client = new Anthropic()
 
@@ -30,46 +33,49 @@ Réponds UNIQUEMENT en JSON valide avec exactement ce format :
 }
 Si une valeur est absente ou non trouvée, utilise null.`
 
+async function askClaude(db: SupabaseClient, documentUrl: string, userId: string): Promise<unknown> {
+  // Le type du fichier est celui enregistré au dépôt
+  const { base64, type } = await fetchOwnDocument(db, documentUrl, null, userId)
+  const isPdf = type === 'application/pdf'
+
+  const messages: MessageParam[] = [
+    {
+      role: 'user',
+      content: [
+        isPdf
+          ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+          : { type: 'image', source: { type: 'base64', media_type: type as 'image/jpeg' | 'image/png' | 'image/webp', data: base64 } },
+        { type: 'text', text: PROMPT },
+      ],
+    },
+  ]
+
+  const message = await client.messages.create({
+    model: 'claude-opus-4-7',
+    max_tokens: 2048,
+    messages,
+  })
+
+  const textBlock = message.content.find(c => c.type === 'text')
+  if (!textBlock || textBlock.type !== 'text') throw new Error('No text in response')
+
+  const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('No JSON found in response')
+  return JSON.parse(jsonMatch[0])
+}
+
+// Analyse le document d'un brouillon et enregistre ses lignes ; le document est lu en base, jamais fourni par le navigateur.
 export async function POST(req: Request) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-
-    const { documentUrl, mimeType } = await req.json()
-    const { base64, type } = await fetchOwnDocument(supabase, documentUrl, mimeType, user.id)
-    const isPdf = type === 'application/pdf'
-
-    const messages: MessageParam[] = [
-      {
-        role: 'user',
-        content: [
-          isPdf
-            ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
-            : { type: 'image', source: { type: 'base64', media_type: type as 'image/jpeg' | 'image/png' | 'image/webp', data: base64 } },
-          { type: 'text', text: PROMPT },
-        ],
-      },
-    ]
-
-    const message = await client.messages.create({
-      model: 'claude-opus-4-7',
-      max_tokens: 2048,
-      messages,
-    })
-
-    const textBlock = message.content.find(c => c.type === 'text')
-    if (!textBlock || textBlock.type !== 'text') throw new Error('No text in response')
-
-    const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('No JSON found in response')
-
-    return NextResponse.json(JSON.parse(jsonMatch[0]))
-  } catch (err: unknown) {
-    console.error('Analyze error:', err)
-    if (err instanceof DocumentError) {
-      return NextResponse.json({ error: err.message }, { status: err.status })
+  const body = ((await req.json().catch(() => null)) ?? {}) as { requestId?: unknown }
+  const id = typeof body.requestId === 'string' ? body.requestId : ''
+  return clientRoute(id, async ({ userId, db }) => {
+    try {
+      return await analyzeDraft(supabaseDraftStore(db), userId, id, url => askClaude(db, url, userId))
+    } catch (err) {
+      if (err instanceof ClientActionError) throw err
+      if (err instanceof DocumentError) throw new ClientActionError(err.message, err.status)
+      console.error('Analyze error:', err)
+      throw new ClientActionError('Analyse échouée, veuillez réessayer', 500)
     }
-    return NextResponse.json({ error: 'Analyse échouée, veuillez réessayer' }, { status: 500 })
-  }
+  })
 }
