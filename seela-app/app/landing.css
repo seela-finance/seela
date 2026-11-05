@@ -339,7 +339,8 @@
 .lp .hero__aside strong{display:block;color:var(--ink);font-weight:600;font-size:15px}
 
 /* ----- signature: du montant au loyer ----- */
-.lp .sig{position:relative;min-height:240vh;border-top:1px solid var(--line)}
+/* clip et non hidden : garde le sticky ; au premier rendu, avant le JS, les tranches ont leur taille desktop */
+.lp .sig{position:relative;min-height:240vh;border-top:1px solid var(--line);overflow-x:clip}
 .lp .sig__pin{position:sticky;top:68px;min-height:calc(100vh - 68px);display:flex;align-items:center;padding:32px 0}
 .lp .sig__wrap{text-align:center;display:flex;flex-direction:column;align-items:center}
 .lp .sig__title{margin-top:14px;max-width:760px;font-size:clamp(28px,3.6vw,46px)}

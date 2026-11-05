@@ -23,7 +23,6 @@ type OfferRow = {
 type LeaserRow = {
   id: string
   name: string
-  brand_color: string | null
   description: string | null
   referent_name: string | null
   delai_reponse_heures: number | null
@@ -70,7 +69,7 @@ export default async function OfferDetailPage({
   // 2. Fetch leaser metadata from DB
   const { data: leaserData } = await supabase
     .from('leasers')
-    .select('id, name, brand_color, description, referent_name, delai_reponse_heures, depot_garantie, frais_dossier, penalite_resiliation, periodicite')
+    .select('id, name, description, referent_name, delai_reponse_heures, depot_garantie, frais_dossier, penalite_resiliation, periodicite')
     .eq('name', offer.leaser_name)
     .maybeSingle()
 
@@ -84,7 +83,6 @@ export default async function OfferDetailPage({
     .single()
 
   // Derived display values
-  const leaserColor = leaser?.brand_color ?? 'var(--ink-3)'
   const initials = leaserInitials(offer.leaser_name)
   const duration = offer.duration_months
   const monthly = offer.monthly_payment
@@ -153,8 +151,8 @@ export default async function OfferDetailPage({
             {/* Leaser header */}
             <div className="flex items-center gap-3 mb-1">
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0"
-                style={{ background: leaserColor }}
+                className="w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
+                style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}
               >
                 {initials}
               </div>

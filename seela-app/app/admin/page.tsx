@@ -194,7 +194,7 @@ export default async function AdminRequestsPage({
                     <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }} title={fmtDate(r.lastActionAt)}>
                       {sinceLabel(r.lastActionAt, now)}
                       {isOverdue(r.status, r.lastActionAt, now) && (
-                        <span className="ev-tag ev-tag--danger ml-2">En retard</span>
+                        <span className="block mt-1"><span className="ev-tag ev-tag--danger">En retard</span></span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(r.createdAt)}</td>

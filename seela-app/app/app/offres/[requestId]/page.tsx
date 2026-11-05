@@ -48,12 +48,6 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
   const counterOffer = offers.find(o => o.status === OS.counter_offer)
   const recommended = recommendedOffer(offers)
 
-  // Couleur de marque de chaque leaser (table leasers), à défaut gris neutre
-  const { data: leaserRows } = offers.length > 0
-    ? await supabase.from('leasers').select('name, brand_color').in('name', offers.map(o => o.leaser_name))
-    : { data: [] }
-  const leaserColors = new Map((leaserRows ?? []).map(l => [l.name, l.brand_color as string | null]))
-
   const selectedLines: LineItem[] = (request.line_items ?? []).filter((l: LineItem) => l.selected)
   const firstLine = selectedLines[0]
   const assetTitle = firstLine?.description
@@ -196,7 +190,6 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
             ) : (
               <div className="space-y-3">
                 {offers.map((offer) => {
-                  const color = leaserColors.get(offer.leaser_name) ?? null
                   const rate = formatRate(offer.rate)
 
                   if (offer.id === recommended?.id) {
@@ -213,8 +206,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                         <div className="flex items-start justify-between flex-wrap gap-4">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                              style={{ background: color ?? 'var(--accent)' }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                              style={{ background: 'var(--dark-line)', color: '#fff' }}
                             >
                               {leaserInitials(offer.leaser_name)}
                             </div>
@@ -260,8 +253,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                       className="ev-card flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-3 px-5 py-4"
                     >
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ background: color ?? 'var(--ink-3)' }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                        style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}
                       >
                         {leaserInitials(offer.leaser_name)}
                       </div>
