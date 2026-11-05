@@ -156,7 +156,7 @@ function MiniProgress({ status }: { status: string }) {
   const s3: 'done' | 'active' | 'pending' = status === RS.seela_validated ? 'active' : 'pending'
 
   const label = status === RS.seela_validated
-    ? 'Décision du leaser en cours'
+    ? 'Décision du financeur en cours'
     : 'Validation Everlease en cours'
 
   return (
@@ -283,7 +283,7 @@ export default async function OffresPage() {
               </svg>
             </div>
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink)' }}>Aucune demande en cours</p>
-            <p className="text-xs mb-5" style={{ color: 'var(--ink-3)' }}>Les offres apparaissent ici dès qu&apos;un leaser partenaire répond à votre dossier.</p>
+            <p className="text-xs mb-5" style={{ color: 'var(--ink-3)' }}>Les offres apparaissent ici dès qu&apos;un financeur répond à votre dossier.</p>
             <Link href="/app/nouveau" className="ev-btn ev-btn--primary">
               Démarrer un financement
             </Link>

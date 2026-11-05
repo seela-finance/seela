@@ -391,7 +391,7 @@ function Step3Contact({
         Qui êtes-vous ?
       </h1>
       <p className="text-sm mb-6" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
-        Ces informations permettent au leaser d&apos;identifier le signataire du contrat.
+        Ces informations permettent au financeur d&apos;identifier le signataire du contrat.
       </p>
 
       <div className="flex flex-col gap-4">
@@ -531,7 +531,7 @@ function ScoreCircle({ grade, score }: { grade: string; score: number }) {
         </span>
       </div>
       <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-        Score Everlease · Basé sur vos données légales
+        Profil Everlease · établi à partir de vos données légales, indicatif
       </p>
     </div>
   )
@@ -681,7 +681,6 @@ function Step4Score({
   const grade = score?.grade ?? 'B'
   const scoreVal = score?.score ?? 0
   const gradeColor = GRADE_COLORS[grade] ?? 'var(--ink-3)'
-  const isHighGrade = grade === 'A' || grade === 'B+'
 
   if (loading) {
     return (
@@ -724,21 +723,13 @@ function Step4Score({
       {/* What your score unlocks */}
       <div className="mb-5">
         <p className="ev-kicker mb-3">
-          Ce que votre score débloque
+          Ce que votre profil permet
         </p>
         <div className="ev-card overflow-hidden">
           <div className="px-4 divide-y divide-[var(--line)]">
-            <UnlockItem label="Accès à 3 leasers partenaires" />
-            <UnlockItem label={isHighGrade ? 'Financement jusqu\'à 150 000 €' : 'Financement jusqu\'à 50 000 €'} />
-            {!isHighGrade && (
-              <UnlockItem label="Accès complet" locked badge="Score B+ requis" />
-            )}
-            {isHighGrade && (
-              <>
-                <UnlockItem label="Accès à 8 leasers" locked badge="Score A requis" />
-                <UnlockItem label="Financement jusqu'à 200 000 €" locked badge="Score A requis" />
-              </>
-            )}
+            <UnlockItem label="Dossier pré-rempli à partir de vos données légales" />
+            <UnlockItem label="Dossier présenté à des financeurs adaptés à votre profil" />
+            <UnlockItem label="Bilans joints au dossier pour le financeur" locked={!bilansUploaded} badge={bilansUploaded ? undefined : 'Bilans à importer'} />
           </div>
         </div>
       </div>
@@ -757,7 +748,7 @@ function Step4Score({
           </div>
           <div className="flex-1">
             <p className="text-sm mb-2" style={{ color: 'var(--ink)', lineHeight: 1.5 }}>
-              Uploadez vos <strong>2 derniers bilans</strong> pour améliorer votre score et accéder à plus d&apos;offres
+              Uploadez vos <strong>2 derniers bilans</strong> pour compléter votre dossier avant sa présentation aux financeurs
             </p>
             <input
               ref={fileRef}
@@ -796,7 +787,7 @@ function Step4Score({
             <path d="M2 7l3.5 3.5L12 4" stroke="var(--ok)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="text-sm font-medium" style={{ color: 'var(--ok)' }}>
-            Bilans importés — score mis à jour
+            Bilans importés — dossier mis à jour
           </p>
         </div>
       )}

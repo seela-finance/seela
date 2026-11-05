@@ -112,8 +112,8 @@ export default async function OfferDetailPage({
     { label: 'Périodicité des loyers', value: periodicite.charAt(0).toUpperCase() + periodicite.slice(1) },
     { label: 'Dépôt de garantie', value: leaser?.depot_garantie ? fmt(leaser.depot_garantie) : 'Aucun' },
     { label: 'Frais de dossier', value: leaser?.frais_dossier ? fmt(leaser.frais_dossier) : 'Aucun' },
-    { label: 'Résiliation anticipée', value: leaser?.penalite_resiliation ?? 'Selon le contrat du leaser' },
-    { label: 'Délai de réponse du leaser', value: `${leaser?.delai_reponse_heures ?? 48} h ouvrées` },
+    { label: 'Résiliation anticipée', value: leaser?.penalite_resiliation ?? 'Selon le contrat du financeur' },
+    { label: 'Assurance et services', value: 'Non inclus dans le loyer' },
   ]
 
   // Simulation indicative : loyer constant, mois relatifs (pas de date tant que le contrat n'a pas démarré)
@@ -173,7 +173,7 @@ export default async function OfferDetailPage({
                   )}
                 </div>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-                  Offre indicative {offer.leaser_name} · confirmée par le leaser sous 48 h ouvrées
+                  Offre indicative, hors assurance et services · sous réserve d&apos;acceptation du dossier par le financeur
                 </p>
               </div>
             </div>
@@ -244,7 +244,7 @@ export default async function OfferDetailPage({
                     Simulation indicative
                   </h2>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-                    6 premières échéances · le calendrier réel démarre à la livraison du matériel
+                    6 premières échéances, hors assurance et services · le calendrier réel démarre à la livraison du matériel
                   </p>
                 </div>
                 <span className="ev-mono text-xs" style={{ color: 'var(--ink-3)' }}>
@@ -285,7 +285,6 @@ export default async function OfferDetailPage({
               initialStatus={offer.status}
               canConfirm={request.status === RS.offers_available}
               leaserName={offer.leaser_name}
-              leaserDelai={leaser?.delai_reponse_heures ?? 48}
               companyName={profile?.company_name ?? ''}
               siren={profile?.siren ?? ''}
               userEmail={user.email ?? ''}

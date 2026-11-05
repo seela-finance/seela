@@ -162,11 +162,12 @@ export function emailClientEverleaseValidated({
   <div style="background:#E9ECFF;border:1px solid #E9ECFF;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;color:#1226B0;margin:0">
       Votre dossier a été validé par Everlease et transmis à <strong>${esc(leaserName)}</strong>.
-      Le leaser dispose de 48h ouvrées pour confirmer votre offre indicative de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong>.
+      Il étudie votre offre indicative de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong>, hors assurance et services.
+      Sous réserve d'acceptation du dossier par le financeur.
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
-  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous contacte dès que le leaser répond. En cas de question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous contacte dès que le financeur répond. En cas de question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
   <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
 </div>`,
@@ -193,7 +194,7 @@ export function emailClientLeaserConfirmed({
 
   return {
     to: userEmail,
-    subject: `[Everlease] 🎉 Financement confirmé — ${oneLine(requestRef)}`,
+    subject: `[Everlease] Financement confirmé — ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -203,12 +204,12 @@ export function emailClientLeaserConfirmed({
   <div style="background:#E3F3EC;border:1px solid #E3F3EC;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;color:#0E7C5B;margin:0">
       <strong>${esc(leaserName)}</strong> a accepté votre dossier.
-      Votre financement de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong> est confirmé.
+      Votre financement de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong>, hors assurance et services, est confirmé.
       Votre contrat de location est en cours de préparation.
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
-  <p style="font-size:13px;color:#6B6F76">Vous recevrez votre contrat sous 2 à 3 jours ouvrés. Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous rappelle sous 24 h ouvrées pour la signature du contrat. Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
   <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
 </div>`,
@@ -238,7 +239,7 @@ export function emailClientLeaserRefused({
   <div style="background:#FFF4E5;border:1px solid #FFF4E5;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;color:#8A4B00;margin:0">
       <strong>${esc(leaserName)}</strong> n'a pas pu donner suite à votre dossier à ce stade.
-      Les autres offres que vous avez reçues restent disponibles et votre dossier peut être soumis à d'autres leasers partenaires.
+      Les autres offres que vous avez reçues restent disponibles et votre dossier peut être présenté à d'autres financeurs.
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>

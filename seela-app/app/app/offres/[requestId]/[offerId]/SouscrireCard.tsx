@@ -13,7 +13,6 @@ interface Props {
   // false si le dossier n'attend plus de choix (offre déjà confirmée, contrat en cours…)
   canConfirm: boolean
   leaserName: string
-  leaserDelai: number
   companyName: string
   siren: string
   userEmail: string
@@ -91,7 +90,6 @@ export default function SouscrireCard({
   initialStatus,
   canConfirm,
   leaserName,
-  leaserDelai,
   companyName,
   siren,
   userEmail,
@@ -144,7 +142,7 @@ export default function SouscrireCard({
     <div className="ev-card p-5 sticky top-6">
       <h2 className="font-semibold text-sm mb-0.5" style={{ color: 'var(--ink)' }}>Souscrire à cette offre</h2>
       <p className="text-xs mb-5" style={{ color: 'var(--ink-3)' }}>
-        Confirmation par le leaser sous {leaserDelai}h ouvrées
+        Confirmation par le financeur après étude de votre dossier
       </p>
 
       {/* Refused state */}
@@ -223,10 +221,10 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s3 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s3} n={3} />
           <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Confirmation leaser</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Confirmation du financeur</p>
             <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Contrat de location</p>
             {s3 === 'loading' && (
-              <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>Le leaser examine votre dossier…</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>Le financeur examine votre dossier…</p>
             )}
           </div>
         </div>
@@ -278,7 +276,7 @@ export default function SouscrireCard({
               <path d="M4 5V3.5a2 2 0 114 0V5" stroke="var(--ink-3)" strokeWidth="1.2" />
             </svg>
             <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
-              Offre indicative — confirmation par le leaser sous 48h
+              Offre indicative, hors assurance et services. Sous réserve d&apos;acceptation du dossier par le financeur.
             </span>
           </div>
         </div>

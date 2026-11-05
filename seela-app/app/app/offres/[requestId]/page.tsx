@@ -132,7 +132,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
               <span className="ev-mono text-xs" style={{ color: 'var(--ink-3)' }}>
                 {request.duration_months ? `${request.duration_months} mois` : '—'}
                 {/* Estimation par coefficients seulement tant qu'aucune offre réelle n'existe */}
-                {offers.length === 0 && <>{' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois</>}
+                {offers.length === 0 && <>{' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois, indicatif, hors assurance et services</>}
               </span>
               <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 Total HT : <span className="ev-mono">{fmt(request.total_amount)}</span>
@@ -180,11 +180,11 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                   </p>
                   <p className="text-sm" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
                     {isNoMatch
-                      ? 'Aucune offre automatique ne correspond à votre demande : un conseiller recherche une solution auprès de nos partenaires.'
-                      : `Everlease consulte ses leasers partenaires pour votre ${request.document_type ?? 'dossier'}.`}
+                      ? 'Aucune offre automatique ne correspond à votre demande : un conseiller Everlease étudie votre dossier et recherche une solution adaptée.'
+                      : `Everlease présente votre ${request.document_type ?? 'dossier'} à des financeurs adaptés.`}
                     {' '}Vous serez notifié dès que les offres sont disponibles.
                   </p>
-                  <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>Délai estimé : 24 à 48h ouvrées</p>
+                  <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>Un conseiller Everlease vous rappelle sous 24 h ouvrées.</p>
                 </div>
               </div>
             ) : offers.length === 0 ? (
@@ -299,7 +299,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                     <path d="M7 1l6 11H1L7 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
                     <path d="M7 5.5v3M7 10h.01" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                   </svg>
-                  <span>Offres indicatives — confirmation sous 48h ouvrées par le leaser.</span>
+                  <span>Offres indicatives, hors assurance et services. Sous réserve d&apos;acceptation du dossier par le financeur.</span>
                 </div>
               </div>
             )}

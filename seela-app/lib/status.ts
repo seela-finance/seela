@@ -145,8 +145,8 @@ export const OFFER_STATUS: Record<OfferStatus, Badge> = {
   indicative:       { label: 'Offre indicative',        ...INDIGO },
   client_confirmed: { label: 'Sélection confirmée',     ...ORANGE },
   counter_offer:    { label: 'Contre-proposition',      ...INDIGO },
-  seela_validated:  { label: 'Transmise au leaser',     ...ORANGE },
-  leaser_confirmed: { label: 'Confirmée par le leaser', ...GREEN },
+  seela_validated:  { label: 'Transmise au financeur',     ...ORANGE },
+  leaser_confirmed: { label: 'Confirmée par le financeur', ...GREEN },
   refused:          { label: 'Non retenue',             ...RED },
 }
 
@@ -196,7 +196,7 @@ export const REQUEST_TIMELINE: { status: RequestStatus; label: string }[] = [
   { status: 'submitted', label: 'Dossier transmis' },
   { status: 'offer_selected', label: 'Offre choisie' },
   { status: 'seela_validated', label: 'Validé par Everlease' },
-  { status: 'leaser_confirmed', label: 'Confirmé par le leaser' },
+  { status: 'leaser_confirmed', label: 'Confirmé par le financeur' },
   { status: 'active', label: 'Contrat démarré' },
 ]
 

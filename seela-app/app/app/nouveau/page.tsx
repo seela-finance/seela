@@ -220,7 +220,7 @@ function Step1Upload({
       </h2>
       <p style={{ fontSize: 15, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 28 }}>
         Déposez un devis ou une facture. Everlease en extrait les lignes financables,
-        vous pose quelques questions, puis consulte ses partenaires leasers.
+        vous pose quelques questions, puis présente votre dossier à des financeurs adaptés.
       </p>
 
       {/* Type selector */}
@@ -314,9 +314,8 @@ function Step1Upload({
       {/* Security badges */}
       <div className="flex items-center gap-1.5 mt-4 flex-wrap">
         {[
-          { label: 'Documents chiffrés au repos', lock: true },
-          { label: 'ISO 27001' },
-          { label: "Vos données ne quittent jamais l'UE" },
+          { label: 'Aucune carte ni RIB demandé', lock: true },
+          { label: 'Devis ou facture, PDF ou image' },
         ].map((b, i) => (
           <span key={b.label} className="flex items-center gap-1" style={{ color: 'var(--ink-3)', fontSize: 12 }}>
             {i > 0 && <span style={{ color: 'var(--line-strong)' }}>·</span>}
@@ -703,7 +702,10 @@ function Step3Config({
           </p>
         )}
         <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
-          Sur {duration} mois — estimation indicative
+          Sur {duration} mois. Estimation indicative, hors assurance et services.
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>
+          Sous réserve d&apos;acceptation du dossier par le financeur.
         </p>
       </div>
 
@@ -828,7 +830,7 @@ function Step4Confirmation({
         </h2>
         <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: 'var(--ink-3)', lineHeight: 1.7 }}>
           Aucune offre automatique ne correspond encore à votre {documentType} : un conseiller Everlease étudie votre dossier
-          et revient vers vous sous 48h ouvrées.
+          et vous rappelle sous 24 h ouvrées.
         </p>
         <p className="text-xs mb-8" style={{ color: 'var(--ink-3)' }}>Vous retrouverez son avancement dans « Offres ».</p>
         <button
@@ -850,7 +852,7 @@ function Step4Confirmation({
     <div className="max-w-md mx-auto py-8">
       <h2 className="ev-display text-xl mb-2 text-center" style={{ color: 'var(--ink)' }}>Transmettre votre demande</h2>
       <p className="text-sm mb-6 text-center" style={{ color: 'var(--ink-3)' }}>
-        Vérifiez le récapitulatif : Everlease interroge ensuite ses leasers partenaires.
+        Vérifiez le récapitulatif : Everlease présente ensuite votre dossier à des financeurs adaptés.
       </p>
       <dl className="ev-card divide-y divide-[var(--line)] mb-6">
         {[
