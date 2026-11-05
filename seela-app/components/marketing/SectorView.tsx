@@ -106,19 +106,22 @@ export default function SectorView({ sector }: { sector: Sector }) {
       {/* Indicative examples */}
       <section className="lp-section">
         <div className="lp-wrap">
-          <h2 className="lp-h2" style={{ fontSize: 26 }}>Exemples de financement</h2>
+          <div className="mk-section-head">
+            <h2 className="lp-h2" style={{ fontSize: 26 }}>Exemples de financement</h2>
+            <span className="badge badge--accent">Exemple illustratif</span>
+          </div>
           <div className="mk-examples">
             {sector.examples.map((ex, i) => (
               <div key={i} className="card mk-example">
                 <div className="mk-example__label">{ex.label}</div>
-                <div className="mk-example__total">{ex.total} financés</div>
+                <div className="mk-example__total"><span className="mono">{ex.total}</span> financés</div>
                 <div className="mk-example__monthly">{ex.monthly}<span> / mois</span></div>
                 <div className="mk-example__dur">sur {ex.duration}</div>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 16 }}>
-            Estimations indicatives, hors assurance et services, à titre d&apos;exemple. Votre offre est confirmée par nos partenaires financeurs sous 48h ouvrées.
+          <p className="mk-legal" style={{ marginTop: 16 }}>
+            Exemples illustratifs. Montants HT, hors assurance et services. Sous réserve d&apos;acceptation du dossier par le financeur.
           </p>
         </div>
       </section>
@@ -175,11 +178,12 @@ export default function SectorView({ sector }: { sector: Sector }) {
           <div className="mk-cta-center">
             <h2 className="lp-h2">Équipez votre activité dès aujourd&apos;hui.</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
-              Déposez un devis : Everlease analyse votre besoin et met en concurrence ses partenaires pour vous proposer la meilleure offre.
+              Déposez un devis : Everlease prépare votre dossier et le présente à des financeurs adaptés à votre activité.
             </p>
             <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
             </div>
+            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
           </div>
         </div>
       </section>

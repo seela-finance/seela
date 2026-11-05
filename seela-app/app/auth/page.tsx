@@ -76,28 +76,27 @@ export default function AuthPage() {
     }
   }
 
-  const inputClass = "w-full px-3.5 py-2.5 border text-sm outline-none transition-colors rounded-lg"
-  const inputStyle = { background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C', border: '1px solid #E5E5E3' }
+  const inputClass = "ev-input"
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#FAFAF9' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--paper)' }}>
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-8">
           <Link href="/"><Logo /></Link>
         </div>
 
         {/* Mode toggle */}
-        <div className="flex p-1 mb-6" style={{ background: '#F5F5F4', borderRadius: 10 }}>
+        <div className="flex p-1 mb-6" style={{ background: 'var(--raised)', borderRadius: 'var(--radius)' }}>
           {(['login', 'signup'] as const).map((m) => (
             <button
               key={m}
               onClick={() => switchMode(m)}
-              className="flex-1 py-2 text-sm font-medium transition-all"
+              className="flex-1 py-2 text-sm font-medium transition-colors"
               style={{
-                background: mode === m ? '#fff' : 'transparent',
-                color: mode === m ? '#0E0E0C' : '#9A9A93',
-                borderRadius: 8,
-                boxShadow: mode === m ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                background: mode === m ? 'var(--surface)' : 'transparent',
+                color: mode === m ? 'var(--ink)' : 'var(--ink-3)',
+                border: `1px solid ${mode === m ? 'var(--line)' : 'transparent'}`,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
               {m === 'login' ? 'Se connecter' : 'Créer un compte'}
@@ -107,7 +106,7 @@ export default function AuthPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label className="ev-label">
               Email
             </label>
             <input
@@ -117,12 +116,11 @@ export default function AuthPage() {
               required
               placeholder="vous@entreprise.com"
               className={inputClass}
-              style={inputStyle}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label className="ev-label">
               Mot de passe
             </label>
             <input
@@ -133,13 +131,12 @@ export default function AuthPage() {
               placeholder="••••••••"
               minLength={6}
               className={inputClass}
-              style={inputStyle}
             />
           </div>
 
           {mode === 'signup' && (
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#9A9A93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <label className="ev-label">
                 Confirmer le mot de passe
               </label>
               <input
@@ -150,18 +147,17 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 minLength={6}
                 className={inputClass}
-                style={inputStyle}
               />
             </div>
           )}
 
           {error && (
-            <div className="text-sm px-3.5 py-3 rounded-lg" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+            <div className="ev-alert ev-alert--danger">
               {error}
             </div>
           )}
           {message && (
-            <div className="text-sm px-3.5 py-3 rounded-lg" style={{ background: '#F0FDF4', color: '#16A34A' }}>
+            <div className="ev-alert ev-alert--ok">
               {message}
             </div>
           )}
@@ -169,10 +165,9 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 font-medium text-sm transition-opacity hover:opacity-90 disabled:opacity-40 mt-1 rounded-lg"
-            style={{ background: '#0E0E0C', color: '#fff' }}
+            className="ev-btn ev-btn--primary ev-btn--full ev-btn--lg mt-1"
           >
-            {loading ? 'Chargement…' : mode === 'login' ? 'Se connecter' : 'Créer mon compte →'}
+            {loading ? 'Chargement…' : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
           </button>
         </form>
       </div>

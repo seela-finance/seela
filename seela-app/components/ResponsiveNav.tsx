@@ -23,7 +23,7 @@ export default function ResponsiveNav({ brand, children }: { brand: ReactNode; c
     <>
       <div
         className="md:hidden fixed top-0 inset-x-0 h-12 z-30 flex items-center justify-between pl-4 pr-2"
-        style={{ background: '#fff', borderBottom: '1px solid #E5E5E3' }}
+        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}
       >
         {brand}
         <button
@@ -31,8 +31,8 @@ export default function ResponsiveNav({ brand, children }: { brand: ReactNode; c
           onClick={() => setOpen(true)}
           aria-label="Ouvrir le menu"
           aria-expanded={open}
-          className="w-10 h-10 flex items-center justify-center rounded-lg"
-          style={{ color: '#0E0E0C' }}
+          className="w-10 h-10 flex items-center justify-center"
+          style={{ color: 'var(--ink)' }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -46,14 +46,14 @@ export default function ResponsiveNav({ brand, children }: { brand: ReactNode; c
           aria-label="Fermer le menu"
           onClick={() => setOpen(false)}
           className="md:hidden fixed inset-0 z-40"
-          style={{ background: 'rgba(14, 14, 12, 0.4)' }}
+          style={{ background: 'var(--scrim)' }}
         />
       )}
 
       <aside
         onClick={closeOnLink}
         className={`fixed left-0 top-0 h-dvh flex flex-col z-50 transition-transform md:visible md:translate-x-0 ${open ? 'translate-x-0' : 'invisible -translate-x-full'}`}
-        style={{ width: 220, background: '#FFFFFF', borderRight: '1px solid #E5E5E3' }}
+        style={{ width: 220, background: 'var(--surface)', borderRight: '1px solid var(--line)' }}
       >
         {children}
       </aside>
