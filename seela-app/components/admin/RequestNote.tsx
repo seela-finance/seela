@@ -17,20 +17,18 @@ export default function RequestNote({ requestId }: { requestId: string }) {
         maxLength={2000}
         aria-label="Note interne"
         placeholder="Note interne (jamais visible par le client)"
-        className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:border-[#9A9A93]"
-        style={{ background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C' }}
+        className="ev-input"
       />
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="h-9 px-3 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ background: '#fff', color: '#0E0E0C', border: '1px solid #E5E5E3' }}
+          className="ev-btn ev-btn--ghost ev-btn--sm"
         >
           {saving ? 'En cours…' : 'Ajouter la note'}
         </button>
         {state && (
-          <p role="status" className="text-sm" style={{ color: state.ok ? '#166534' : '#991B1B' }}>{state.message}</p>
+          <p role="status" className="text-sm" style={{ color: state.ok ? 'var(--ok)' : 'var(--danger)' }}>{state.message}</p>
         )}
       </div>
     </form>

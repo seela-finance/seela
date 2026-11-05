@@ -16,6 +16,7 @@ interface ExpertLead {
   devis?: string | null // 'oui' | 'non' | null
   email?: string
   telephone?: string
+  origine?: string // 'Rappel par un conseiller' | 'Fournisseurs et distributeurs' | 'Financeurs'
 }
 
 // Échappe le HTML pour éviter toute injection dans l'email.
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 })
   }
 
-  const { entreprise, prenom, nom, role, devis, email, telephone } = body
+  const { entreprise, prenom, nom, role, devis, email, telephone, origine } = body
 
   // Validation des champs obligatoires.
   const missing = Object.entries({ entreprise, prenom, nom, role, email, telephone })
@@ -51,17 +52,18 @@ export async function POST(req: Request) {
   // ── Email à l'équipe ───────────────────────────────────────────────
   const subject = `[Everlease] Demande d'expert — ${entreprise} (${fullName})`
   const html = `
-  <div style="font-family:Inter,Arial,sans-serif;color:#0E0E0C;max-width:520px">
+  <div style="font-family:Inter,Arial,sans-serif;color:#141517;max-width:520px">
     <h2 style="margin:0 0 16px;font-size:18px">Nouvelle demande « Parler à un expert »</h2>
     <table style="border-collapse:collapse;font-size:14px;line-height:1.6">
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Entreprise</td><td><strong>${esc(entreprise)}</strong></td></tr>
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Contact</td><td>${esc(fullName)}</td></tr>
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Rôle</td><td>${esc(role)}</td></tr>
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Email</td><td><a href="mailto:${esc(email)}">${esc(email)}</a></td></tr>
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Téléphone</td><td><a href="tel:${esc(telephone)}">${esc(telephone)}</a></td></tr>
-      <tr><td style="color:#9A9A93;padding:2px 16px 2px 0">Devis en main</td><td>${esc(devisLabel)}</td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Entreprise</td><td><strong>${esc(entreprise)}</strong></td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Contact</td><td>${esc(fullName)}</td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Rôle</td><td>${esc(role)}</td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Email</td><td><a href="mailto:${esc(email)}">${esc(email)}</a></td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Téléphone</td><td><a href="tel:${esc(telephone)}">${esc(telephone)}</a></td></tr>
+      <tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Devis en main</td><td>${esc(devisLabel)}</td></tr>
+      ${origine ? `<tr><td style="color:#6B6F76;padding:2px 16px 2px 0">Provenance</td><td>${esc(origine)}</td></tr>` : ''}
     </table>
-    <p style="color:#9A9A93;font-size:12px;margin-top:20px">Demande envoyée depuis la landing everlease.fr</p>
+    <p style="color:#6B6F76;font-size:12px;margin-top:20px">Demande envoyée depuis la landing everlease.fr</p>
   </div>`
 
   // ── Slack (optionnel, actif seulement si le webhook est configuré) ──
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
           { type: 'mrkdwn', text: `*Devis en main*\n${devisLabel}` },
           { type: 'mrkdwn', text: `*Email*\n${email}` },
           { type: 'mrkdwn', text: `*Téléphone*\n${telephone}` },
+          ...(origine ? [{ type: 'mrkdwn', text: `*Provenance*\n${origine}` }] : []),
         ],
       },
     ],

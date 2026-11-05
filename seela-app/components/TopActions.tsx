@@ -4,9 +4,9 @@ export default function TopActions() {
   return (
     <div className="ml-auto hidden sm:flex items-center gap-0.5">
       <button
-        className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-        style={{ color: '#9A9A93' }}
-        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#F5F5F4')}
+        className="w-8 h-8 flex items-center justify-center rounded-md transition-colors"
+        style={{ color: 'var(--ink-3)' }}
+        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--raised)')}
         onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = '')}
       >
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
@@ -17,9 +17,9 @@ export default function TopActions() {
       </button>
       <div className="relative">
         <button
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-          style={{ color: '#9A9A93' }}
-          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#F5F5F4')}
+          className="w-8 h-8 flex items-center justify-center rounded-md transition-colors"
+          style={{ color: 'var(--ink-3)' }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--raised)')}
           onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = '')}
         >
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
@@ -27,8 +27,8 @@ export default function TopActions() {
           </svg>
         </button>
         <span
-          className="absolute top-1 right-1 w-2 h-2 rounded-full border border-white"
-          style={{ background: '#4F46E5' }}
+          className="absolute top-1 right-1 w-2 h-2 rounded-full border border-surface"
+          style={{ background: 'var(--accent)' }}
         />
       </div>
     </div>

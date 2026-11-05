@@ -25,11 +25,11 @@ export default function AdminNav({ name, email }: { name: string; email: string 
 
   return (
     <ResponsiveNav brand={<Link href="/admin"><Logo size="sm" /></Link>}>
-      <div className="px-4 h-12 flex items-center gap-2 shrink-0" style={{ borderBottom: '1px solid #E5E5E3' }}>
+      <div className="px-4 h-12 flex items-center gap-2 shrink-0" style={{ borderBottom: '1px solid var(--line)' }}>
         <Link href="/admin">
           <Logo size="sm" />
         </Link>
-        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#0E0E0C', color: '#fff' }}>admin</span>
+        <span className="ev-tag ev-tag--dark">admin</span>
       </div>
 
       <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
@@ -39,7 +39,7 @@ export default function AdminNav({ name, email }: { name: string; email: string 
               <span
                 key={item.label}
                 className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-default"
-                style={{ color: '#C4C4BE' }}
+                style={{ color: 'var(--line-strong)' }}
               >
                 {item.label}
                 <span className="text-xs">Bientôt</span>
@@ -53,10 +53,10 @@ export default function AdminNav({ name, email }: { name: string; email: string 
             <Link
               key={item.label}
               href={item.href}
-              className="px-3 py-2 rounded-md text-sm transition-colors hover:bg-[#F5F5F4]"
+              className="px-3 py-2 rounded-md text-sm transition-colors hover:bg-[var(--raised)]"
               style={{
-                background: active ? '#F5F5F4' : undefined,
-                color: active ? '#0E0E0C' : '#9A9A93',
+                background: active ? 'var(--raised)' : undefined,
+                color: active ? 'var(--ink)' : 'var(--ink-3)',
                 fontWeight: active ? 500 : 400,
               }}
             >
@@ -66,14 +66,14 @@ export default function AdminNav({ name, email }: { name: string; email: string 
         })}
       </nav>
 
-      <div className="px-4 py-3 shrink-0" style={{ borderTop: '1px solid #E5E5E3' }}>
-        <p className="text-sm font-medium truncate" style={{ color: '#0E0E0C' }}>{name}</p>
-        <p className="text-xs truncate" style={{ color: '#9A9A93' }}>{email}</p>
+      <div className="px-4 py-3 shrink-0" style={{ borderTop: '1px solid var(--line)' }}>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{name}</p>
+        <p className="text-xs truncate" style={{ color: 'var(--ink-3)' }}>{email}</p>
         <button
           type="button"
           onClick={signOut}
           className="mt-2 text-xs transition-opacity hover:opacity-70"
-          style={{ color: '#9A9A93' }}
+          style={{ color: 'var(--ink-3)' }}
         >
           Se déconnecter
         </button>

@@ -87,7 +87,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
   return (
     <ResponsiveNav brand={<Link href="/app/dashboard"><Logo size="sm" /></Link>}>
       {/* Logo */}
-      <div className="px-4 h-12 flex items-center shrink-0" style={{ borderBottom: '1px solid #E5E5E3' }}>
+      <div className="px-4 h-12 flex items-center shrink-0" style={{ borderBottom: '1px solid var(--line)' }}>
         <Link href="/app/dashboard">
           <Logo size="sm" />
         </Link>
@@ -103,31 +103,21 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
               href={item.href}
               className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors group"
               style={{
-                background: active ? '#F5F5F4' : 'transparent',
-                color: active ? '#0E0E0C' : '#9A9A93',
+                background: active ? 'var(--raised)' : 'transparent',
+                color: active ? 'var(--ink)' : 'var(--ink-3)',
                 fontWeight: active ? 500 : 400,
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F4' }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--raised)' }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              <span className="shrink-0" style={{ color: active ? '#0E0E0C' : '#9A9A93' }}>
+              <span className="shrink-0" style={{ color: active ? 'var(--ink)' : 'var(--ink-3)' }}>
                 {item.icon}
               </span>
               <span className="flex-1 truncate">{item.label}</span>
               {item.badge && (() => {
                 const count = item.href === '/app/offres' ? offresCount : contratsCount
                 return count > 0 ? (
-                  <span
-                    className="shrink-0 text-xs font-medium"
-                    style={{
-                      background: '#0E0E0C',
-                      color: '#fff',
-                      fontSize: 11,
-                      padding: '1px 6px',
-                      borderRadius: 10,
-                      lineHeight: '16px',
-                    }}
-                  >
+                  <span className="ev-tag ev-tag--dark shrink-0" style={{ minHeight: 18, padding: '0 6px' }}>
                     {count}
                   </span>
                 ) : null
@@ -135,50 +125,27 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
             </Link>
           )
         })}
-
-        {/* BIENTÔT */}
-        <div className="mt-5 mb-1 px-3">
-          <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.08em', color: '#9A9A93', textTransform: 'uppercase' }}>
-            Bientôt
-          </span>
-        </div>
-        <div
-          className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm"
-          style={{ opacity: 0.45, cursor: 'default', color: '#9A9A93' }}
-        >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-          <span className="flex-1 truncate">Scoring Everlease</span>
-          <span
-            className="shrink-0 text-xs px-1.5 py-0.5 rounded"
-            style={{ background: '#F5F5F4', color: '#9A9A93', fontSize: 10 }}
-          >
-            Bientôt
-          </span>
-        </div>
       </nav>
 
       {/* User */}
-      <div className="px-3 py-3 shrink-0" style={{ borderTop: '1px solid #E5E5E3' }}>
+      <div className="px-3 py-3 shrink-0" style={{ borderTop: '1px solid var(--line)' }}>
         <div className="flex items-center gap-2.5">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ background: '#0E0E0C', color: '#FAFAF9' }}
+            style={{ background: 'var(--ink)', color: 'var(--dark-text)' }}
           >
             {initials || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate" style={{ color: '#0E0E0C', lineHeight: '16px' }}>
+            <p className="text-xs font-medium truncate" style={{ color: 'var(--ink)', lineHeight: '16px' }}>
               {companyName || email.split('@')[0]}
             </p>
-            <p className="truncate" style={{ color: '#9A9A93', fontSize: 11, lineHeight: '15px' }}>{email}</p>
+            <p className="truncate" style={{ color: 'var(--ink-3)', fontSize: 11, lineHeight: '15px' }}>{email}</p>
           </div>
           <button
             onClick={signOut}
-            className="shrink-0 transition-colors hover:text-[#0E0E0C]"
-            style={{ color: '#9A9A93' }}
+            className="shrink-0 transition-colors hover:text-[var(--ink)]"
+            style={{ color: 'var(--ink-3)' }}
             title="Se déconnecter"
             aria-label="Se déconnecter"
           >
