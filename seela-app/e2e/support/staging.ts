@@ -8,6 +8,7 @@ export const STAGING_REF = 'fmbvvzmoepsyjlhrmbpy'
 
 // Vidées pour le serveur de test : aucun email, appel IA ou appel payant, même si `.env.local` les définit
 // (Next ne remplace pas une variable déjà présente dans l'environnement, même vide).
+export const FAKE_AI_PORT = 3199
 const NEUTRALIZED = ['RESEND_API_KEY', 'ANTHROPIC_API_KEY', 'PAPPERS_API_KEY', 'SLACK_WEBHOOK_URL', 'SEELA_ADMIN_TOKEN']
 
 function parseEnvFile(content: string): Record<string, string> {
@@ -38,6 +39,9 @@ export function loadStagingEnv(): void {
   const file = resolve(process.cwd(), '.env.staging.local')
   if (existsSync(file)) Object.assign(process.env, parseEnvFile(readFileSync(file, 'utf8')))
   for (const name of NEUTRALIZED) process.env[name] = ''
+  // Vraie route /api/analyze, faux modèle (e2e/support/fake-anthropic.mjs)
+  process.env.ANTHROPIC_API_KEY = 'e2e-fake'
+  process.env.ANTHROPIC_BASE_URL = `http://localhost:${FAKE_AI_PORT}`
   process.env.EMAIL_MODE = 'development'
 
   if (!isStagingConfig(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)) {

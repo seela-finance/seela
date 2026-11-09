@@ -64,8 +64,6 @@ export function parseSubmitPayload(body: unknown): SubmitPayload {
   const durationMonths = DURATIONS.find(d => d === b.durationMonths)
   if (!durationMonths) throw new ClientActionError('Durée invalide.', 400)
   const periodicite = PERIODICITES.find(p => p === b.periodicite) ?? 'mensuelle'
-  const meta = (b.meta ?? {}) as Record<string, unknown>
-  const date = text(meta.document_date, 10)
 
   return {
     lines,
@@ -73,13 +71,20 @@ export function parseSubmitPayload(body: unknown): SubmitPayload {
     periodicite,
     documentType: DOCUMENT_TYPES.find(t => t === b.documentType) ?? null,
     notes: text(b.notes, 2000),
-    meta: {
-      supplier_name: text(meta.supplier_name),
-      supplier_address: text(meta.supplier_address),
-      supplier_siren: text(meta.supplier_siren, 20),
-      document_number: text(meta.document_number, 100),
-      document_date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
-    },
+    meta: parseDocumentMeta(b.meta),
+  }
+}
+
+/** Fournisseur et références du document, avec une date au format attendu par la base. */
+export function parseDocumentMeta(raw: unknown): SubmitPayload['meta'] {
+  const meta = (raw ?? {}) as Record<string, unknown>
+  const date = text(meta.document_date, 10)
+  return {
+    supplier_name: text(meta.supplier_name),
+    supplier_address: text(meta.supplier_address),
+    supplier_siren: text(meta.supplier_siren, 20),
+    document_number: text(meta.document_number, 100),
+    document_date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
   }
 }
 

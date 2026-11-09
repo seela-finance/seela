@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { RS, requestStatusInfo, requestDestination } from '@/lib/status'
 
@@ -29,6 +30,18 @@ function fmt(n: number | null) {
 
 export default function RequestsTable({ requests }: { requests: RequestRow[] }) {
   const router = useRouter()
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function deleteDraft(id: string) {
+    if (!window.confirm('Supprimer ce brouillon et son document ?')) return
+    setDeleting(id)
+    setDeleteError(null)
+    const res = await fetch(`/api/requests/${id}/draft`, { method: 'DELETE' }).catch(() => null)
+    setDeleting(null)
+    if (res?.ok) router.refresh()
+    else setDeleteError(id)
+  }
 
   return (
     <tbody>
@@ -73,7 +86,15 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
               {fmtDate(r.created_at)}
             </td>
             <td className="px-4 py-3.5">
-              {r.status === RS.offers_available ? (
+              {r.status === RS.draft ? (
+                <div className="flex items-center gap-2 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => router.push(destination)} className="ev-btn ev-btn--ghost ev-btn--sm">Reprendre</button>
+                  <button onClick={() => deleteDraft(r.id)} disabled={deleting === r.id} className="ev-btn ev-btn--danger ev-btn--sm">
+                    {deleting === r.id ? 'Suppression…' : 'Supprimer'}
+                  </button>
+                  {deleteError === r.id && <span role="alert" className="text-xs" style={{ color: 'var(--danger)' }}>Suppression impossible</span>}
+                </div>
+              ) : r.status === RS.offers_available ? (
                 <button
                   onClick={e => { e.stopPropagation(); router.push(`/app/offres/${r.id}`) }}
                   className="ev-tag ev-tag--accent cursor-pointer transition-opacity hover:opacity-80"

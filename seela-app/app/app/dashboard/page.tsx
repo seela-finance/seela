@@ -24,7 +24,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')
-      .select('first_name, onboarding_completed, financial_docs_uploaded, seela_score_grade')
+      .select('first_name, onboarding_completed, financial_docs_uploaded')
       .eq('id', user.id)
       .single(),
   ])
@@ -59,9 +59,9 @@ export default async function DashboardPage() {
         >
           <p className="text-sm" style={{ color: 'var(--ink)' }}>
             <span className="font-medium">
-              Score Everlease{profile?.seela_score_grade ? ` : ${profile.seela_score_grade}` : ''}
+              Complétez votre dossier
             </span>
-            {' '}· Uploadez vos bilans pour accéder à plus d&apos;offres
+            {' '}· Ajoutez vos bilans pour que votre conseiller le présente aux financeurs
           </p>
           <a
             href="/app/onboarding"
