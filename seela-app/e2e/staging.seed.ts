@@ -10,7 +10,7 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
   const db = stagingAdmin()
   const runId = randomBytes(5).toString('hex')
   const companyName = `Société E2E ${runId}`
-  const roles: Role[] = ['client', 'admin', 'intruder']
+  const roles: Role[] = ['client', 'admin', 'intruder', 'member']
   const users = {} as RunContext['users']
   const passwords = {} as Record<Role, string>
 

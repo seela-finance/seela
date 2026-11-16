@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { adminEventRow, type AdminEvent } from '@/lib/admin-events'
+import { can, isAdminRole, type AdminRole, type Capability } from '@/lib/admin-roles'
 
-export type Admin = { userId: string; name: string; email: string }
+export type Admin = { userId: string; name: string; email: string; role: AdminRole }
 
-// Back-office réservé à l'équipe. Non admin → 404 (un 403 révélerait l'existence de la page).
+// Back-office réservé à l'équipe. Non membre → 404 (un 403 révélerait l'existence de la page).
 // La RLS de `admins` ne laisse lire que sa propre ligne : un client n'y trouve rien.
 // En cas d'erreur (table absente, réseau), on refuse aussi.
 export const requireAdmin = cache(async (): Promise<Admin> => {
@@ -15,11 +16,21 @@ export const requireAdmin = cache(async (): Promise<Admin> => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  const { data, error } = await supabase.from('admins').select('name').eq('user_id', user.id).maybeSingle()
+  // `*` plutôt que `role` : le code reste valable avant comme après la migration des rôles
+  const { data, error } = await supabase.from('admins').select('*').eq('user_id', user.id).maybeSingle()
   if (error || !data) notFound()
 
-  return { userId: user.id, name: data.name, email: user.email ?? '' }
+  // Sans colonne `role` (avant migration), les membres existants sont admins ; une valeur inconnue → commercial
+  const role: AdminRole = data.role == null ? 'admin' : isAdminRole(data.role) ? data.role : 'commercial'
+  return { userId: user.id, name: data.name, email: user.email ?? '', role }
 })
+
+/** Page réservée à un droit : un membre sans ce droit reçoit un 404, comme un inconnu. */
+export async function requireCapability(capability: Capability): Promise<Admin> {
+  const admin = await requireAdmin()
+  if (!can(admin.role, capability)) notFound()
+  return admin
+}
 
 // À appeler dans chaque Server Action admin, après requireAdmin(), pour toute écriture.
 // Service role : admin_events n'est accessible à aucun compte.
