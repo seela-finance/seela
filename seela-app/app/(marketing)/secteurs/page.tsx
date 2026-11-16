@@ -50,7 +50,7 @@ export default function SecteursHub() {
               <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Secteurs d&apos;activité</span>
               <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>Un financement adapté à votre métier</h1>
               <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 660 }}>
-                Chaque secteur a ses équipements et ses contraintes de trésorerie. Everlease adapte le financement au matériel de votre activité — et met en concurrence ses partenaires pour vous.
+                Chaque secteur a ses équipements et ses contraintes de trésorerie. Everlease adapte le financement au matériel de votre activité et présente votre dossier à des financeurs adaptés.
               </p>
             </div>
           </div>

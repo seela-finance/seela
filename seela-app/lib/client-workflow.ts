@@ -3,8 +3,11 @@
 // Logique sans dépendance serveur : la base est injectée (lib/client-store.ts), ce qui la rend testable.
 import { OS, RS, canTransitionOffer, canTransitionRequest, type OfferStatus, type RequestStatus } from '@/lib/status'
 import { TransitionError } from '@/lib/transitions'
+import { familyOf, typeOf } from '@/lib/equipment'
 
-export const DURATIONS = [24, 36, 48, 60] as const
+/** Durées acceptées à la soumission : celles des barèmes (18 à 63 mois chez Grenke), bornées par sécurité. */
+export const DURATION_MIN = 12
+export const DURATION_MAX = 84
 export const PERIODICITES = ['mensuelle', 'trimestrielle', 'annuelle'] as const
 export const DOCUMENT_TYPES = ['devis', 'facture'] as const
 
@@ -14,11 +17,14 @@ export type SubmitLine = {
   unit_price: number | null
   total_price: number
   category: string | null
+  /** Matériel de la ligne (identifiants de lib/equipment.ts) : le matching s'en sert pour le barème et l'éligibilité. */
+  equipment_family: string | null
+  equipment_type: string | null
 }
 
 export type SubmitPayload = {
   lines: SubmitLine[]
-  durationMonths: (typeof DURATIONS)[number]
+  durationMonths: number
   periodicite: (typeof PERIODICITES)[number]
   /** Type confirmé par le client (corrigé si l'IA a détecté l'autre) ; null = garder celui du brouillon */
   documentType: (typeof DOCUMENT_TYPES)[number] | null
@@ -50,22 +56,27 @@ export function parseSubmitPayload(body: unknown): SubmitPayload {
   const rawLines = Array.isArray(b.lines) ? b.lines.slice(0, 200) : []
   const lines: SubmitLine[] = rawLines.map(raw => {
     const l = (raw ?? {}) as Record<string, unknown>
+    // Seuls des identifiants connus passent ; la famille suit le type quand il est donné
+    const typed = typeOf(typeof l.equipment_type === 'string' ? l.equipment_type : null)
+    const family = typed?.family.slug ?? familyOf(typeof l.equipment_family === 'string' ? l.equipment_family : null)?.slug ?? null
     return {
       description: text(l.description),
       quantity: num(l.quantity),
       unit_price: num(l.unit_price),
       total_price: num(l.total_price) ?? 0,
       category: text(l.category, 50),
+      equipment_family: family,
+      equipment_type: typed?.type.slug ?? null,
     }
   })
   if (lines.length === 0) throw new ClientActionError('Sélectionnez au moins une ligne à financer.', 400)
   if (lines.some(l => l.total_price < 0)) throw new ClientActionError('Montant de ligne invalide.', 400)
 
-  const durationMonths = DURATIONS.find(d => d === b.durationMonths)
-  if (!durationMonths) throw new ClientActionError('Durée invalide.', 400)
+  const durationMonths = b.durationMonths
+  if (typeof durationMonths !== 'number' || !Number.isInteger(durationMonths) || durationMonths < DURATION_MIN || durationMonths > DURATION_MAX) {
+    throw new ClientActionError('Durée invalide.', 400)
+  }
   const periodicite = PERIODICITES.find(p => p === b.periodicite) ?? 'mensuelle'
-  const meta = (b.meta ?? {}) as Record<string, unknown>
-  const date = text(meta.document_date, 10)
 
   return {
     lines,
@@ -73,13 +84,20 @@ export function parseSubmitPayload(body: unknown): SubmitPayload {
     periodicite,
     documentType: DOCUMENT_TYPES.find(t => t === b.documentType) ?? null,
     notes: text(b.notes, 2000),
-    meta: {
-      supplier_name: text(meta.supplier_name),
-      supplier_address: text(meta.supplier_address),
-      supplier_siren: text(meta.supplier_siren, 20),
-      document_number: text(meta.document_number, 100),
-      document_date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
-    },
+    meta: parseDocumentMeta(b.meta),
+  }
+}
+
+/** Fournisseur et références du document, avec une date au format attendu par la base. */
+export function parseDocumentMeta(raw: unknown): SubmitPayload['meta'] {
+  const meta = (raw ?? {}) as Record<string, unknown>
+  const date = text(meta.document_date, 10)
+  return {
+    supplier_name: text(meta.supplier_name),
+    supplier_address: text(meta.supplier_address),
+    supplier_siren: text(meta.supplier_siren, 20),
+    document_number: text(meta.document_number, 100),
+    document_date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
   }
 }
 

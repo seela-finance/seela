@@ -11,9 +11,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = await requireAdmin()
 
   return (
-    <div className="min-h-screen" style={{ background: '#FAFAF9' }}>
+    <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <AdminNav name={admin.name} email={admin.email} />
-      <main style={{ marginLeft: 220 }}>{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   )
 }

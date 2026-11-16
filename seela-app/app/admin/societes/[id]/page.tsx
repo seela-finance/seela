@@ -42,7 +42,8 @@ async function listClientFiles(db: SupabaseClient, ownerId: string): Promise<Sto
   return [...files, ...nested.flat()].filter(f => !f.path.endsWith('/.emptyFolderPlaceholder'))
 }
 
-const GRADE_COLOR: Record<string, string> = { A: '#166534', 'B+': '#15803D', B: '#1D4ED8', 'C+': '#B45309', C: '#991B1B' }
+// Tokens sémantiques uniquement (le cobalt reste réservé à l'action)
+const GRADE_COLOR: Record<string, string> = { A: 'var(--ok)', 'B+': 'var(--ok)', B: 'var(--warning)', 'C+': 'var(--warning)', C: 'var(--danger)' }
 
 export default async function AdminCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin()
@@ -51,7 +52,7 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
 
   if (!isServiceRoleConfigured()) {
     return (
-      <p className="m-6 text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>
+      <p className="ev-alert ev-alert--danger m-6">
         {SERVICE_ROLE_MISSING_MESSAGE}
       </p>
     )
@@ -123,16 +124,16 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
 
         {/* En-tête */}
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold" style={{ color: '#0E0E0C', letterSpacing: '-0.02em' }}>{name}</h1>
-          {profile.siren && <span className="text-sm" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>SIREN {profile.siren}</span>}
+          <h1 className="ev-display text-xl" style={{ color: 'var(--ink)' }}>{name}</h1>
+          {profile.siren && <span className="text-sm" style={{ color: 'var(--ink-3)' }}>SIREN <span className="ev-mono">{profile.siren}</span></span>}
           {registryCompany && (
             <Badge info={registryCompany.active
-              ? { label: 'Active au registre', color: '#166534', bg: '#F0FDF4', dot: '#22C55E' }
-              : { label: 'Cessée au registre', color: '#991B1B', bg: '#FEF2F2', dot: '#EF4444' }}
+              ? { label: 'Active au registre', color: 'var(--ok)', bg: 'var(--ok-soft)', dot: 'var(--ok)' }
+              : { label: 'Cessée au registre', color: 'var(--danger)', bg: 'var(--danger-soft)', dot: 'var(--danger)' }}
             />
           )}
           {!profile.onboarding_completed && (
-            <Badge info={{ label: 'Onboarding incomplet', color: '#92400E', bg: '#FFFBEB', dot: '#F59E0B' }} />
+            <Badge info={{ label: 'Onboarding incomplet', color: 'var(--warning)', bg: 'var(--warning-soft)', dot: 'var(--warning)' }} />
           )}
         </div>
 
@@ -140,12 +141,12 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
         <Section title="Synthèse">
           <dl className="px-4 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Field label="Dossiers soumis" value={String(submitted.length)} />
-            <Field label="Montant total demandé" value={eur(submitted.reduce((s, r) => s + (r.total_amount ?? 0), 0))} />
+            <Field label="Montant total demandé" value={<span className="ev-mono">{eur(submitted.reduce((s, r) => s + (r.total_amount ?? 0), 0))}</span>} />
             <Field
               label="Score Everlease"
               value={profile.seela_score_grade ? (
-                <span style={{ color: GRADE_COLOR[profile.seela_score_grade] ?? '#0E0E0C', fontWeight: 600 }}>
-                  {profile.seela_score_grade} <span style={{ color: '#9A9A93', fontWeight: 400 }}>· {profile.seela_score}/100</span>
+                <span style={{ color: GRADE_COLOR[profile.seela_score_grade] ?? 'var(--ink)', fontWeight: 600 }}>
+                  {profile.seela_score_grade} <span className="ev-mono" style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· {profile.seela_score}/100</span>
                 </span>
               ) : null}
             />
@@ -182,35 +183,35 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
         {/* Identité : déclaré vs registre */}
         <Section
           title="Identité"
-          right={<span className="text-xs" style={{ color: '#9A9A93' }}>Registre : annuaire des entreprises (data.gouv), mis à jour chaque jour</span>}
+          right={<span className="text-xs" style={{ color: 'var(--ink-3)' }}>Registre : annuaire des entreprises (data.gouv), mis à jour chaque jour</span>}
         >
           {registry.status === 'error' && (
-            <p className="mx-4 mt-4 text-sm px-3 py-2 rounded-lg" style={{ background: '#FFFBEB', color: '#92400E' }}>
+            <p className="ev-alert ev-alert--warning mx-4 mt-4">
               Registre indisponible pour le moment : seules les données déclarées sont affichées.
             </p>
           )}
           {registry.status === 'not_found' && (
-            <p className="mx-4 mt-4 text-sm px-3 py-2 rounded-lg" style={{ background: '#F5F5F4', color: '#6B6B66' }}>
+            <p className="ev-alert mx-4 mt-4">
               {profile.siren ? 'SIREN introuvable au registre public.' : 'Pas de SIREN renseigné.'}
             </p>
           )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left">
               <thead>
-                <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+                <tr style={{ borderBottom: '1px solid var(--line)' }}>
                   {['', 'Déclaré par le client', 'Registre public'].map(h => (
-                    <th key={h} className="px-4 py-2 text-xs font-medium" style={{ color: '#9A9A93' }}>{h}</th>
+                    <th key={h} className="ev-kicker px-4 py-2">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {identity.map(row => (
-                  <tr key={row.label} style={{ borderBottom: '1px solid #F5F5F4', background: row.mismatch ? '#FFFBEB' : undefined }}>
-                    <td className="px-4 py-2.5 text-xs whitespace-nowrap" style={{ color: '#9A9A93' }}>{row.label}</td>
-                    <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>{row.declared ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm" style={{ color: '#0E0E0C' }}>
+                  <tr key={row.label} style={{ borderBottom: '1px solid var(--line)', background: row.mismatch ? 'var(--warning-soft)' : undefined }}>
+                    <td className="px-4 py-2.5 text-xs whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{row.label}</td>
+                    <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>{row.declared ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>
                       {row.registry ?? '—'}
-                      {row.mismatch && <span className="ml-2 text-xs font-medium" style={{ color: '#B45309' }}>écart</span>}
+                      {row.mismatch && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--warning)' }}>écart</span>}
                     </td>
                   </tr>
                 ))}
@@ -234,13 +235,13 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
           {/* Dirigeants */}
           <Section title="Dirigeants (registre)">
             {!registryCompany || registryCompany.directors.length === 0 ? (
-              <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucun dirigeant connu.</p>
+              <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aucun dirigeant connu.</p>
             ) : (
-              <ul className="px-4 py-3 divide-y divide-[#F5F5F4]">
+              <ul className="px-4 py-3 divide-y divide-[var(--line)]">
                 {registryCompany.directors.map((d, i) => (
                   <li key={i} className="py-2 flex items-baseline justify-between gap-3">
-                    <span className="text-sm" style={{ color: '#0E0E0C' }}>{d.name}</span>
-                    <span className="text-xs text-right" style={{ color: '#9A9A93' }}>{d.role ?? (d.kind === 'company' ? 'Personne morale' : '—')}</span>
+                    <span className="text-sm" style={{ color: 'var(--ink)' }}>{d.name}</span>
+                    <span className="text-xs text-right" style={{ color: 'var(--ink-3)' }}>{d.role ?? (d.kind === 'company' ? 'Personne morale' : '—')}</span>
                   </li>
                 ))}
               </ul>
@@ -250,19 +251,19 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
           {/* Score */}
           <Section
             title="Score Everlease"
-            right={score?.partial ? <span className="text-xs" style={{ color: '#B45309' }}>Partiel : sans chiffres financiers</span> : undefined}
+            right={score?.partial ? <span className="text-xs" style={{ color: 'var(--warning)' }}>Partiel : sans chiffres financiers</span> : undefined}
           >
             {!score ? (
-              <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Score pas encore calculé.</p>
+              <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Score pas encore calculé.</p>
             ) : (
               <ul className="px-4 py-3 space-y-2">
                 {score.rows.map(r => (
                   <li key={r.label} className="flex items-center gap-3">
-                    <span className="w-36 shrink-0 text-xs" style={{ color: '#9A9A93' }}>{r.label}</span>
-                    <span className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#F5F5F4' }}>
-                      <span className="block h-full rounded-full" style={{ width: `${((r.points ?? 0) / r.max) * 100}%`, background: '#0E0E0C' }} />
+                    <span className="w-36 shrink-0 text-xs" style={{ color: 'var(--ink-3)' }}>{r.label}</span>
+                    <span className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
+                      <span className="block h-full rounded-full" style={{ width: `${((r.points ?? 0) / r.max) * 100}%`, background: 'var(--accent)' }} />
                     </span>
-                    <span className="w-12 text-right text-xs" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+                    <span className="ev-mono w-12 text-right text-xs" style={{ color: 'var(--ink)' }}>
                       {r.points ?? '—'}/{r.max}
                     </span>
                   </li>
@@ -271,9 +272,9 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
             )}
             {registryCompany && registryCompany.finances.length > 0 && (
               <div className="px-4 pb-4">
-                <p className="text-xs mb-1" style={{ color: '#9A9A93' }}>Chiffres publiés au registre</p>
+                <p className="text-xs mb-1" style={{ color: 'var(--ink-3)' }}>Chiffres publiés au registre</p>
                 {registryCompany.finances.slice(0, 3).map(f => (
-                  <p key={f.year} className="text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+                  <p key={f.year} className="ev-mono text-sm" style={{ color: 'var(--ink)' }}>
                     {f.year} · CA {eur(f.revenue)} · résultat {eur(f.netResult)}
                   </p>
                 ))}
@@ -285,28 +286,28 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
         {/* Dossiers */}
         <Section title="Dossiers">
           {requests.length === 0 ? (
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucun dossier.</p>
+            <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aucun dossier.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+                  <tr style={{ borderBottom: '1px solid var(--line)' }}>
                     {['Référence', 'Statut', 'Montant HT', 'Durée', 'Document', 'Créé le'].map(h => (
-                      <th key={h} className="px-4 py-2 text-xs font-medium whitespace-nowrap" style={{ color: '#9A9A93' }}>{h}</th>
+                      <th key={h} className="ev-kicker px-4 py-2 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map(r => (
-                    <tr key={r.id} style={{ borderBottom: '1px solid #F5F5F4' }}>
-                      <td className="px-4 py-2.5 text-sm font-medium whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        <Link href={`/admin/dossiers/${r.id}`} className="underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>{requestLabel(r)}</Link>
+                    <tr key={r.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td className="ev-mono px-4 py-2.5 text-sm font-medium whitespace-nowrap">
+                        <Link href={`/admin/dossiers/${r.id}`} className="underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>{requestLabel(r)}</Link>
                       </td>
                       <td className="px-4 py-2.5"><Badge info={requestStatusInfo(r.status)} /></td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{eur(r.total_amount)}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{r.duration_months ? `${r.duration_months} mois` : '—'}</td>
-                      <td className="px-4 py-2.5 text-sm" style={{ color: '#9A9A93' }}>{r.document_type ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(r.created_at)}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{eur(r.total_amount)}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{r.duration_months ? `${r.duration_months} mois` : '—'}</td>
+                      <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink-3)' }}>{r.document_type ?? '—'}</td>
+                      <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -316,30 +317,30 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
         </Section>
 
         {/* Documents */}
-        <Section title="Documents" right={<span className="text-xs" style={{ color: '#9A9A93' }}>{documents.length} fichier(s) · liens valables 1 h</span>}>
+        <Section title="Documents" right={<span className="text-xs" style={{ color: 'var(--ink-3)' }}>{documents.length} fichier(s) · liens valables 1 h</span>}>
           {documentGroups.length === 0 ? (
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucun document uploadé.</p>
+            <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aucun document uploadé.</p>
           ) : (
             <div className="px-4 py-3 space-y-4">
               {documentGroups.map(g => (
                 <div key={g.kind}>
-                  <p className="text-xs font-medium mb-1" style={{ color: '#9A9A93' }}>{DOCUMENT_KIND_LABEL[g.kind]}</p>
-                  <ul className="divide-y divide-[#F5F5F4]">
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--ink-3)' }}>{DOCUMENT_KIND_LABEL[g.kind]}</p>
+                  <ul className="divide-y divide-[var(--line)]">
                     {g.items.map(d => {
                       const url = signedUrl.get(d.path)
                       return (
                         <li key={d.path} className="py-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <span className="min-w-0 text-sm truncate" style={{ color: '#0E0E0C' }}>
+                          <span className="min-w-0 text-sm truncate" style={{ color: 'var(--ink)' }}>
                             {url ? (
                               <a href={url} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">{d.name}</a>
                             ) : d.name}
                             {d.request && (
-                              <Link href={`/admin/dossiers/${d.request.id}`} className="ml-2 text-xs hover:opacity-70" style={{ color: '#9A9A93' }}>
+                              <Link href={`/admin/dossiers/${d.request.id}`} className="ev-mono ml-2 text-xs hover:opacity-70" style={{ color: 'var(--ink-3)' }}>
                                 {d.request.ref}
                               </Link>
                             )}
                           </span>
-                          <span className="text-xs whitespace-nowrap" style={{ color: '#9A9A93' }}>
+                          <span className="text-xs whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
                             {formatBytes(d.size)} · {fmtDate(d.createdAt)}
                           </span>
                         </li>
@@ -355,23 +356,23 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
         {/* Historique */}
         <Section title="Historique des actions admin">
           {(rawEvents ?? []).length === 0 ? (
-            <p className="px-4 py-6 text-sm" style={{ color: '#9A9A93' }}>Aucune action de l&apos;équipe sur cette société.</p>
+            <p className="px-4 py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Aucune action de l&apos;équipe sur cette société.</p>
           ) : (
             <ol className="px-4 py-4 space-y-3">
               {(rawEvents ?? []).map(e => (
                 <li key={e.id} className="flex gap-3">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#D1D1CE' }} />
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--line-strong)' }} />
                   <div className="min-w-0">
-                    <p className="text-sm" style={{ color: '#0E0E0C' }}>
+                    <p className="text-sm" style={{ color: 'var(--ink)' }}>
                       {e.action}
                       {e.request_id && refById.get(e.request_id) && (
-                        <Link href={`/admin/dossiers/${e.request_id}`} className="ml-1 hover:opacity-70" style={{ color: '#9A9A93' }}>
+                        <Link href={`/admin/dossiers/${e.request_id}`} className="ev-mono ml-1 hover:opacity-70" style={{ color: 'var(--ink-3)' }}>
                           · {refById.get(e.request_id)}
                         </Link>
                       )}
-                      {e.note && <span style={{ color: '#9A9A93' }}> · {e.note}</span>}
+                      {e.note && <span style={{ color: 'var(--ink-3)' }}> · {e.note}</span>}
                     </p>
-                    <p className="text-xs" style={{ color: '#9A9A93' }}>
+                    <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
                       {fmtDateTime(e.created_at)} · {adminName.get(e.admin_id) ?? 'Admin'}
                     </p>
                   </div>

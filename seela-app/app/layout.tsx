@@ -10,8 +10,8 @@ const inter = Inter({
 })
 
 // Design system v2 : Bricolage Grotesque pour les titres, JetBrains Mono pour
-// les montants et kickers. Consommées par `.lp` (app/landing.css) via
-// --font-display et --font-mono ; globals.css (app authentifiée) reste sur Inter.
+// les montants et kickers. Consommées par `.lp` (app/landing.css) et par
+// app/globals.css (app authentifiée) via --font-display et --font-mono.
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   weight: ['500', '600', '700'],

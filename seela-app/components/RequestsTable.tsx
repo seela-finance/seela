@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { RS, requestStatusInfo, requestDestination } from '@/lib/status'
 
@@ -29,6 +30,18 @@ function fmt(n: number | null) {
 
 export default function RequestsTable({ requests }: { requests: RequestRow[] }) {
   const router = useRouter()
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function deleteDraft(id: string) {
+    if (!window.confirm('Supprimer ce brouillon et son document ?')) return
+    setDeleting(id)
+    setDeleteError(null)
+    const res = await fetch(`/api/requests/${id}/draft`, { method: 'DELETE' }).catch(() => null)
+    setDeleting(null)
+    if (res?.ok) router.refresh()
+    else setDeleteError(id)
+  }
 
   return (
     <tbody>
@@ -53,41 +66,45 @@ export default function RequestsTable({ requests }: { requests: RequestRow[] }) 
             key={r.id}
             onClick={() => router.push(destination)}
             className="cursor-pointer transition-colors"
-            style={{ borderBottom: '1px solid #F5F5F4' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FAFAF9')}
+            style={{ borderBottom: '1px solid var(--line)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper)')}
             onMouseLeave={e => (e.currentTarget.style.background = '')}
           >
-            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+            <td className="ev-mono px-4 py-3.5 text-sm font-medium" style={{ color: 'var(--ink)' }}>
               {ref}
             </td>
-            <td className="px-4 py-3.5 text-sm max-w-xs" style={{ color: '#0E0E0C' }}>
+            <td className="px-4 py-3.5 text-sm max-w-xs" style={{ color: 'var(--ink)' }}>
               <span className="block truncate">{assetLabel}</span>
             </td>
-            <td className="px-4 py-3.5 text-sm" style={{ color: '#9A9A93' }}>
+            <td className="px-4 py-3.5 text-sm" style={{ color: 'var(--ink-3)' }}>
               {selOffer?.leaser_name ?? '—'}
             </td>
-            <td className="px-4 py-3.5 text-sm font-medium" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+            <td className="ev-mono px-4 py-3.5 text-sm font-medium" style={{ color: 'var(--ink)' }}>
               {selOffer ? fmt(selOffer.monthly_payment) : '—'}
             </td>
-            <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>
+            <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
               {fmtDate(r.created_at)}
             </td>
             <td className="px-4 py-3.5">
-              {r.status === RS.offers_available ? (
+              {r.status === RS.draft ? (
+                <div className="flex items-center gap-2 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => router.push(destination)} className="ev-btn ev-btn--ghost ev-btn--sm">Reprendre</button>
+                  <button onClick={() => deleteDraft(r.id)} disabled={deleting === r.id} className="ev-btn ev-btn--danger ev-btn--sm">
+                    {deleting === r.id ? 'Suppression…' : 'Supprimer'}
+                  </button>
+                  {deleteError === r.id && <span role="alert" className="text-xs" style={{ color: 'var(--danger)' }}>Suppression impossible</span>}
+                </div>
+              ) : r.status === RS.offers_available ? (
                 <button
                   onClick={e => { e.stopPropagation(); router.push(`/app/offres/${r.id}`) }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-80"
-                  style={{ background: '#EEF2FF', color: '#3730A3' }}
+                  className="ev-tag ev-tag--accent cursor-pointer transition-opacity hover:opacity-80"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#4F46E5' }} />
+                  <span className="ev-tag__dot" style={{ background: 'var(--accent)' }} />
                   {offerCount > 0 ? `${offerCount} offre${offerCount > 1 ? 's' : ''} à examiner` : 'Offres disponibles'}
                 </button>
               ) : (
-                <span
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  style={{ background: cfg.bg, color: cfg.color }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cfg.dot }} />
+                <span className="ev-tag" style={{ background: cfg.bg, color: cfg.color }}>
+                  <span className="ev-tag__dot" style={{ background: cfg.dot }} />
                   {cfg.label}
                 </span>
               )}

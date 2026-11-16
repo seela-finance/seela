@@ -36,21 +36,19 @@ export default function CounterOfferActions({ offerId }: Props) {
         <button
           onClick={() => act('accept')}
           disabled={loading !== null}
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ background: '#0E0E0C', color: '#fff', borderRadius: 8 }}
+          className="ev-btn ev-btn--primary"
         >
           {loading === 'accept' ? 'Confirmation…' : 'Accepter les conditions'}
         </button>
         <button
           onClick={() => act('refuse')}
           disabled={loading !== null}
-          className="px-4 py-2 rounded-lg text-sm font-medium border transition-opacity hover:opacity-70 disabled:opacity-50"
-          style={{ background: '#fff', color: '#92400E', borderColor: '#FED7AA', borderRadius: 8 }}
+          className="ev-btn ev-btn--danger"
         >
           {loading === 'refuse' ? 'Envoi…' : 'Refuser'}
         </button>
       </div>
-      {error && <p className="mt-2 text-xs" style={{ color: '#991B1B' }}>{error}</p>}
+      {error && <p className="ev-alert ev-alert--danger mt-2">{error}</p>}
     </div>
   )
 }

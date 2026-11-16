@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -27,6 +27,10 @@ jobs:
       # Compte de test staging : active les tests du projet "authenticated" s'il est défini.
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      # Clé service role de STAGING : active les parcours connectés (e2e/flows/), avec des comptes
+      # éphémères. e2e/support/staging.ts refuse toute autre base que le staging.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_STAGING: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +47,14 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-parcours
+          path: seela-app/test-results/screens
+          if-no-files-found: ignore
+          retention-days: 7
 
       - uses: actions/upload-artifact@v4
         if: failure()

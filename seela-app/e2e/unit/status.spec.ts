@@ -27,7 +27,7 @@ test.describe('Statuts de dossier', () => {
   })
 
   test('un brouillon mène au flow, jamais à la fiche contrat', () => {
-    expect(requestDestination(ID, RS.draft)).toBe('/app/nouveau')
+    expect(requestDestination(ID, RS.draft)).toBe(`/app/nouveau?request=${ID}`)
   })
 
   test('seuls leaser_confirmed et active mènent à la fiche contrat', () => {

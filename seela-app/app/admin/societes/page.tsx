@@ -38,9 +38,9 @@ export default async function AdminCompaniesPage({
 
   return (
     <div>
-      <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: '#E5E5E3', background: '#fff' }}>
-        <span className="text-sm font-medium" style={{ color: '#0E0E0C' }}>Sociétés</span>
-        <span className="ml-2 text-xs" style={{ color: '#9A9A93' }}>{companies.length}</span>
+      <div className="h-12 flex items-center px-6 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Sociétés</span>
+        <span className="ev-mono ml-2 text-xs" style={{ color: 'var(--ink-3)' }}>{companies.length}</span>
       </div>
 
       <div className="px-6 py-6">
@@ -50,79 +50,79 @@ export default async function AdminCompaniesPage({
             name="q"
             defaultValue={params.query}
             placeholder="Raison sociale, SIREN, contact ou email"
-            className="h-9 w-80 max-w-full px-3 rounded-lg border text-sm outline-none focus:border-[#9A9A93]"
-            style={{ background: '#fff', borderColor: '#E5E5E3', color: '#0E0E0C' }}
+            className="ev-input"
+            style={{ width: '20rem', maxWidth: '100%' }}
           />
-          <button type="submit" className="h-9 px-3 rounded-lg text-sm font-medium transition-opacity hover:opacity-80" style={{ background: '#0E0E0C', color: '#fff' }}>
+          <button type="submit" className="ev-btn ev-btn--ghost">
             Rechercher
           </button>
           {params.query && (
-            <Link href="/admin/societes" className="text-xs hover:opacity-70" style={{ color: '#9A9A93' }}>Effacer</Link>
+            <Link href="/admin/societes" className="text-xs hover:opacity-70" style={{ color: 'var(--ink-3)' }}>Effacer</Link>
           )}
         </form>
 
         {(error || !configured) && (
-          <p className="mt-4 text-sm px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', color: '#991B1B' }}>
+          <p className="ev-alert ev-alert--danger mt-4">
             {configured ? 'Impossible de charger les sociétés. Réessayez dans un instant.' : SERVICE_ROLE_MISSING_MESSAGE}
           </p>
         )}
 
-        <div className="mt-4 rounded-xl border overflow-x-auto" style={{ background: '#fff', borderColor: '#E5E5E3' }}>
+        <div className="ev-card mt-4 overflow-x-auto">
           <table className="w-full min-w-[900px] text-left">
             <thead>
-              <tr style={{ borderBottom: '1px solid #E5E5E3' }}>
+              <tr style={{ borderBottom: '1px solid var(--line)' }}>
                 {HEADERS.map(h => (
-                  <th key={h} className="px-4 py-2.5 text-xs font-medium whitespace-nowrap" style={{ color: '#9A9A93' }}>{h}</th>
+                  <th key={h} className="ev-kicker px-4 py-2.5 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {items.map(c => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #F5F5F4' }}>
+                <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td className="px-4 py-3 text-sm max-w-[240px]">
-                    <Link href={`/admin/societes/${c.id}`} className="block truncate font-medium underline-offset-2 hover:underline" style={{ color: '#0E0E0C' }}>
+                    <Link href={`/admin/societes/${c.id}`} className="block truncate font-medium underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>
                       {c.name ?? 'Société sans nom'}
                     </Link>
-                    <span className="block text-xs" style={{ color: '#9A9A93', fontVariantNumeric: 'tabular-nums' }}>
-                      {c.siren ?? 'SIREN non renseigné'}{!c.onboarded && ' · onboarding incomplet'}
+                    <span className="block text-xs" style={{ color: 'var(--ink-3)' }}>
+                      {c.siren ? <span className="ev-mono">{c.siren}</span> : 'SIREN non renseigné'}{!c.onboarded && ' · onboarding incomplet'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm max-w-[220px]">
-                    <span className="block truncate" style={{ color: '#0E0E0C' }}>{c.contact ?? '—'}</span>
-                    {c.email && <span className="block truncate text-xs" style={{ color: '#9A9A93' }}>{c.email}</span>}
+                    <span className="block truncate" style={{ color: 'var(--ink)' }}>{c.contact ?? '—'}</span>
+                    {c.email && <span className="block truncate text-xs" style={{ color: 'var(--ink-3)' }}>{c.email}</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#0E0E0C' }}>
-                    {c.grade ? <>{c.grade} <span style={{ color: '#9A9A93' }}>· {c.score}</span></> : <span style={{ color: '#9A9A93' }}>—</span>}
+                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>
+                    {c.grade ? <>{c.grade} <span className="ev-mono" style={{ color: 'var(--ink-3)' }}>· {c.score}</span></> : <span style={{ color: 'var(--ink-3)' }}>—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>{c.requestCount}</td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#0E0E0C', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="ev-mono px-4 py-3 text-sm" style={{ color: 'var(--ink)' }}>{c.requestCount}</td>
+                  <td className="ev-mono px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>
                     {c.requestedAmount > 0 ? eur(c.requestedAmount) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }} title={c.lastRequestAt ? fmtDate(c.lastRequestAt) : undefined}>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }} title={c.lastRequestAt ? fmtDate(c.lastRequestAt) : undefined}>
                     {c.lastRequestAt ? sinceLabel(c.lastRequestAt, now) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#9A9A93' }}>{fmtDate(c.createdAt)}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(c.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
           {items.length === 0 && !error && configured && (
-            <p className="px-4 py-10 text-sm text-center" style={{ color: '#9A9A93' }}>
+            <p className="px-4 py-10 text-sm text-center" style={{ color: 'var(--ink-3)' }}>
               {params.query ? 'Aucune société ne correspond à cette recherche.' : 'Aucune société inscrite pour le moment.'}
             </p>
           )}
         </div>
 
         {pageCount > 1 && (
-          <div className="mt-4 flex items-center justify-between text-sm" style={{ color: '#9A9A93' }}>
+          <div className="mt-4 flex items-center justify-between text-sm" style={{ color: 'var(--ink-3)' }}>
             <span>{total} sociétés · page {page} / {pageCount}</span>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={listHref(params, { page: page - 1 })} className="px-3 py-1.5 rounded-lg border hover:opacity-70" style={{ borderColor: '#E5E5E3', background: '#fff', color: '#0E0E0C' }}>Précédent</Link>
+                <Link href={listHref(params, { page: page - 1 })} className="ev-btn ev-btn--ghost ev-btn--sm">Précédent</Link>
               )}
               {page < pageCount && (
-                <Link href={listHref(params, { page: page + 1 })} className="px-3 py-1.5 rounded-lg border hover:opacity-70" style={{ borderColor: '#E5E5E3', background: '#fff', color: '#0E0E0C' }}>Suivant</Link>
+                <Link href={listHref(params, { page: page + 1 })} className="ev-btn ev-btn--ghost ev-btn--sm">Suivant</Link>
               )}
             </div>
           </div>

@@ -51,7 +51,7 @@ export default function SolutionsHub() {
               <span className="lp-eyebrow" style={{ marginTop: 18 }}><SparkleGlyph size={12} /> Modes de financement</span>
               <h1 className="lp-h1" style={{ fontSize: 40, marginTop: 18 }}>Financer vos équipements professionnels</h1>
               <p className="lp-lede" style={{ fontSize: 18, marginTop: 18, maxWidth: 660 }}>
-                Location financière, crédit-bail, LLD, LOA, lease-back : chaque mode de financement a ses atouts. Everlease vous conseille et met en concurrence ses partenaires financeurs pour trouver le bon.
+                Location financière, crédit-bail, LLD, LOA, lease-back : chaque mode de financement a ses atouts. Everlease vous conseille et présente votre dossier à des financeurs adaptés.
               </p>
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function SolutionsHub() {
           <div className="lp-wrap" style={{ textAlign: 'center', maxWidth: 560 }}>
             <h2 className="lp-h2">Pas sûr du bon financement ?</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 460 }}>
-              Déposez un devis : Everlease analyse votre besoin et vous propose les offres les plus adaptées.
+              Déposez un devis : Everlease analyse votre besoin et prépare votre dossier pour des financeurs adaptés.
             </p>
             <div className="lp-cta-row" style={{ marginTop: 28 }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>

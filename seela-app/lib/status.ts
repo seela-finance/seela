@@ -6,12 +6,14 @@ export type Actor = 'client' | 'admin' | 'system'
 
 type Badge = { label: string; color: string; bg: string; dot: string }
 
-const GRAY = { color: '#9A9A93', bg: '#F5F5F4', dot: '#D1D1CE' }
-const YELLOW = { color: '#854D0E', bg: '#FEF9C3', dot: '#D97706' }
-const INDIGO = { color: '#3730A3', bg: '#EEF2FF', dot: '#4F46E5' }
-const ORANGE = { color: '#92400E', bg: '#FFF7ED', dot: '#D97706' }
-const GREEN = { color: '#166534', bg: '#F0FDF4', dot: '#16A34A' }
-const RED = { color: '#991B1B', bg: '#FEF2F2', dot: '#DC2626' }
+// Cinq tons du design system v2 (tags `ev-tag`) : neutre, cobalt, warning, ok, danger.
+// YELLOW et ORANGE partagent le ton warning (le sens est porté par le libellé, pas par la nuance).
+const GRAY = { color: 'var(--ink-2)', bg: 'var(--raised)', dot: 'var(--line-strong)' }
+const YELLOW = { color: 'var(--warning)', bg: 'var(--warning-soft)', dot: 'var(--warning)' }
+const INDIGO = { color: 'var(--accent-ink)', bg: 'var(--accent-soft)', dot: 'var(--accent)' }
+const ORANGE = YELLOW
+const GREEN = { color: 'var(--ok)', bg: 'var(--ok-soft)', dot: 'var(--ok)' }
+const RED = { color: 'var(--danger)', bg: 'var(--danger-soft)', dot: 'var(--danger)' }
 
 // ── Dossiers ─────────────────────────────────────────────────────────
 
@@ -67,8 +69,7 @@ export function requestStatusesIn(section: RequestSection): RequestStatus[] {
 export function requestDestination(id: string, status: string | null | undefined): string {
   switch (requestStatusInfo(status).section) {
     case 'draft':
-      // La reprise d'un brouillon (/app/nouveau?request=<id>) arrive avec #27
-      return '/app/nouveau'
+      return `/app/nouveau?request=${id}`
     case 'contrats':
       return `/app/contrats/${id}`
     default:
@@ -81,15 +82,17 @@ type Transition<S> = { to: S; by: Actor[] }
 export const REQUEST_TRANSITIONS: Record<RequestStatus, Transition<RequestStatus>[]> = {
   draft: [{ to: 'submitted', by: ['client'] }],
   submitted: [
-    { to: 'offers_available', by: ['system'] },
+    { to: 'offers_available', by: ['system', 'admin'] }, // admin : offre manuelle
     { to: 'no_match', by: ['system'] },
     { to: 'refused', by: ['admin'] },
   ],
   offers_available: [
     { to: 'offer_selected', by: ['client'] },
+    { to: 'counter_offer', by: ['admin'] },
     { to: 'refused', by: ['admin'] },
   ],
   no_match: [
+    { to: 'submitted', by: ['admin'] }, // relance du matching
     { to: 'offers_available', by: ['admin'] },
     { to: 'refused', by: ['admin'] },
   ],
@@ -143,8 +146,8 @@ export const OFFER_STATUS: Record<OfferStatus, Badge> = {
   indicative:       { label: 'Offre indicative',        ...INDIGO },
   client_confirmed: { label: 'Sélection confirmée',     ...ORANGE },
   counter_offer:    { label: 'Contre-proposition',      ...INDIGO },
-  seela_validated:  { label: 'Transmise au leaser',     ...ORANGE },
-  leaser_confirmed: { label: 'Confirmée par le leaser', ...GREEN },
+  seela_validated:  { label: 'Transmise au financeur',     ...ORANGE },
+  leaser_confirmed: { label: 'Confirmée par le financeur', ...GREEN },
   refused:          { label: 'Non retenue',             ...RED },
 }
 
@@ -194,7 +197,7 @@ export const REQUEST_TIMELINE: { status: RequestStatus; label: string }[] = [
   { status: 'submitted', label: 'Dossier transmis' },
   { status: 'offer_selected', label: 'Offre choisie' },
   { status: 'seela_validated', label: 'Validé par Everlease' },
-  { status: 'leaser_confirmed', label: 'Confirmé par le leaser' },
+  { status: 'leaser_confirmed', label: 'Confirmé par le financeur' },
   { status: 'active', label: 'Contrat démarré' },
 ]
 
