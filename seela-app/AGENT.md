@@ -94,16 +94,17 @@ le signaler en tête de PR) :
   ligne par ligne, avec un commentaire qui explique pourquoi.
 - **Imiter le code voisin** : même structure de page, mêmes noms, même densité de commentaires.
   Les pages de `app/app/` sont la référence visuelle pour toute page authentifiée.
-- **Design system** : fond `#FAFAF9`, texte `#1A1A18`, secondaire `#9A9A93`, Inter. Minimaliste.
+- **Design system v2** (obligatoire, voir `CLAUDE.md`) : tokens et classes `ev-*` de `app/globals.css`, papier froid `#F2F3F4`, encre `#141517`, cobalt `#1F3BFF` réservé à l'action, Bricolage Grotesque, Inter, JetBrains Mono.
 - **Textes en français**, vouvoiement, ton sobre et professionnel. Marque : **everlease** (minuscule).
 - Chaque action async a un état de chargement et une erreur explicite pour l'utilisateur.
 - Responsive : vérifier à 375 px de large, aucun scroll horizontal.
 - Server Components par défaut ; `'use client'` seulement quand il faut de l'état ou des événements.
 - Pas de code mort, pas de `console.log` de debug laissé.
 - Une PR = une issue. Viser < 400 lignes modifiées ; au-delà, découper et le signaler.
-- **Back-office `/admin`** : chaque page appelle `requireAdmin()` (`lib/admin.ts`, 404 si non admin) ;
-  chaque écriture passe par une Server Action qui appelle `requireAdmin()` puis `logAdminEvent()`.
-  Ajouter un admin : `INSERT INTO public.admins (user_id, name) SELECT id, 'Prénom' FROM auth.users WHERE email = '…';`
+- **Back-office `/admin`** : chaque page appelle `requireAdmin()` ou `requireCapability()` (`lib/admin.ts`, 404 sinon) ;
+  chaque écriture passe par une Server Action qui vérifie le droit côté serveur (`can(admin.role, …)`,
+  `lib/admin-roles.ts`) puis appelle `logAdminEvent()`. Les membres de l'équipe et leurs rôles se gèrent
+  sur `/admin/equipe` (après la PR #88).
 
 ## 5. Format de PR
 
