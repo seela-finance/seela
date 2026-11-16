@@ -1,7 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { afterConfirmPath } from '@/lib/auth-redirect'
 
+// Retour du lien de confirmation d'email : ouvre la session, puis onboarding ou tableau de bord.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
@@ -22,9 +24,13 @@ export async function GET(request: Request) {
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) return NextResponse.redirect(`${origin}/app/dashboard`)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      const { data: profile } = await supabase.from('profiles').select('onboarding_completed').eq('id', data.user.id).maybeSingle()
+      return NextResponse.redirect(`${origin}${afterConfirmPath(profile?.onboarding_completed)}`)
+    }
   }
 
+  // Lien expiré ou ouvert dans un autre navigateur : l'email peut être confirmé quand même (message sur /auth)
   return NextResponse.redirect(`${origin}/auth?error=auth_callback_error`)
 }

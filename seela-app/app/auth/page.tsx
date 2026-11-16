@@ -1,16 +1,28 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
+import { authCallbackUrl, authErrorMessage } from '@/lib/auth-redirect'
 
 type Mode = 'login' | 'signup'
 
+// useSearchParams exige une frontière Suspense pour que la page reste pré-rendue
 export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthForm />
+    </Suspense>
+  )
+}
+
+function AuthForm() {
   const router = useRouter()
   const supabase = useRef(createClient()).current
+  // Retour d'un lien de confirmation expiré ou ouvert ailleurs (app/auth/callback)
+  const callbackError = authErrorMessage(useSearchParams().get('error'))
 
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
@@ -52,7 +64,8 @@ export default function AuthPage() {
           router.refresh()
         }
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password })
+        // Le lien de confirmation revient sur ce site (et non sur l'adresse réglée dans Supabase, qui peut être périmée)
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: authCallbackUrl(window.location.origin) } })
         if (error) throw error
 
         if (data.user) {
@@ -151,6 +164,11 @@ export default function AuthPage() {
             </div>
           )}
 
+          {callbackError && !error && !message && (
+            <div role="alert" className="ev-alert ev-alert--warning">
+              {callbackError}
+            </div>
+          )}
           {error && (
             <div className="ev-alert ev-alert--danger">
               {error}
