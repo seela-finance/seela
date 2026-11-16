@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 const NAV = [
   { href: '/admin', label: 'Dossiers' },
   { href: '/admin/societes', label: 'Sociétés' },
-  { href: null, label: 'Leasers' },
+  { href: '/admin/leasers', label: 'Leasers' },
 ]
 
 export default function AdminNav({ name, email }: { name: string; email: string }) {

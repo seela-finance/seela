@@ -496,6 +496,103 @@ test('anonymat : le nom du leaser n’apparaît nulle part côté client, ni par
   await client.context().close()
 })
 
+test('onglet Leasers : liste, simulateur comparatif, et fiche éditable (barème, éligibilité, conditions)', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const admin = await pageAs(browser, 'admin')
+
+  await test.step('la liste montre Grenke actif, avec ses champs à compléter', async () => {
+    await admin.goto('/admin/leasers')
+    // Première ligne : la liste (Grenke figure aussi dans le comparatif en dessous)
+    const grenke = admin.getByRole('row').filter({ hasText: 'Grenke' }).first()
+    await expect(grenke).toContainText('Actif')
+    await expect(grenke).toContainText(/18 à 63 mois/)
+    await expect(grenke).toContainText(/\d+ champs/)
+    // Les leasers fictifs sont désactivés, le leaser de test n'apparaît pas
+    await expect(admin.getByRole('row').filter({ hasText: 'BNP Lease' }).first()).toContainText('Inactif')
+    await expect(admin.getByText(run.leaser.name)).toHaveCount(0)
+    await shot(admin, '20-admin-leasers')
+  })
+
+  await test.step('simulateur comparatif : 20 000 € sur 36 mois chez Grenke', async () => {
+    await admin.getByLabel('Montant HT (€)').fill('20000')
+    await admin.getByLabel('Durée').selectOption('36')
+    const row = admin.getByRole('row').filter({ hasText: 'Grenke' }).last()
+    await expect(row).toContainText(/3,23\s%/)
+    await expect(row).toContainText(/646,00\s€/)
+    await expect(row).toContainText(/10,68\s%\s\/ an/)
+    // Les véhicules immatriculés sont exclus chez Grenke
+    await admin.getByLabel('Matériel').selectOption('vehicules-immatricules')
+    await expect(admin.getByText(/Matériel exclu/).first()).toBeVisible()
+    await admin.getByLabel('Matériel').selectOption('')
+    await shot(admin, '21-admin-simulateur')
+  })
+
+  const leaserPage = `/admin/leasers/${run.leaser.id}`
+
+  await test.step('barème : ajout d’une tranche et d’une durée, enregistré en base', async () => {
+    await admin.goto(leaserPage)
+    await admin.getByRole('button', { name: '+ Tranche' }).click()
+    await admin.getByLabel('Tranche 1, minimum').fill('1000')
+    await admin.getByLabel('Tranche 1, maximum').fill('50000')
+    await admin.getByRole('button', { name: '+ Durée' }).click()
+    await admin.getByLabel('Durée, ligne 1').fill('48')
+    await admin.getByLabel('Coefficient 48 mois, tranche 1').fill('2,55')
+    await admin.getByRole('button', { name: 'Enregistrer le barème' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Barème enregistré : 1 coefficient' })).toBeVisible({ timeout: 30_000 })
+    const { data } = await db.from('leaser_rate_grid').select('amount_min, amount_max, duration_months, coefficient_pct').eq('leaser_id', run.leaser.id)
+    expect(data?.map(r => [Number(r.amount_min), Number(r.amount_max), r.duration_months, Number(r.coefficient_pct)])).toEqual([[1000, 50000, 48, 2.55]])
+  })
+
+  await test.step('une saisie invalide est refusée sans rien écrire', async () => {
+    await admin.reload()
+    await admin.getByLabel('Coefficient 48 mois, tranche 1').fill('35')
+    await admin.getByRole('button', { name: 'Enregistrer le barème' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'hors bornes' })).toBeVisible({ timeout: 30_000 })
+    const { data } = await db.from('leaser_rate_grid').select('coefficient_pct').eq('leaser_id', run.leaser.id)
+    expect(data?.map(r => Number(r.coefficient_pct))).toEqual([2.55])
+  })
+
+  await test.step('éligibilité : CHR exclu', async () => {
+    await admin.reload()
+    await admin.getByLabel('Éligibilité : CHR & métiers de bouche').selectOption('no')
+    await admin.getByLabel('Conditions : CHR & métiers de bouche').fill('Hors périmètre E2E')
+    await admin.getByRole('button', { name: 'Enregistrer l’éligibilité' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Éligibilité enregistrée' })).toBeVisible({ timeout: 30_000 })
+    const { data } = await db.from('leaser_eligibility').select('equipment_family, equipment_type, status, conditions').eq('leaser_id', run.leaser.id)
+    expect(data).toEqual([{ equipment_family: 'chr', equipment_type: null, status: 'no', conditions: 'Hors périmètre E2E' }])
+  })
+
+  await test.step('conditions : frais de dossier et frais client, journalisés', async () => {
+    await admin.reload()
+    await admin.getByLabel('Frais de dossier du leaser (€ HT)').fill('150')
+    await admin.getByRole('button', { name: 'Ajouter un palier' }).click()
+    await admin.getByLabel('Taux (%)').fill('1,5')
+    await admin.getByRole('button', { name: 'Enregistrer les conditions' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Conditions enregistrées' })).toBeVisible({ timeout: 30_000 })
+    const { data } = await db.from('leasers').select('frais_dossier, client_fee_rules, is_active').eq('id', run.leaser.id).single()
+    expect(Number(data?.frais_dossier)).toBe(150)
+    expect(data?.client_fee_rules).toEqual({ tiers: [{ up_to: null, rate: 0.015 }], min: null, max: null })
+    expect(data?.is_active).toBe(true)
+    const { data: events } = await db.from('admin_events').select('action').eq('leaser_id', run.leaser.id)
+    expect(events?.map(e => e.action).sort()).toEqual(['Barème du leaser modifié', 'Leaser modifié', 'Éligibilité du leaser modifiée'])
+    await shot(admin, '22-admin-fiche-leaser')
+  })
+
+  await test.step('le simulateur de la fiche suit le barème enregistré', async () => {
+    await admin.getByLabel('Durée').first().selectOption('48')
+    await admin.getByLabel('Montant HT (€)').fill('10000')
+    await expect(admin.getByText(/255,00\s€/).first()).toBeVisible()
+  })
+
+  const client = await pageAs(browser, 'client')
+  expect((await client.goto('/admin/leasers'))?.status()).toBe(404)
+  expect((await client.goto(leaserPage))?.status()).toBe(404)
+  await client.context().close()
+  await admin.context().close()
+})
+
 test('un autre client ne voit ni ne modifie le dossier, et le back-office lui répond 404', async ({ browser }) => {
   test.setTimeout(120_000)
   const run = readContext()
