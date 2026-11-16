@@ -6,8 +6,14 @@ import { ClientActionError } from '@/lib/client-workflow'
 import { fetchOwnDocument, DocumentError } from '@/lib/documents'
 import { supabaseDraftStore } from '@/lib/draft-store'
 import { analyzeDraft } from '@/lib/draft-workflow'
+import { EQUIPMENT_FAMILIES } from '@/lib/equipment'
 
 const client = new Anthropic()
+
+// Les 39 types de matériel (lib/equipment.ts), par famille : l'IA choisit l'identifiant du type de chaque ligne
+const EQUIPMENT_TYPES = EQUIPMENT_FAMILIES
+  .map(f => `- ${f.label} : ${f.types.map(t => `"${t.slug}" (${t.examples})`).join(' ; ')}`)
+  .join('\n')
 
 const PROMPT = `Analyse ce document commercial (devis ou facture) et retourne un JSON structuré.
 
@@ -15,7 +21,10 @@ LIGNES À INCLURE dans "items" : matériel informatique, machines, véhicules ut
 
 EXCLURE impérativement des "items" : éco-participations, remises, avoirs, services, formations, garanties, maintenances, licences logicielles, frais de livraison, taxes, assurances.
 
-Pour chaque ligne retenue dans "items" : description (string), quantité (number), prix unitaire HT (number), prix total HT (number), category (string parmi : "Informatique" | "Mobilier" | "Véhicule" | "Médical" | "Industrie" | "Téléphonie" | "Audiovisuel" | "Autre").
+Pour chaque ligne retenue dans "items" : description (string), quantité (number), prix unitaire HT (number), prix total HT (number), equipment_type (string : l'identifiant exact du type de matériel le plus proche dans la liste ci-dessous, ou null si aucun ne convient).
+
+Types de matériel :
+${EQUIPMENT_TYPES}
 
 Extrait aussi :
 - "document_kind" : "devis" si le document est un devis, une proposition commerciale ou une facture pro forma ; "facture" si c'est une facture définitive ; null si tu ne peux pas trancher (avoir, bon de commande, document illisible)
@@ -29,7 +38,7 @@ Réponds UNIQUEMENT en JSON valide avec exactement ce format :
   "supplier": { "name": "", "address": "", "siren": "" },
   "document_number": "",
   "document_date": "",
-  "items": [ { "description": "", "quantity": 0, "unit_price": 0, "total_price": 0, "category": "" } ]
+  "items": [ { "description": "", "quantity": 0, "unit_price": 0, "total_price": 0, "equipment_type": "" } ]
 }
 Si une valeur est absente ou non trouvée, utilise null.`
 

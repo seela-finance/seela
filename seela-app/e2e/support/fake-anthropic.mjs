@@ -8,9 +8,9 @@ const ANALYSIS = {
   document_date: '2026-10-01',
   document_kind: 'facture',
   items: [
-    { description: 'Serveur de calcul', quantity: 1, unit_price: 10000, total_price: 10000, category: 'Informatique' },
-    { description: 'Écrans 27 pouces', quantity: 4, unit_price: 500, total_price: 2000, category: 'Informatique' },
-    { description: 'Installation sur site', quantity: 1, unit_price: 1500, total_price: 1500, category: 'Autre' },
+    { description: 'Serveur de calcul', quantity: 1, unit_price: 10000, total_price: 10000, equipment_type: 'postes-serveurs' },
+    { description: 'Écrans 27 pouces', quantity: 4, unit_price: 500, total_price: 2000, equipment_type: 'affichage-ecrans' },
+    { description: 'Installation sur site', quantity: 1, unit_price: 1500, total_price: 1500, equipment_type: null },
   ],
 }
 

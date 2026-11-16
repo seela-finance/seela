@@ -3,6 +3,7 @@
 import { documentPath } from '@/lib/documents'
 import { ClientActionError, DOCUMENT_TYPES, parseDocumentMeta, type SubmitPayload } from '@/lib/client-workflow'
 import { RS } from '@/lib/status'
+import { typeOf } from '@/lib/equipment'
 
 const MAX_LINES = 200
 
@@ -14,6 +15,8 @@ export type DraftLine = {
   unit_price: number | null
   total_price: number | null
   category: string | null
+  equipment_family: string | null
+  equipment_type: string | null
   selected: boolean
 }
 
@@ -43,12 +46,16 @@ export function parseAnalysis(raw: unknown): { lines: DraftLine[]; meta: DraftMe
   const lines = (Array.isArray(r.items) ? r.items.slice(0, MAX_LINES) : []).map(item => {
     const i = (item ?? {}) as Record<string, unknown>
     const total = num(i.total_price)
+    // Type de matériel : seulement un identifiant connu (lib/equipment.ts) ; la famille en découle
+    const typed = typeOf(typeof i.equipment_type === 'string' ? i.equipment_type : null)
     return {
       description: text(i.description),
       quantity: num(i.quantity),
       unit_price: num(i.unit_price),
       total_price: total,
-      category: text(i.category, 50),
+      category: typed?.family.label ?? text(i.category, 50),
+      equipment_family: typed?.family.slug ?? null,
+      equipment_type: typed?.type.slug ?? null,
       // Une ligne sans montant ne se finance pas : décochée d'office
       selected: total != null && total > 0,
     }

@@ -5,9 +5,16 @@ import TopActions from '@/components/TopActions'
 import { OS, RS, offerStatusInfo, requestDestination, requestStatusInfo } from '@/lib/status'
 import CounterOfferActions from './CounterOfferActions'
 import { CLIENT_OFFER_COLUMNS, RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
+import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
+import { loadActiveLeasers } from '@/lib/matching'
+import { equipmentOf } from '@/lib/matching-rules'
+import { estimateOptions } from '@/lib/estimates'
 
 
-type LineItem = { description: string | null; selected: boolean; quantity: number | null; unit_price: number | null; total_price: number | null }
+type LineItem = {
+  description: string | null; selected: boolean; quantity: number | null; unit_price: number | null; total_price: number | null
+  category: string | null; equipment_family: string | null; equipment_type: string | null
+}
 type OfferRow = {
   id: string
   leaser_name: string
@@ -26,8 +33,6 @@ function fmt(n: number | null) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 }
 
-const COEFFICIENTS: Record<number, number> = { 24: 0.048, 36: 0.034, 48: 0.027, 60: 0.023 }
-
 export default async function OffresDetailPage({ params }: { params: Promise<{ requestId: string }> }) {
   const { requestId } = await params
   const supabase = await createClient()
@@ -36,7 +41,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
   const { data: request } = await supabase
     .from('financing_requests')
-    .select(`id, total_amount, duration_months, created_at, status, document_type, supplier_name, document_number, line_items(description, selected, quantity, unit_price, total_price), offers(${CLIENT_OFFER_COLUMNS})`)
+    .select(`id, total_amount, duration_months, created_at, status, document_type, supplier_name, document_number, line_items(description, selected, quantity, unit_price, total_price, category, equipment_family, equipment_type), offers(${CLIENT_OFFER_COLUMNS})`)
     .eq('id', requestId)
     .eq('user_id', user.id)
     .single()
@@ -62,7 +67,22 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
   const ref = `C-${requestId.slice(0, 4).toUpperCase()}-${requestId.slice(4, 8).toUpperCase()}`
   const duration = request.duration_months ?? 36
-  const coeff = COEFFICIENTS[duration] ?? 0.034
+
+  // Sans offre encore : loyer estimé d'après les barèmes en base (serveur), jamais de nom de leaser.
+  // Pas d'estimation si aucun barème ne couvre le dossier.
+  let estimatedMonthly: number | null = null
+  if ((request.offers ?? []).length === 0 && request.total_amount != null && isServiceRoleConfigured()) {
+    try {
+      const options = estimateOptions(await loadActiveLeasers(createAdminClient(), user.id), {
+        amount: Number(request.total_amount),
+        equipment: equipmentOf(selectedLines).mainEquipment,
+        financingType: request.document_type === 'facture' ? 'lease_back' : 'leasing',
+      })
+      estimatedMonthly = options.find(o => o.months === duration)?.monthly ?? null
+    } catch (err) {
+      console.error('[offres] estimation', err)
+    }
+  }
 
   const isWaiting = request.status === RS.submitted || request.status === RS.no_match
   const isNoMatch = request.status === RS.no_match
@@ -130,8 +150,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
             <div className="px-5 py-3 flex items-center justify-between border-t" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
               <span className="ev-mono text-xs" style={{ color: 'var(--ink-3)' }}>
                 {request.duration_months ? `${request.duration_months} mois` : '—'}
-                {/* Estimation par coefficients seulement tant qu'aucune offre réelle n'existe */}
-                {offers.length === 0 && <>{' · '}loyer estimé {fmt(request.total_amount != null ? request.total_amount * coeff : null)}/mois, indicatif, hors assurance et services</>}
+                {/* Estimation d'après les barèmes, seulement tant qu'aucune offre réelle n'existe */}
+                {offers.length === 0 && estimatedMonthly != null && <>{' · '}loyer estimé {fmt(estimatedMonthly)}/mois, exemple illustratif, hors assurance et services</>}
               </span>
               <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 Total HT : <span className="ev-mono">{fmt(request.total_amount)}</span>

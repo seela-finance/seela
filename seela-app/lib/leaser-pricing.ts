@@ -169,8 +169,8 @@ export function simulate(leaser: PricingLeaser, input: SimulationInput): Simulat
   const warnings: string[] = []
 
   if (!leaser.is_active) exclusions.push('Leaser inactif')
-  if (leaser.min_amount != null && input.amount < leaser.min_amount) exclusions.push(`Montant sous le minimum de ${eur(leaser.min_amount)}`)
-  if (leaser.max_amount != null && input.amount > leaser.max_amount) exclusions.push(`Montant au-dessus du maximum de ${eur(leaser.max_amount)}`)
+  if (leaser.min_amount != null && input.amount < leaser.min_amount) exclusions.push(`Montant ${eur(input.amount)} sous le minimum de ${eur(leaser.min_amount)}`)
+  if (leaser.max_amount != null && input.amount > leaser.max_amount) exclusions.push(`Montant ${eur(input.amount)} au-dessus du maximum de ${eur(leaser.max_amount)}`)
   if (!leaser.financing_types.includes(input.financingType)) exclusions.push(`Financement non couvert : ${input.financingType === 'lease_back' ? 'lease-back' : input.financingType === 'credit_bail' ? 'crédit-bail' : 'leasing'}`)
 
   const eligibility = eligibilityFor(leaser.eligibility, input.equipment)
