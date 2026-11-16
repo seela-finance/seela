@@ -281,3 +281,67 @@ export function emailClientRequestRefused({
 </div>`,
   }
 }
+
+const EUR = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+
+const MENTIONS = `<p style="font-size:12px;color:#6B6F76;margin:12px 0 0">Offre indicative, hors assurance et services. Sous réserve d'acceptation du dossier par le financeur.</p>`
+
+const FOOTER = (requestRef: string) => `
+  <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
+  <p style="font-size:13px;color:#6B6F76">Retrouvez le détail dans votre espace, rubrique « Offres ». Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a></p>
+  <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
+  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+</div>`
+
+/** Offre ajoutée par l'équipe (#34). */
+export function emailClientNewOffer({
+  userEmail, companyName, leaserName, monthlyPayment, durationMonths, requestRef,
+}: { userEmail: string; companyName: string; leaserName: string; monthlyPayment: number; durationMonths: number; requestRef: string }) {
+  return {
+    to: userEmail,
+    subject: `[Everlease] Nouvelle offre disponible — ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Nouvelle offre disponible</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0">
+      Votre conseiller Everlease a obtenu une offre de <strong>${esc(leaserName)}</strong> :
+      <strong>${EUR(monthlyPayment)} HT / mois sur ${durationMonths} mois</strong>.
+    </p>
+    ${MENTIONS}
+  </div>${FOOTER(requestRef)}`,
+  }
+}
+
+/** Contre-proposition du financeur (#34) : ancien et nouveau loyer, message de l'équipe. */
+export function emailClientCounterOffer({
+  userEmail, companyName, leaserName, previousMonthly, monthlyPayment, durationMonths, message, requestRef,
+}: {
+  userEmail: string; companyName: string; leaserName: string; previousMonthly: number | null
+  monthlyPayment: number; durationMonths: number; message: string | null; requestRef: string
+}) {
+  const before = previousMonthly && previousMonthly !== monthlyPayment
+    ? `<span style="color:#6B6F76;text-decoration:line-through">${EUR(previousMonthly)}</span> → ` : ''
+  return {
+    to: userEmail,
+    subject: `[Everlease] Contre-proposition à examiner — ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Contre-proposition à examiner</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0">
+      <strong>${esc(leaserName)}</strong> propose de nouvelles conditions :
+      ${before}<strong>${EUR(monthlyPayment)} HT / mois sur ${durationMonths} mois</strong>.
+    </p>
+    ${message ? `<p style="font-size:13px;margin:12px 0 0;white-space:pre-line">${esc(message)}</p>` : ''}
+    <p style="font-size:13px;margin:12px 0 0">Acceptez-les ou refusez-les depuis votre espace.</p>
+    ${MENTIONS}
+  </div>${FOOTER(requestRef)}`,
+  }
+}

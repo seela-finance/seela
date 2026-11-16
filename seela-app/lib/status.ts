@@ -82,12 +82,13 @@ type Transition<S> = { to: S; by: Actor[] }
 export const REQUEST_TRANSITIONS: Record<RequestStatus, Transition<RequestStatus>[]> = {
   draft: [{ to: 'submitted', by: ['client'] }],
   submitted: [
-    { to: 'offers_available', by: ['system'] },
+    { to: 'offers_available', by: ['system', 'admin'] }, // admin : offre manuelle
     { to: 'no_match', by: ['system'] },
     { to: 'refused', by: ['admin'] },
   ],
   offers_available: [
     { to: 'offer_selected', by: ['client'] },
+    { to: 'counter_offer', by: ['admin'] },
     { to: 'refused', by: ['admin'] },
   ],
   no_match: [

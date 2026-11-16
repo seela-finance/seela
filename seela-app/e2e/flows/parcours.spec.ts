@@ -1,7 +1,8 @@
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { test, expect, type Browser, type Page } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
 import { OS, RS } from '../../lib/status'
-import { readContext, stagingAdmin, stateFile, type Role } from '../support/staging'
+import { STAGING_REF, readContext, stagingAdmin, stateFile, type Role } from '../support/staging'
 
 // Parcours réels sur le Supabase de staging, avec les comptes éphémères de e2e/staging.seed.ts.
 // Seule la réponse du modèle d'IA est simulée (e2e/support/fake-anthropic.mjs) ; aucun email ne part (voir loadStagingEnv).
@@ -349,6 +350,105 @@ test('sans offre : l’admin voit pourquoi, note le dossier et relance le matchi
     await expect(client.getByText(run.leaser.name).first()).toBeVisible()
     await expect(client.getByText(note)).toHaveCount(0)
   })
+})
+
+/** Client Supabase avec la session d'un compte de test (lue dans ses cookies) : un appel direct, sans passer par l'app. */
+function directClient(role: Role) {
+  const { cookies } = JSON.parse(readFileSync(stateFile(role), 'utf8')) as { cookies: { name: string; value: string }[] }
+  const prefix = `sb-${STAGING_REF}-auth-token`
+  const raw = cookies
+    .filter(c => c.name === prefix || c.name.startsWith(`${prefix}.`))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }))
+    .map(c => c.value)
+    .join('')
+  const session = JSON.parse(raw.startsWith('base64-') ? Buffer.from(raw.slice(7), 'base64').toString('utf8') : decodeURIComponent(raw))
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+  })
+}
+
+test('offre manuelle puis contre-proposition : le client voit l’ancien loyer barré et accepte', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const leaserName = `Financeur manuel ${run.runId}`
+
+  const { data: request, error } = await db
+    .from('financing_requests')
+    .insert({ user_id: run.users.client.id, status: RS.no_match, document_type: 'devis', total_amount: 15000, duration_months: 48 })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  await db.from('line_items').insert({ request_id: request!.id, description: 'Four mixte', quantity: 1, unit_price: 15000, total_price: 15000, category: 'Industrie', selected: true })
+
+  const admin = await pageAs(browser, 'admin')
+  const client = await pageAs(browser, 'client')
+  const offerOf = async () => (await db.from('offers').select('id, status, source, monthly_payment, duration_months, previous_terms, client_message, conditions, frais_dossier').eq('request_id', request!.id).single()).data!
+  const statusOf = async () => (await db.from('financing_requests').select('status').eq('id', request!.id).single()).data?.status
+
+  await test.step('l’admin ajoute une offre hors grille sur un dossier sans offre', async () => {
+    await admin.goto(`/admin/dossiers/${request!.id}`)
+    await admin.getByRole('button', { name: 'Ajouter une offre' }).click()
+    await admin.getByLabel('Financeur').fill(leaserName)
+    await admin.getByLabel('Loyer HT (€)').fill('410')
+    await admin.getByLabel('Durée').selectOption('48')
+    await admin.getByLabel('Frais de dossier (€)').fill('150')
+    await admin.getByLabel('Conditions particulières').fill('Premier loyer majoré de 10 %')
+    admin.once('dialog', d => d.accept())
+    await admin.getByRole('button', { name: 'Ajouter l’offre' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Offre ajoutée' })).toBeVisible({ timeout: 30_000 })
+    expect(await offerOf()).toMatchObject({ status: OS.indicative, source: 'manual', duration_months: 48, conditions: 'Premier loyer majoré de 10 %' })
+    expect(Number((await offerOf()).monthly_payment)).toBe(410)
+    expect(await statusOf()).toBe(RS.offers_available)
+  })
+
+  await test.step('le client la voit avec ses conditions et la confirme', async () => {
+    const offer = await offerOf()
+    await client.goto(`/app/offres/${request!.id}/${offer.id}`)
+    await expect(client.getByText('Premier loyer majoré de 10 %')).toBeVisible()
+    await expect(client.getByRole('row', { name: /Frais de dossier/ })).toContainText(/150\s€/)
+    await client.getByRole('button', { name: 'Confirmer ma sélection' }).click()
+    await expect(client.getByText('Votre sélection est enregistrée')).toBeVisible()
+    expect(await statusOf()).toBe(RS.offer_selected)
+  })
+
+  await test.step('un client ne peut ni créer une offre ni modifier la sienne par un appel direct', async () => {
+    const direct = directClient('client')
+    const { error: insertError } = await direct.from('offers').insert({ request_id: request!.id, leaser_name: 'Pirate', monthly_payment: 1, duration_months: 12 })
+    expect(insertError).not.toBeNull()
+    await direct.from('offers').update({ monthly_payment: 1, status: OS.counter_offer }).eq('request_id', request!.id)
+    expect(Number((await offerOf()).monthly_payment)).toBe(410)
+  })
+
+  await test.step('l’admin envoie une contre-proposition', async () => {
+    await admin.reload()
+    await admin.getByRole('button', { name: 'Contre-proposition' }).click()
+    await admin.getByLabel('Nouveau loyer HT (€)').fill('380')
+    await admin.getByLabel('Durée').selectOption('60')
+    await admin.getByLabel('Message au client').fill('Le financeur accepte sur 60 mois.')
+    admin.once('dialog', d => d.accept())
+    await admin.getByRole('button', { name: 'Envoyer la contre-proposition' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Contre-proposition envoyée' })).toBeVisible({ timeout: 30_000 })
+    const offer = await offerOf()
+    expect(offer).toMatchObject({ status: OS.counter_offer, source: 'counter_offer', duration_months: 60, client_message: 'Le financeur accepte sur 60 mois.' })
+    expect(Number((offer.previous_terms as { monthly_payment: number }).monthly_payment)).toBe(410)
+    expect(await statusOf()).toBe(RS.counter_offer)
+  })
+
+  await test.step('le client voit l’ancien et le nouveau loyer, puis accepte', async () => {
+    await client.goto(`/app/offres/${request!.id}`)
+    await expect(client.getByText('Le financeur accepte sur 60 mois.')).toBeVisible()
+    await expect(client.getByLabel('Ancien loyer')).toHaveText(/410\s€/)
+    await expect(client.getByText(/380\s€/).first()).toBeVisible()
+    await shot(client, '19-contre-proposition')
+    await client.getByRole('button', { name: 'Accepter les conditions' }).click()
+    await expect.poll(statusOf, { timeout: 20_000 }).toBe(RS.offer_selected)
+    expect(await offerOf()).toMatchObject({ status: OS.client_confirmed, duration_months: 60 })
+  })
+
+  await admin.context().close()
+  await client.context().close()
 })
 
 test('un autre client ne voit ni ne modifie le dossier, et le back-office lui répond 404', async ({ browser }) => {

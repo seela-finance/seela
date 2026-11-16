@@ -16,6 +16,9 @@ export type DetailOffer = {
   status: string | null
   selected: boolean | null
   notes: string | null
+  source?: string | null
+  conditions?: string | null
+  previous_terms?: { monthly_payment?: number | null; duration_months?: number | null } | null
   confirmed_at: string | null
   seela_validated_at: string | null
   leaser_confirmed_at: string | null

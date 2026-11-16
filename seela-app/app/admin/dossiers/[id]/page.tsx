@@ -16,6 +16,8 @@ import {
 import { canRerunMatching, leaserValidationEmail, WorkflowError, type OfferContext } from '@/lib/admin-workflow'
 import { diagnoseMatching } from '@/lib/matching'
 import RequestActions from '@/components/admin/RequestActions'
+import { AddOfferForm, CounterOfferForm } from '@/components/admin/OfferForms'
+import { canAddManualOffer, canCounterOffer } from '@/lib/admin-offers'
 import RequestNote from '@/components/admin/RequestNote'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { fetchRegistry } from '@/lib/company-registry'
@@ -99,6 +101,14 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const awaitingLeaser = !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
   const canRefuse = canTransitionRequest(request.status, RS.refused, 'admin')
   const canRerun = canRerunMatching(request.status)
+  const canAddOffer = canAddManualOffer(request.status)
+  const counterTargets = offers
+    .filter(o => canCounterOffer(o.status, request.status))
+    .map(o => ({ id: o.id, label: `${o.leaser_name ?? 'Offre'} · ${eur(o.monthly_payment, 2)} · ${o.duration_months ?? '—'} mois`, durationMonths: o.duration_months }))
+  const { data: leaserRows } = canAddOffer
+    ? await db.from('leasers').select('name').eq('is_active', true).order('name')
+    : { data: [] }
+  const leaserNames = (leaserRows ?? []).map(l => l.name as string)
 
   // Réponse de chaque leaser avec la grille actuelle : une panne de lecture n'empêche pas d'ouvrir la fiche
   const diagnostic = canRerun ? await diagnoseMatching(db, id).catch(err => { console.error('[admin] diagnostic', err); return null }) : null
@@ -253,9 +263,16 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
                     <tr key={o.id} style={{ borderBottom: '1px solid var(--line)' }}>
                       <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--ink)' }}>
                         {o.leaser_name ?? '—'}
+                        {o.source === 'manual' && <span className="ev-tag ml-2">Manuelle</span>}
                         {o.notes && <span className="block text-xs" style={{ color: 'var(--ink-3)' }}>{o.notes}</span>}
+                        {o.conditions && <span className="block text-xs whitespace-pre-line" style={{ color: 'var(--ink-3)' }}>{o.conditions}</span>}
                       </td>
-                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>{eur(o.monthly_payment, 2)}</td>
+                      <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink)' }}>
+                        {eur(o.monthly_payment, 2)}
+                        {o.previous_terms?.monthly_payment != null && (
+                          <span className="block text-xs line-through" style={{ color: 'var(--ink-3)' }}>{eur(o.previous_terms.monthly_payment, 2)}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{o.duration_months ? `${o.duration_months} mois` : '—'}</td>
                       <td className="ev-mono px-4 py-2.5 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{formatRate(o.rate) ?? '—'}</td>
                       <td className="px-4 py-2.5"><Badge info={offerStatusInfo(o.status)} /></td>
@@ -268,6 +285,10 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
                 </tbody>
               </table>
             </div>
+          )}
+          {canAddOffer && <AddOfferForm requestId={request.id} leaserNames={leaserNames} defaultDuration={request.duration_months ?? 36} />}
+          {(counterTargets.length > 0 || request.status === RS.counter_offer) && (
+            <CounterOfferForm requestId={request.id} offers={counterTargets} waiting={request.status === RS.counter_offer} />
           )}
         </Section>
 

@@ -16,6 +16,9 @@ type OfferRow = {
   selected: boolean
   status: string | null
   rate: number | null
+  conditions?: string | null
+  client_message?: string | null
+  previous_terms?: { monthly_payment?: number | null; duration_months?: number | null } | null
 }
 
 function fmt(n: number | null) {
@@ -145,18 +148,33 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
               <p className="text-xs mt-0.5 mb-4" style={{ color: 'var(--warning)' }}>
                 Examinez les nouveaux termes, puis acceptez-les ou refusez-les.
               </p>
+              {counterOffer.client_message && (
+                <p className="text-sm mb-4 whitespace-pre-line" style={{ color: 'var(--ink)' }}>{counterOffer.client_message}</p>
+              )}
               <div className="grid grid-cols-2 gap-3 mb-5 max-w-sm">
                 <div className="ev-card p-3.5">
                   <p className="text-xs mb-1" style={{ color: 'var(--ink-3)' }}>Nouvelle mensualité</p>
                   <p className="ev-mono font-semibold text-sm" style={{ color: 'var(--ink)' }}>
                     {fmt(counterOffer.monthly_payment)} <span className="font-normal text-xs" style={{ color: 'var(--ink-3)' }}>HT</span>
                   </p>
+                  {counterOffer.previous_terms?.monthly_payment != null && counterOffer.previous_terms.monthly_payment !== counterOffer.monthly_payment && (
+                    <p className="ev-mono text-xs line-through mt-0.5" style={{ color: 'var(--ink-3)' }} aria-label="Ancien loyer">
+                      {fmt(counterOffer.previous_terms.monthly_payment)}
+                    </p>
+                  )}
                 </div>
                 <div className="ev-card p-3.5">
                   <p className="text-xs mb-1" style={{ color: 'var(--ink-3)' }}>Durée proposée</p>
                   <p className="ev-mono font-semibold text-sm" style={{ color: 'var(--ink)' }}>{counterOffer.duration_months} mois</p>
+                  {counterOffer.previous_terms?.duration_months != null && counterOffer.previous_terms.duration_months !== counterOffer.duration_months && (
+                    <p className="ev-mono text-xs line-through mt-0.5" style={{ color: 'var(--ink-3)' }}>{counterOffer.previous_terms.duration_months} mois</p>
+                  )}
                 </div>
               </div>
+              {counterOffer.conditions && (
+                <p className="text-sm mb-4 whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>Conditions : {counterOffer.conditions}</p>
+              )}
+              <p className="text-xs mb-4" style={{ color: 'var(--ink-3)' }}>Hors assurance et services. Sous réserve d&apos;acceptation du dossier par le financeur.</p>
               <CounterOfferActions offerId={counterOffer.id} />
             </section>
           )}

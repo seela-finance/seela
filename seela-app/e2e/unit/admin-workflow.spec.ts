@@ -12,12 +12,13 @@ import {
   type WorkflowDeps,
   type WorkflowStore,
 } from '../../lib/admin-workflow'
+import { addManualOffer, canAddManualOffer, canCounterOffer, parseAmount, parseCounterOffer, parseManualOffer, proposeCounterOffer } from '../../lib/admin-offers'
 import { TransitionError } from '../../lib/transitions'
 import { canTransitionOffer, canTransitionRequest, type OfferStatus, type RequestStatus } from '../../lib/status'
 import type { AdminEvent } from '../../lib/admin-events'
 
 // Base en mémoire : un dossier, ses offres, le profil et les leasers ; transitions atomiques comme en prod.
-function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers?: string[]; referent?: string | null; sendOk?: (e: Email) => boolean; matched?: number } = {}) {
+function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers?: string[]; referent?: string | null; sendOk?: (e: Email) => boolean; matched?: number; insertFails?: boolean } = {}) {
   const offers: Record<string, { status: string; selected: boolean; extra: Record<string, unknown> }> = {
     o1: { status: opts.offerStatus ?? 'client_confirmed', selected: true, extra: {} },
   }
@@ -25,6 +26,7 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
   const request = { id: 'r1aaaaaa-0000', status: opts.requestStatus ?? 'offer_selected' }
   const sent: Email[] = []
   const events: AdminEvent[] = []
+  const inserted: Record<string, unknown>[] = []
 
   const ctx = (): OfferContext => ({
     offer: { id: 'o1', request_id: request.id, leaser_name: 'BNP Lease', monthly_payment: 340, duration_months: 36, status: offers.o1.status },
@@ -48,10 +50,14 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
       request.status = to
     },
     async restoreOffer(id, current, values) {
-      if (offers[id].status === current) offers[id] = { ...offers[id], status: String(values.status) }
+      if (offers[id].status === current) offers[id] = { ...offers[id], status: String(values.status), extra: { ...offers[id].extra, ...values } }
     },
     async restoreRequest(_id, current, status) {
       if (request.status === current) request.status = status
+    },
+    async insertOffer(values) {
+      if (opts.insertFails) throw new Error('écriture')
+      inserted.push(values)
     },
     async runMatching() {
       request.status = opts.matched ? 'offers_available' : 'no_match'
@@ -67,7 +73,7 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
     adminEmail: 'louis@everlease.fr',
     now: () => new Date('2026-11-02T10:00:00Z'),
   }
-  return { deps, offers, request, sent, events }
+  return { deps, offers, request, sent, events, inserted }
 }
 
 test('valider : statuts, email au référent avec l’admin en copie, email client, journal', async () => {
@@ -183,4 +189,105 @@ test('note interne : ajoutée au journal, vide refusée, aucun email', async () 
   expect(sent).toHaveLength(0)
   await expect(addRequestNote(deps, 'r1aaaaaa-0000', '   ')).rejects.toBeInstanceOf(WorkflowError)
   await expect(addRequestNote(deps, 'inconnu', 'Note')).rejects.toBeInstanceOf(WorkflowError)
+})
+
+// ── Offre manuelle et contre-proposition (#34) ───────────────────────
+
+const MANUAL = { leaserName: 'Financeur libre', monthlyPayment: '410,50', durationMonths: '48', periodicite: 'trimestrielle', rate: '', fraisDossier: '150', depotGarantie: '', conditions: ' 1er loyer majoré ' }
+
+test('parseAmount lit les montants saisis à la française', () => {
+  expect(parseAmount('1 234,50 €')).toBe(1234.5)
+  expect(parseAmount('410')).toBe(410)
+  expect(parseAmount('')).toBeNull()
+  expect(parseAmount('abc')).toBeNaN()
+})
+
+test('offre manuelle : champs contrôlés, le vide devient null', () => {
+  expect(parseManualOffer(MANUAL)).toEqual({
+    leaserName: 'Financeur libre', monthlyPayment: 410.5, durationMonths: 48, periodicite: 'trimestrielle',
+    rate: null, fraisDossier: 150, depotGarantie: null, conditions: '1er loyer majoré',
+  })
+  expect(() => parseManualOffer({ ...MANUAL, leaserName: ' ' })).toThrow(WorkflowError)
+  expect(() => parseManualOffer({ ...MANUAL, monthlyPayment: '0' })).toThrow(/Loyer/)
+  expect(() => parseManualOffer({ ...MANUAL, monthlyPayment: '' })).toThrow(/Loyer/)
+  expect(() => parseManualOffer({ ...MANUAL, durationMonths: '37' })).toThrow(/Durée/)
+  expect(() => parseManualOffer({ ...MANUAL, fraisDossier: '-5' })).toThrow(/Frais/)
+  expect(() => parseManualOffer({ ...MANUAL, rate: '45' })).toThrow(/Taux/)
+  expect(parseManualOffer({ ...MANUAL, periodicite: 'hebdo' }).periodicite).toBe('mensuelle')
+})
+
+test('offre manuelle sur un dossier sans offre : offre écrite, dossier en offres disponibles, email client', async () => {
+  const { deps, request, inserted, sent, events } = setup({ requestStatus: 'no_match' })
+  await addManualOffer(deps, request.id, parseManualOffer(MANUAL))
+  expect(request.status).toBe('offers_available')
+  expect(inserted).toEqual([expect.objectContaining({ leaser_name: 'Financeur libre', monthly_payment: 410.5, source: 'manual', status: 'indicative', total_cost: 19704 })])
+  expect(sent.map(e => e.to)).toEqual(['client@hotel.fr'])
+  expect(sent[0].subject).toContain('Nouvelle offre disponible')
+  expect(sent[0].html).toContain("Sous réserve d'acceptation du dossier par le financeur")
+  expect(events.map(e => e.action)).toEqual(['Offre manuelle ajoutée', 'Email envoyé'])
+})
+
+test('offre manuelle : dossier encore transmis accepté, dossier déjà engagé refusé', async () => {
+  const submitted = setup({ requestStatus: 'submitted' })
+  await addManualOffer(submitted.deps, submitted.request.id, parseManualOffer(MANUAL))
+  expect(submitted.request.status).toBe('offers_available')
+
+  const open = setup({ requestStatus: 'offers_available' })
+  await addManualOffer(open.deps, open.request.id, parseManualOffer(MANUAL))
+  expect(open.inserted).toHaveLength(1)
+
+  for (const status of ['offer_selected', 'seela_validated', 'active', 'refused', 'draft']) {
+    expect(canAddManualOffer(status)).toBe(false)
+    const { deps, request, inserted, sent } = setup({ requestStatus: status })
+    await expect(addManualOffer(deps, request.id, parseManualOffer(MANUAL))).rejects.toBeInstanceOf(WorkflowError)
+    expect(inserted).toHaveLength(0)
+    expect(sent).toHaveLength(0)
+  }
+})
+
+test('offre manuelle : si l’écriture échoue, le dossier reprend son statut et rien ne part', async () => {
+  const { deps, request, sent } = setup({ requestStatus: 'no_match', insertFails: true })
+  await expect(addManualOffer(deps, request.id, parseManualOffer(MANUAL))).rejects.toThrow('écriture')
+  expect(request.status).toBe('no_match')
+  expect(sent).toHaveLength(0)
+})
+
+const COUNTER = { monthlyPayment: '380', durationMonths: '48', rate: '', conditions: '', clientMessage: 'Le financeur demande 48 mois.' }
+
+test('contre-proposition : anciennes conditions gardées, dossier en contre-proposition, email avec l’ancien loyer barré', async () => {
+  const { deps, offers, request, sent, events } = setup({ offerStatus: 'client_confirmed', requestStatus: 'offer_selected' })
+  await proposeCounterOffer(deps, 'o1', parseCounterOffer(COUNTER))
+  expect(offers.o1.status).toBe('counter_offer')
+  expect(offers.o1.extra).toMatchObject({
+    previous_terms: { monthly_payment: 340, duration_months: 36, rate: null, conditions: null },
+    monthly_payment: 380, duration_months: 48, client_message: 'Le financeur demande 48 mois.', source: 'counter_offer',
+  })
+  expect(request.status).toBe('counter_offer')
+  expect(sent[0].subject).toContain('Contre-proposition')
+  expect(sent[0].html).toMatch(/line-through">340\s€/)
+  expect(sent[0].html).toContain('Le financeur demande 48 mois.')
+  expect(events.map(e => e.action)).toEqual(['Contre-proposition envoyée au client', 'Email envoyé'])
+})
+
+test('contre-proposition possible sur une offre indicative ou transmise, pas sur une offre close', () => {
+  expect(canCounterOffer('indicative', 'offers_available')).toBe(true)
+  expect(canCounterOffer('seela_validated', 'seela_validated')).toBe(true)
+  expect(canCounterOffer('leaser_confirmed', 'leaser_confirmed')).toBe(false)
+  expect(canCounterOffer('refused', 'offers_available')).toBe(false)
+  // Une seule contre-proposition à la fois
+  expect(canCounterOffer('indicative', 'counter_offer')).toBe(false)
+})
+
+test('contre-proposition identique, ou dossier changé entre-temps : refusée, offre restaurée', async () => {
+  const same = setup()
+  await expect(proposeCounterOffer(same.deps, 'o1', parseCounterOffer({ ...COUNTER, monthlyPayment: '340', durationMonths: '36' }))).rejects.toThrow(/identiques/)
+
+  const raced = setup({ offerStatus: 'client_confirmed', requestStatus: 'offer_selected' })
+  const original = raced.deps.store.transitionRequest
+  raced.deps.store.transitionRequest = async () => { throw new TransitionError('modifié', 409) }
+  await expect(proposeCounterOffer(raced.deps, 'o1', parseCounterOffer(COUNTER))).rejects.toBeInstanceOf(TransitionError)
+  raced.deps.store.transitionRequest = original
+  expect(raced.offers.o1.status).toBe('client_confirmed')
+  expect(raced.offers.o1.extra).toMatchObject({ previous_terms: null, monthly_payment: 340, duration_months: 36, client_message: null })
+  expect(raced.sent).toHaveLength(0)
 })
