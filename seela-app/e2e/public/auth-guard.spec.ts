@@ -17,6 +17,14 @@ test('/auth affiche connexion et inscription', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Créer un compte' })).toBeVisible()
 })
 
+test('lien de confirmation expiré ou ouvert ailleurs : retour sur /auth avec un message clair', async ({ page }) => {
+  await page.goto('/auth/callback?code=lien-invalide')
+  await expect(page).toHaveURL(/\/auth\?error=auth_callback_error$/)
+  // (Next ajoute son propre role="alert" pour annoncer les navigations : on vise le message)
+  await expect(page.getByRole('alert').filter({ hasText: 'expiré ou a été ouvert dans un autre navigateur' })).toBeVisible()
+  await expect(page.locator('input[type="email"]')).toBeVisible()
+})
+
 test('inscription : mots de passe différents → erreur', async ({ page }) => {
   await page.goto('/auth')
   await page.getByRole('button', { name: 'Créer un compte' }).click()

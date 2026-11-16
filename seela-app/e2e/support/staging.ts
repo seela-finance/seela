@@ -65,7 +65,7 @@ export const AUTH_DIR = 'e2e/.auth'
 export const CONTEXT_FILE = `${AUTH_DIR}/staging-context.json`
 export const stateFile = (role: Role) => `${AUTH_DIR}/staging-${role}.json`
 
-export type Role = 'client' | 'admin' | 'intruder'
+export type Role = 'client' | 'admin' | 'intruder' | 'member'
 export type RunContext = {
   runId: string
   companyName: string
@@ -75,7 +75,7 @@ export type RunContext = {
 
 export const testEmail = (runId: string, role: Role) => `e2e-${runId}-${role}@everlease.test`
 // Seuls ces comptes peuvent être supprimés par le nettoyage
-export const TEST_EMAIL_PATTERN = /^e2e-[a-z0-9]+-(client|admin|intruder)@everlease\.test$/
+export const TEST_EMAIL_PATTERN = /^e2e-[a-z0-9]+-(client|admin|intruder|member)@everlease\.test$/
 
 export function readContext(): RunContext {
   return JSON.parse(readFileSync(CONTEXT_FILE, 'utf8'))

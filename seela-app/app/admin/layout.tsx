@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
-      <AdminNav name={admin.name} email={admin.email} />
+      <AdminNav name={admin.name} email={admin.email} role={admin.role} />
       <main className="app-main">{children}</main>
     </div>
   )

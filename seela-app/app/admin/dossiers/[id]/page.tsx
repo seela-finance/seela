@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireAdmin } from '@/lib/admin'
+import { can } from '@/lib/admin-roles'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { documentPath, signedDocumentUrl } from '@/lib/documents'
 import { OS, RS, canTransitionOffer, canTransitionRequest, offerStatusInfo, requestStatusInfo } from '@/lib/status'
@@ -94,16 +95,17 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const timeline = buildTimeline(request, offers, events)
   const ref = requestLabel(request)
 
-  // Actions possibles, d'après les statuts (mêmes règles que les Server Actions)
+  // Actions possibles, d'après les statuts et le rôle du membre (mêmes règles que les Server Actions)
+  const decide = can(admin.role, 'decide_requests')
   const selected = offers.find(o => o.selected) ?? null
-  const canValidate = !!selected && canTransitionOffer(selected.status ?? '', OS.seela_validated, 'admin')
+  const canValidate = decide && !!selected && canTransitionOffer(selected.status ?? '', OS.seela_validated, 'admin')
     && canTransitionRequest(request.status, RS.seela_validated, 'admin')
-  const awaitingLeaser = !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
-  const canRefuse = canTransitionRequest(request.status, RS.refused, 'admin')
-  const canRerun = canRerunMatching(request.status)
-  const canAddOffer = canAddManualOffer(request.status)
+  const awaitingLeaser = decide && !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
+  const canRefuse = decide && canTransitionRequest(request.status, RS.refused, 'admin')
+  const canRerun = decide && canRerunMatching(request.status)
+  const canAddOffer = decide && canAddManualOffer(request.status)
   const counterTargets = offers
-    .filter(o => canCounterOffer(o.status, request.status))
+    .filter(o => decide && canCounterOffer(o.status, request.status))
     .map(o => ({ id: o.id, label: `${o.leaser_name ?? 'Offre'} · ${eur(o.monthly_payment, 2)} · ${o.duration_months ?? '—'} mois`, durationMonths: o.duration_months }))
   const { data: leaserRows } = canAddOffer
     ? await db.from('leasers').select('name').eq('is_active', true).order('name')
