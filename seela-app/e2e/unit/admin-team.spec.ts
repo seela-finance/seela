@@ -40,7 +40,7 @@ test('ajouter un membre : compte existant et confirmé, email insensible à la c
 
 test('ajouter un membre : refus clairs, rien n’est écrit', async () => {
   const unconfirmed = { ...LORENZO, confirmed: false }
-  const cases: [Account[], Record<string, string>, RegExp][] = [
+  const cases: [Account[], { email: string; name: string; role: string }, RegExp][] = [
     [[], { email: 'lorenzo@everlease.fr', name: 'Lorenzo', role: 'commercial' }, /d’abord en créer un/],
     [[unconfirmed], { email: 'lorenzo@everlease.fr', name: 'Lorenzo', role: 'commercial' }, /pas encore confirmée/],
     [[LORENZO], { email: 'lorenzo@', name: 'Lorenzo', role: 'commercial' }, /Email invalide/],
