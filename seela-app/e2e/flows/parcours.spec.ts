@@ -602,6 +602,84 @@ test('onglet Leasers : liste, simulateur comparatif, et fiche éditable (barème
   await admin.context().close()
 })
 
+test('équipe : un admin ajoute un commercial, change son rôle puis le retire', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const admin = await pageAs(browser, 'admin')
+  const member = await pageAs(browser, 'member')
+  const memberId = run.users.member.id
+  const row = admin.getByRole('listitem').filter({ hasText: 'Membre E2E' })
+
+  // Dossier sans offre du client, pour vérifier ce que le commercial peut y faire
+  const { data: request, error } = await db
+    .from('financing_requests')
+    .insert({ user_id: run.users.client.id, status: RS.no_match, document_type: 'devis', total_amount: 100, duration_months: 36 })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+
+  expect((await member.goto('/admin'))?.status()).toBe(404)
+
+  await test.step('ajout : compte inconnu refusé, compte confirmé ajouté en commercial', async () => {
+    await admin.goto('/admin/equipe')
+    await admin.getByLabel('Email du compte everlease').fill(`inconnu-${run.runId}@everlease.test`)
+    await admin.getByLabel('Nom affiché').fill('Inconnu')
+    await admin.getByRole('button', { name: 'Ajouter à l’équipe' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'd’abord en créer un' })).toBeVisible({ timeout: 30_000 })
+
+    await admin.getByLabel('Email du compte everlease').fill(run.users.member.email.toUpperCase())
+    await admin.getByLabel('Nom affiché').fill('Membre E2E')
+    await admin.getByLabel('Rôle').selectOption('commercial')
+    await admin.getByRole('button', { name: 'Ajouter à l’équipe' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'a rejoint l’équipe' })).toBeVisible({ timeout: 30_000 })
+    await expect(row).toContainText('Commercial')
+    const { data } = await db.from('admins').select('name, role').eq('user_id', memberId).single()
+    expect(data).toEqual({ name: 'Membre E2E', role: 'commercial' })
+    await shot(admin, '23-admin-equipe')
+  })
+
+  await test.step('commercial : dossiers et notes, ni leasers, ni équipe, ni décision', async () => {
+    await member.goto('/admin')
+    await expect(member.getByRole('link', { name: 'Dossiers' })).toBeVisible()
+    await expect(member.getByRole('link', { name: 'Leasers' })).toHaveCount(0)
+    await expect(member.getByRole('link', { name: 'Équipe' })).toHaveCount(0)
+    expect((await member.goto('/admin/leasers'))?.status()).toBe(404)
+    expect((await member.goto(`/admin/leasers/${run.leaser.id}`))?.status()).toBe(404)
+    expect((await member.goto('/admin/equipe'))?.status()).toBe(404)
+
+    await member.goto(`/admin/dossiers/${request!.id}`)
+    await expect(member.getByRole('button', { name: 'Ajouter la note' })).toBeVisible()
+    await expect(member.getByRole('button', { name: 'Relancer le matching' })).toHaveCount(0)
+    await expect(member.getByRole('button', { name: 'Ajouter une offre' })).toHaveCount(0)
+    await expect(member.getByText('Refuser le dossier…')).toHaveCount(0)
+    await member.getByLabel('Note interne').fill(`Note du commercial ${run.runId}`)
+    await member.getByRole('button', { name: 'Ajouter la note' }).click()
+    await expect(member.getByText(`Note du commercial ${run.runId}`)).toBeVisible({ timeout: 30_000 })
+  })
+
+  await test.step('passé admin : il voit les leasers', async () => {
+    await admin.reload()
+    await row.getByRole('button', { name: 'Passer admin' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'Rôle modifié' })).toBeVisible({ timeout: 30_000 })
+    expect((await member.goto('/admin/leasers'))?.status()).toBe(200)
+  })
+
+  await test.step('retiré : plus d’accès au back-office, compte et historique conservés', async () => {
+    await admin.reload()
+    admin.once('dialog', d => d.accept())
+    await row.getByRole('button', { name: 'Retirer' }).click()
+    await expect(admin.getByRole('status').filter({ hasText: 'n’a plus accès' })).toBeVisible({ timeout: 30_000 })
+    expect((await member.goto('/admin'))?.status()).toBe(404)
+    expect((await member.goto('/app/dashboard'))?.status()).toBe(200)
+    const { data: events } = await db.from('admin_events').select('action').eq('profile_id', memberId).order('created_at')
+    expect(events?.map(e => e.action)).toEqual(['Membre ajouté à l’équipe', 'Rôle modifié', 'Membre retiré de l’équipe'])
+  })
+
+  await admin.context().close()
+  await member.context().close()
+})
+
 test('un autre client ne voit ni ne modifie le dossier, et le back-office lui répond 404', async ({ browser }) => {
   test.setTimeout(120_000)
   const run = readContext()

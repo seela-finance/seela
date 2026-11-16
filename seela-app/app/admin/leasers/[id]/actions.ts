@@ -2,11 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireAdmin, logAdminEvent } from '@/lib/admin'
+import { can } from '@/lib/admin-roles'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/admin-request-detail'
 import { LeaserEditError, changedFields, parseConditions, parseEligibility, parseGrid } from '@/lib/leaser-edit'
 
 export type LeaserActionState = { ok: boolean; message: string } | null
+
+const DENIED: LeaserActionState = { ok: false, message: 'Votre rôle ne permet pas de modifier les leasers.' }
 
 // Accès, exécution, message à l'admin ; la fiche et la liste sont rafraîchies.
 async function run(leaserId: string, action: () => Promise<string>): Promise<LeaserActionState> {
@@ -44,6 +47,7 @@ function parseJson(raw: FormDataEntryValue | null): unknown {
 
 export async function saveConditionsAction(_: LeaserActionState, form: FormData): Promise<LeaserActionState> {
   const admin = await requireAdmin()
+  if (!can(admin.role, 'manage_leasers')) return DENIED
   const leaserId = String(form.get('leaserId') ?? '')
   return run(leaserId, async () => {
     const { patch, financingTypes } = parseConditions(formRecord(form))
@@ -76,6 +80,7 @@ export async function saveConditionsAction(_: LeaserActionState, form: FormData)
 
 export async function saveGridAction(_: LeaserActionState, form: FormData): Promise<LeaserActionState> {
   const admin = await requireAdmin()
+  if (!can(admin.role, 'manage_leasers')) return DENIED
   const leaserId = String(form.get('leaserId') ?? '')
   return run(leaserId, async () => {
     const rows = parseGrid(parseJson(form.get('grid')))
@@ -103,6 +108,7 @@ export async function saveGridAction(_: LeaserActionState, form: FormData): Prom
 
 export async function saveEligibilityAction(_: LeaserActionState, form: FormData): Promise<LeaserActionState> {
   const admin = await requireAdmin()
+  if (!can(admin.role, 'manage_leasers')) return DENIED
   const leaserId = String(form.get('leaserId') ?? '')
   return run(leaserId, async () => {
     const rows = parseEligibility(parseJson(form.get('eligibility')))

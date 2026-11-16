@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { requireAdmin } from '@/lib/admin'
+import { requireCapability } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { loadLeasers } from '@/lib/leasers-admin'
 import { missingConditions, ratesExpired, toPricingLeaser, type LeaserRecord } from '@/lib/leaser-conditions'
@@ -10,7 +10,7 @@ import LeaserSimulator from '@/components/admin/LeaserSimulator'
 const HEADERS = ['Leaser', 'Statut', 'Montants', 'Durées', 'Commission incluse', 'Validité du barème', 'À compléter']
 
 export default async function AdminLeasersPage() {
-  await requireAdmin()
+  await requireCapability('manage_leasers')
   if (!isServiceRoleConfigured()) return <p className="ev-alert ev-alert--danger m-6">{SERVICE_ROLE_MISSING_MESSAGE}</p>
 
   let leasers: LeaserRecord[] = []

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { requireAdmin } from '@/lib/admin'
+import { requireCapability } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/admin-request-detail'
 import { loadLeaser } from '@/lib/leasers-admin'
@@ -11,7 +11,7 @@ import RateGridEditor from '@/components/admin/leasers/RateGridEditor'
 import EligibilityEditor from '@/components/admin/leasers/EligibilityEditor'
 
 export default async function AdminLeaserPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin()
+  await requireCapability('manage_leasers')
   const { id } = await params
   if (!isUuid(id)) notFound()
   if (!isServiceRoleConfigured()) return <p className="ev-alert ev-alert--danger m-6">{SERVICE_ROLE_MISSING_MESSAGE}</p>

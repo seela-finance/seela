@@ -5,17 +5,20 @@ import Link from 'next/link'
 import Logo from '../Logo'
 import ResponsiveNav from '../ResponsiveNav'
 import { createClient } from '@/lib/supabase/client'
+import { ROLE_LABEL, can, type AdminRole, type Capability } from '@/lib/admin-roles'
 
-// Les sections sans href arrivent avec les issues suivantes du Lot 3
-const NAV = [
-  { href: '/admin', label: 'Dossiers' },
-  { href: '/admin/societes', label: 'Sociétés' },
-  { href: '/admin/leasers', label: 'Leasers' },
+// Chaque section n'apparaît qu'aux rôles qui y ont accès (la page renvoie 404 aux autres)
+const NAV: { href: string | null; label: string; capability: Capability }[] = [
+  { href: '/admin', label: 'Dossiers', capability: 'view' },
+  { href: '/admin/societes', label: 'Sociétés', capability: 'view' },
+  { href: '/admin/leasers', label: 'Leasers', capability: 'manage_leasers' },
+  { href: '/admin/equipe', label: 'Équipe', capability: 'manage_team' },
 ]
 
-export default function AdminNav({ name, email }: { name: string; email: string }) {
+export default function AdminNav({ name, email, role }: { name: string; email: string; role: AdminRole }) {
   const pathname = usePathname()
   const router = useRouter()
+  const items = NAV.filter(item => can(role, item.capability))
 
   async function signOut() {
     await createClient().auth.signOut()
@@ -29,11 +32,11 @@ export default function AdminNav({ name, email }: { name: string; email: string 
         <Link href="/admin">
           <Logo size="sm" />
         </Link>
-        <span className="ev-tag ev-tag--dark">admin</span>
+        <span className="ev-tag ev-tag--dark">{ROLE_LABEL[role].toLowerCase()}</span>
       </div>
 
       <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
-        {NAV.map(item => {
+        {items.map(item => {
           if (!item.href) {
             return (
               <span
