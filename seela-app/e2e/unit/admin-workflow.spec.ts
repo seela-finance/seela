@@ -29,7 +29,7 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
   const inserted: Record<string, unknown>[] = []
 
   const ctx = (): OfferContext => ({
-    offer: { id: 'o1', request_id: request.id, leaser_name: 'BNP Lease', monthly_payment: 340, duration_months: 36, status: offers.o1.status },
+    offer: { id: 'o1', request_id: request.id, leaser_name: 'BNP Lease', public_name: 'Financeur A · Banque', monthly_payment: 340, duration_months: 36, status: offers.o1.status },
     request: { id: request.id, status: request.status, user_id: 'u1', total_amount: 12000, document_url: 'doc', line_items: [{ description: 'Serveur', quantity: 2, selected: true }] },
     profile: { company_name: 'Hôtel du Lac', siren: '123456789', email: 'client@hotel.fr' },
     leaser: { referent_email: opts.referent === undefined ? 'partenaires@bnp.fr' : opts.referent, referent_name: 'Équipe BNP' },
@@ -58,6 +58,7 @@ function setup(opts: { offerStatus?: string; requestStatus?: string; otherOffers
     async insertOffer(values) {
       if (opts.insertFails) throw new Error('écriture')
       inserted.push(values)
+      return 'Financeur B · Banque'
     },
     async runMatching() {
       request.status = opts.matched ? 'offers_available' : 'no_match'
@@ -290,4 +291,25 @@ test('contre-proposition identique, ou dossier changé entre-temps : refusée, o
   expect(raced.offers.o1.status).toBe('client_confirmed')
   expect(raced.offers.o1.extra).toMatchObject({ previous_terms: null, monthly_payment: 340, duration_months: 36, client_message: null })
   expect(raced.sent).toHaveLength(0)
+})
+
+test('les emails au client ne citent jamais le leaser, seulement le nom public de l’offre', async () => {
+  const validated = setup()
+  await validateAndTransmit(validated.deps, 'o1', '')
+  expect(validated.sent[0].to).toBe('partenaires@bnp.fr') // l'email au leaser, lui, lui est adressé
+  expect(validated.sent[1].html).not.toContain('BNP')
+  expect(validated.sent[1].html).toContain('Financeur A · Banque')
+
+  const decided = setup({ offerStatus: 'seela_validated', requestStatus: 'seela_validated' })
+  await recordLeaserDecision(decided.deps, 'o1', 'confirmed', '')
+  expect(decided.sent.every(e => !`${e.subject}${e.html}`.includes('BNP'))).toBe(true)
+
+  const manual = setup({ requestStatus: 'no_match' })
+  await addManualOffer(manual.deps, manual.request.id, parseManualOffer({ ...MANUAL, leaserName: 'Grenke' }))
+  expect(manual.sent[0].html).not.toContain('Grenke')
+  expect(manual.sent[0].html).toContain('Financeur B · Banque')
+
+  const counter = setup()
+  await proposeCounterOffer(counter.deps, 'o1', parseCounterOffer(COUNTER))
+  expect(counter.sent[0].html).not.toContain('BNP')
 })

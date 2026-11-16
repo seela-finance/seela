@@ -3,7 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import SouscrireCard from './SouscrireCard'
-import { formatRate, leaserInitials, recommendedOffer } from '@/lib/offers'
+import { CLIENT_OFFER_COLUMNS, formatRate, leaserInitials, recommendedOffer } from '@/lib/offers'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { RS, requestDestination, requestStatusInfo } from '@/lib/status'
 import { requestLabel } from '@/lib/request-label'
 
@@ -25,10 +26,6 @@ type OfferRow = {
 }
 
 type LeaserRow = {
-  id: string
-  name: string
-  description: string | null
-  referent_name: string | null
   delai_reponse_heures: number | null
   depot_garantie: number | null
   frais_dossier: number | null
@@ -54,7 +51,7 @@ export default async function OfferDetailPage({
   // 1. Get request + all its offers
   const { data: request } = await supabase
     .from('financing_requests')
-    .select('id, total_amount, duration_months, created_at, status, document_type, periodicite, supplier_name, document_number, line_items(description, selected, quantity), offers(*)')
+    .select(`id, total_amount, duration_months, created_at, status, document_type, periodicite, supplier_name, document_number, line_items(description, selected, quantity), offers(${CLIENT_OFFER_COLUMNS})`)
     .eq('id', requestId)
     .eq('user_id', user.id)
     .single()
@@ -70,14 +67,16 @@ export default async function OfferDetailPage({
 
   const allOffers: OfferRow[] = request.offers ?? []
 
-  // 2. Fetch leaser metadata from DB
-  const { data: leaserData } = await supabase
-    .from('leasers')
-    .select('id, name, description, referent_name, delai_reponse_heures, depot_garantie, frais_dossier, penalite_resiliation, periodicite')
-    .eq('name', offer.leaser_name)
+  // 2. Conditions du leaser, lues côté serveur (le client n'a aucun accès aux leasers) : seulement
+  // ce qui s'affiche, jamais le nom, la description ni le référent. Le dossier appartient au client (requête ci-dessus).
+  const { data: leaserData } = await createAdminClient()
+    .from('offers')
+    .select('leasers(delai_reponse_heures, depot_garantie, frais_dossier, penalite_resiliation, periodicite)')
+    .eq('id', offerId)
+    .eq('request_id', requestId)
     .maybeSingle()
 
-  const leaser: LeaserRow | null = leaserData ?? null
+  const leaser = (leaserData?.leasers ?? null) as unknown as LeaserRow | null
 
   // 3. Fetch user profile
   const { data: profile } = await supabase
@@ -183,10 +182,6 @@ export default async function OfferDetailPage({
                 </p>
               </div>
             </div>
-
-            {leaser?.description && (
-              <p className="text-sm mt-3 mb-4" style={{ color: 'var(--ink-3)' }}>{leaser.description}</p>
-            )}
 
             {/* 4 KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 mb-8">
@@ -298,7 +293,6 @@ export default async function OfferDetailPage({
               companyName={profile?.company_name ?? ''}
               siren={profile?.siren ?? ''}
               userEmail={user.email ?? ''}
-              referentName={leaser?.referent_name ?? ''}
             />
           </div>
         </div>

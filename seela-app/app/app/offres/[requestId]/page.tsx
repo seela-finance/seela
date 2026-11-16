@@ -4,7 +4,7 @@ import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import { OS, RS, offerStatusInfo, requestDestination, requestStatusInfo } from '@/lib/status'
 import CounterOfferActions from './CounterOfferActions'
-import { RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
+import { CLIENT_OFFER_COLUMNS, RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
 
 
 type LineItem = { description: string | null; selected: boolean; quantity: number | null; unit_price: number | null; total_price: number | null }
@@ -36,7 +36,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
 
   const { data: request } = await supabase
     .from('financing_requests')
-    .select('id, total_amount, duration_months, created_at, status, document_type, supplier_name, document_number, line_items(description, selected, quantity, unit_price, total_price), offers(*)')
+    .select(`id, total_amount, duration_months, created_at, status, document_type, supplier_name, document_number, line_items(description, selected, quantity, unit_price, total_price), offers(${CLIENT_OFFER_COLUMNS})`)
     .eq('id', requestId)
     .eq('user_id', user.id)
     .single()

@@ -16,7 +16,6 @@ interface Props {
   companyName: string
   siren: string
   userEmail: string
-  referentName: string
 }
 
 type StepState = 'active' | 'done' | 'pending' | 'loading'
@@ -93,7 +92,6 @@ export default function SouscrireCard({
   companyName,
   siren,
   userEmail,
-  referentName,
 }: Props) {
   const [status, setStatus] = useState(initialStatus)
   const [loading, setLoading] = useState(false)
@@ -229,12 +227,6 @@ export default function SouscrireCard({
           </div>
         </div>
       </div>
-
-      {referentName && status !== OS.refused && (
-        <p className="text-xs mb-4" style={{ color: 'var(--ink-3)' }}>
-          Référent : {referentName}
-        </p>
-      )}
 
       {/* Confirm button — only when indicative */}
       {status === OS.indicative && !canConfirm && (

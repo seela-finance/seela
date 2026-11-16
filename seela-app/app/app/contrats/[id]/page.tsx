@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import TopActions from '@/components/TopActions'
 import { RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
-import { formatRate } from '@/lib/offers'
+import { CLIENT_OFFER_COLUMNS, formatRate } from '@/lib/offers'
 import { signedDocumentUrl } from '@/lib/documents'
 
 
@@ -29,7 +29,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
 
   const { data: request } = await supabase
     .from('financing_requests')
-    .select('*, line_items(*), offers(*)')
+    .select(`*, line_items(*), offers(${CLIENT_OFFER_COLUMNS})`)
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
@@ -62,10 +62,6 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   const timeline = requestTimeline(request.status)
   const isActive = request.status === RS.active
 
-  // Référent du leaser, affiché uniquement s'il est renseigné en base
-  const { data: leaser } = selectedOffer
-    ? await supabase.from('leasers').select('referent_name').eq('name', selectedOffer.leaser_name).maybeSingle()
-    : { data: null }
 
   // Bucket privé : lien temporaire, valable le temps de la consultation
   const documentHref = await signedDocumentUrl(supabase, request.document_url, user.id, 3600)
@@ -263,11 +259,10 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="divide-y divide-[var(--line)]">
                   {[
-                    { label: 'Leaser', value: leaserName },
+                    { label: 'Financeur', value: leaserName },
                     { label: 'Taux nominal', value: rate },
                     { label: 'Coût total', value: totalCost != null ? fmt(totalCost) : null },
                     { label: 'Fournisseur', value: request.supplier_name as string | null },
-                    { label: 'Référent leaser', value: leaser?.referent_name ?? null },
                   ].filter(row => row.value).map(row => (
                     <div key={row.label} className="px-4 py-2.5 flex items-center justify-between">
                       <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{row.label}</span>

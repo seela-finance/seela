@@ -24,6 +24,8 @@ export type OfferContext = {
     conditions?: string | null
     total_cost?: number | null
     source?: string | null
+    /** Nom vu par le client (« Financeur A · Banque ») : le seul à mettre dans un email au client. */
+    public_name?: string | null
   }
   request: {
     id: string
@@ -54,7 +56,8 @@ export interface WorkflowStore {
   restoreOffer(id: string, current: string, values: Record<string, unknown>): Promise<void>
   restoreRequest(id: string, current: string, status: string): Promise<void>
   runMatching(requestId: string): Promise<{ offers: number }>
-  insertOffer(values: Record<string, unknown>): Promise<void>
+  /** Écrit l'offre et renvoie son nom public (donné par la base). */
+  insertOffer(values: Record<string, unknown>): Promise<string | null>
 }
 
 export type Email = { to: string; subject: string; html: string; cc?: string }
@@ -85,6 +88,11 @@ export async function sendLogged(deps: WorkflowDeps, requestId: string, email: E
     note: `${email.to}${email.cc ? ` (copie ${email.cc})` : ''} · ${email.subject}`,
   })
   return success
+}
+
+/** Le client ne voit jamais le nom du leaser : seulement le nom public de l'offre. */
+export function clientFacingName(offer: { public_name?: string | null }): string {
+  return offer.public_name ?? 'le financeur'
 }
 
 export function equipmentList(lines: OfferContext['request']['line_items']): string {
@@ -159,7 +167,7 @@ export async function validateAndTransmit(deps: WorkflowDeps, offerId: string, n
     await sendLogged(deps, request.id, emailClientEverleaseValidated({
       userEmail: ctx.profile.email,
       companyName: ctx.profile.company_name ?? 'Entreprise',
-      leaserName: offer.leaser_name,
+      leaserName: clientFacingName(offer),
       monthlyPayment: offer.monthly_payment,
       durationMonths: offer.duration_months,
       requestRef: requestLabel(request),
@@ -206,7 +214,7 @@ export async function recordLeaserDecision(deps: WorkflowDeps, offerId: string, 
   })
 
   if (!ctx.profile?.email) return
-  const common = { userEmail: ctx.profile.email, companyName: ctx.profile.company_name ?? 'Entreprise', leaserName: offer.leaser_name, requestRef: requestLabel(request) }
+  const common = { userEmail: ctx.profile.email, companyName: ctx.profile.company_name ?? 'Entreprise', leaserName: clientFacingName(offer), requestRef: requestLabel(request) }
   await sendLogged(deps, request.id, decision === 'confirmed'
     ? emailClientLeaserConfirmed({ ...common, monthlyPayment: offer.monthly_payment, durationMonths: offer.duration_months })
     : emailClientLeaserRefused(common))
