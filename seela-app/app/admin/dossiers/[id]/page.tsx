@@ -287,7 +287,9 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             </div>
           )}
           {canAddOffer && <AddOfferForm requestId={request.id} leaserNames={leaserNames} defaultDuration={request.duration_months ?? 36} />}
-          {counterTargets.length > 0 && <CounterOfferForm requestId={request.id} offers={counterTargets} />}
+          {(counterTargets.length > 0 || request.status === RS.counter_offer) && (
+            <CounterOfferForm requestId={request.id} offers={counterTargets} waiting={request.status === RS.counter_offer} />
+          )}
         </Section>
 
         {/* Réponse de chaque leaser : calculée à l'ouverture de la fiche, pas enregistrée */}

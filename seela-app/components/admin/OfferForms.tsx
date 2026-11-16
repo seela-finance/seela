@@ -30,8 +30,13 @@ function DurationSelect({ defaultValue }: { defaultValue: number }) {
 
 /** Offre hors matching : leaser de la liste ou nom libre. Le client est prévenu par email. */
 export function AddOfferForm({ requestId, leaserNames, defaultDuration }: { requestId: string; leaserNames: string[]; defaultDuration: number }) {
-  const [state, submit, pending] = useActionState(addManualOfferAction, null)
   const [open, setOpen] = useState(false)
+  // Le formulaire se referme après un succès : le message de confirmation prend sa place
+  const [state, submit, pending] = useActionState(async (prev: ActionState, form: FormData) => {
+    const result = await addManualOfferAction(prev, form)
+    if (result?.ok) setOpen(false)
+    return result
+  }, null)
 
   if (!open) {
     return (
@@ -44,7 +49,7 @@ export function AddOfferForm({ requestId, leaserNames, defaultDuration }: { requ
 
   return (
     <form
-      action={async form => { await submit(form) }}
+      action={submit}
       onSubmit={e => { if (!window.confirm('Ajouter cette offre ? Le client la verra et recevra un email.')) e.preventDefault() }}
       className="px-4 py-4 space-y-4"
     >
@@ -94,11 +99,26 @@ export function AddOfferForm({ requestId, leaserNames, defaultDuration }: { requ
 export type CounterOfferTarget = { id: string; label: string; durationMonths: number | null }
 
 /** Nouvelles conditions sur une offre existante ; l'ancien loyer reste affiché barré au client. */
-export function CounterOfferForm({ requestId, offers }: { requestId: string; offers: CounterOfferTarget[] }) {
-  const [state, submit, pending] = useActionState(counterOfferAction, null)
+export function CounterOfferForm({ requestId, offers, waiting = false }: { requestId: string; offers: CounterOfferTarget[]; waiting?: boolean }) {
   const [open, setOpen] = useState(false)
+  const [state, submit, pending] = useActionState(async (prev: ActionState, form: FormData) => {
+    const result = await counterOfferAction(prev, form)
+    if (result?.ok) setOpen(false)
+    return result
+  }, null)
   const [offerId, setOfferId] = useState(offers[0]?.id ?? '')
   const target = offers.find(o => o.id === offerId) ?? offers[0]
+
+  // Une contre-proposition attend la réponse du client : plus d'autre possible d'ici là
+  if (offers.length === 0) {
+    return (
+      <div className="px-4 py-4">
+        {state?.ok
+          ? <Feedback state={state} />
+          : waiting && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Contre-proposition en attente de la réponse du client.</p>}
+      </div>
+    )
+  }
 
   if (!open) {
     return (
@@ -111,7 +131,7 @@ export function CounterOfferForm({ requestId, offers }: { requestId: string; off
 
   return (
     <form
-      action={async form => { await submit(form) }}
+      action={submit}
       onSubmit={e => { if (!window.confirm('Envoyer cette contre-proposition au client ? Il recevra un email.')) e.preventDefault() }}
       className="px-4 py-4 space-y-4"
     >
