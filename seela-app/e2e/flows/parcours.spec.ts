@@ -474,9 +474,11 @@ test('anonymat : le nom du leaser n’apparaît nulle part côté client, ni par
   expect(offer).toMatchObject({ public_name: 'Financeur A · Établissement financier', leaser_id: run.leaser.id })
 
   const client = await pageAs(browser, 'client')
+  // Tableau de bord et liste : le financeur n'y figure qu'une fois l'offre choisie ; le nom réel ne doit jamais y être
   for (const path of ['/app/dashboard', '/app/offres', `/app/offres/${request!.id}`, `/app/offres/${request!.id}/${offer!.id}`]) {
     await client.goto(path)
-    await expect(client.getByText(/Financeur A/).first()).toBeVisible()
+    if (path.includes(request!.id)) await expect(client.getByText(/Financeur A/).first()).toBeVisible()
+    else await expect(client.getByRole('heading').first()).toBeVisible()
     expect(await client.content(), path).not.toContain(run.leaser.name)
   }
 
