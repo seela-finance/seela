@@ -33,7 +33,8 @@ Statut : **proposition à valider par Louis** · Décision d'origine : option C,
 | Colonne | Type | Origine | Note |
 |---|---|---|---|
 | `id` | uuid PK | — | |
-| `siren` | text, unique si non nul | `profiles.siren` | Nul permis : un prospect peut être créé avant de connaître son SIREN |
+| `siren` | text, unique si non nul | `profiles.siren` | Identité légale. Nul permis pour un prospect ; obligatoire pour devenir client |
+| `domain` | text, indexé (non unique) | nouveau | Domaine du site / des emails, clé de l'outbound. Non unique : un groupe partage un domaine entre filiales |
 | `name` | text NOT NULL | `profiles.company_name` | |
 | `legal_form` | text | `profiles.legal_form` / `forme_juridique` | Les 2 colonnes actuelles fusionnées |
 | `naf_code` | text | `profiles.naf_code` | |
@@ -45,11 +46,11 @@ Statut : **proposition à valider par Louis** · Décision d'origine : option C,
 | `kyc_completed`, `financial_docs_uploaded` | boolean | `profiles` | |
 | `seela_score`, `seela_score_grade`, `seela_score_details` | integer / text / jsonb | `profiles` | Écrits côté serveur uniquement (#23) |
 | `crm_status` | text | nouveau | `prospect` · `client` · `partenaire` · `fournisseur` · `exclu` |
-| `sector` | text | Notion « Secteur » | Liste du cockpit (IT, Médical, BTP…) |
-| `asset_types` | text[] | Notion « Type d'actifs » | |
-| `source` | text | Notion « Source » | Inbound, liste lemlist, partenaire… |
-| `signal` | text | Notion « Signal » | |
-| `website` | text | Notion « Site web » | |
+| `sector` | text | nouveau | Liste du cockpit (IT, Médical, BTP…) |
+| `asset_types` | text[] | nouveau | |
+| `source` | text | nouveau | Inbound, liste lemlist, partenaire… |
+| `signal` | text | nouveau | |
+| `website` | text | nouveau | |
 | `owner_id` | uuid → `admins.user_id` | nouveau | Commercial responsable |
 | `created_at`, `updated_at` | timestamptz | — | |
 
@@ -150,19 +151,19 @@ Nouveau droit `crm` dans `lib/admin-roles.ts`, donné à `admin` et `commercial`
 | M1 | Crée `companies` et les tables `crm_*`, ajoute `profiles.company_id`, recopie les comptes existants (staging : comptes de test) | Phase 1 |
 | M2 | Retire les colonnes société de `profiles` | Après la bascule du code (≈ 20 fichiers lisent aujourd'hui `company_name` / `siren`) |
 
-## 7. Reprise du cockpit Notion
+## 7. Identification et doublons
 
-| Base Notion | Table | Remarque |
-|---|---|---|
-| Sociétés | `companies` | Rapprochement par SIREN si connu, sinon par nom |
-| Contacts | `crm_contacts` | |
-| Deals | `crm_deals` | Étapes converties vers les codes du §3 |
-| Activités | `crm_activities` + `crm_mentions` | « Mentionnés » → membres de l'équipe |
-| Tâches | `crm_tasks` | « Faite » → `done_at` |
+L'identifiant d'une société est son `id` interne. SIREN et domaine servent à **la retrouver** :
 
-Script d'import dans `scripts/`, lancé à la main sur staging. Jamais par l'agent autonome.
+1. SIREN connu → société existante avec ce SIREN.
+2. Sinon, domaine connu (hors messageries grand public : gmail, orange, outlook, free…) → proposition de rattachement « société déjà connue ? », jamais de fusion automatique.
+3. Sinon → nouvelle société.
 
-## 8. Points à trancher
+S'applique à l'inscription (domaine de l'email du compte), à la création manuelle dans le CRM et à l'import d'une liste outbound. Le SIREN d'un prospect peut être complété plus tard par l'enrichissement (#43).
+
+Pas de reprise du cockpit Notion : il ne contenait que des données de test. Le CRM démarre vide.
+
+## 8. Points à trancher## 8. Points à trancher
 
 1. **Écritures du client sur sa société** : aujourd'hui l'onboarding écrit `profiles` depuis le navigateur. Proposition : ces écritures passent par une Server Action (protège le score et le SIREN). Plus de travail en phase 1, mais plus sûr.
 2. **Passage en `client`** : automatique quand un contrat devient actif, ou manuel ?
