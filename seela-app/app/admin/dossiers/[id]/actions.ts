@@ -7,6 +7,7 @@ import { isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/sup
 import { addRequestNote, recordLeaserDecision, refuseRequest, rerunMatching, validateAndTransmit, WorkflowError } from '@/lib/admin-workflow'
 import { TransitionError } from '@/lib/transitions'
 import { isUuid } from '@/lib/admin-request-detail'
+import { addManualOffer, parseCounterOffer, parseManualOffer, proposeCounterOffer } from '@/lib/admin-offers'
 
 export type ActionState = { ok: boolean; message: string } | null
 
@@ -65,4 +66,19 @@ export async function refuseRequestAction(_: ActionState, form: FormData): Promi
   const requestId = field(form, 'requestId')
   return run(requestId, () => refuseRequest(workflowDeps(admin), requestId, field(form, 'reason'), field(form, 'clientMessage')),
     'Dossier refusé.')
+}
+
+const formRecord = (form: FormData) => Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v).slice(0, 2000)]))
+
+export async function addManualOfferAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const admin = await requireAdmin()
+  const requestId = field(form, 'requestId')
+  return run(requestId, () => addManualOffer(workflowDeps(admin), requestId, parseManualOffer(formRecord(form))),
+    'Offre ajoutée : visible sur l\'espace du client, qui est prévenu par email.')
+}
+
+export async function counterOfferAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const admin = await requireAdmin()
+  return run(field(form, 'requestId'), () => proposeCounterOffer(workflowDeps(admin), field(form, 'offerId'), parseCounterOffer(formRecord(form))),
+    'Contre-proposition envoyée : le client est prévenu par email et peut l\'accepter ou la refuser.')
 }

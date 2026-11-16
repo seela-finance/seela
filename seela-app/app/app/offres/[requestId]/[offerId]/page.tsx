@@ -18,6 +18,10 @@ type OfferRow = {
   rate: number | null
   total_cost: number | null
   notes: string | null
+  conditions?: string | null
+  periodicite?: string | null
+  frais_dossier?: number | null
+  depot_garantie?: number | null
 }
 
 type LeaserRow = {
@@ -99,7 +103,10 @@ export default async function OfferDetailPage({
 
   // Conditions : uniquement ce que l'on sait (dossier et fiche leaser), rien d'inventé (#25)
   const isLeaseBack = request.document_type === 'facture'
-  const periodicite = request.periodicite ?? 'mensuelle'
+  // Une offre saisie par l'équipe porte ses propres conditions ; sinon, celles de la fiche du leaser
+  const periodicite = offer.periodicite ?? request.periodicite ?? 'mensuelle'
+  const depot = offer.depot_garantie ?? leaser?.depot_garantie ?? null
+  const frais = offer.frais_dossier ?? leaser?.frais_dossier ?? null
   const contractConditions = [
     {
       label: 'Type de financement',
@@ -108,8 +115,9 @@ export default async function OfferDetailPage({
         : 'Location financière / crédit-bail',
     },
     { label: 'Périodicité des loyers', value: periodicite.charAt(0).toUpperCase() + periodicite.slice(1) },
-    { label: 'Dépôt de garantie', value: leaser?.depot_garantie ? fmt(leaser.depot_garantie) : 'Aucun' },
-    { label: 'Frais de dossier', value: leaser?.frais_dossier ? fmt(leaser.frais_dossier) : 'Aucun' },
+    { label: 'Dépôt de garantie', value: depot ? fmt(depot) : 'Aucun' },
+    { label: 'Frais de dossier', value: frais ? fmt(frais) : 'Aucun' },
+    ...(offer.conditions ? [{ label: 'Conditions particulières', value: offer.conditions }] : []),
     { label: 'Résiliation anticipée', value: leaser?.penalite_resiliation ?? 'Selon le contrat du financeur' },
     { label: 'Assurance et services', value: 'Non inclus dans le loyer' },
   ]

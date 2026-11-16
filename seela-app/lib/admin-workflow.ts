@@ -13,7 +13,18 @@ import {
 import type { AdminEvent } from '@/lib/admin-events'
 
 export type OfferContext = {
-  offer: { id: string; request_id: string; leaser_name: string; monthly_payment: number; duration_months: number; status: string }
+  offer: {
+    id: string
+    request_id: string
+    leaser_name: string
+    monthly_payment: number
+    duration_months: number
+    status: string
+    rate?: number | null
+    conditions?: string | null
+    total_cost?: number | null
+    source?: string | null
+  }
   request: {
     id: string
     status: string
@@ -43,6 +54,7 @@ export interface WorkflowStore {
   restoreOffer(id: string, current: string, values: Record<string, unknown>): Promise<void>
   restoreRequest(id: string, current: string, status: string): Promise<void>
   runMatching(requestId: string): Promise<{ offers: number }>
+  insertOffer(values: Record<string, unknown>): Promise<void>
 }
 
 export type Email = { to: string; subject: string; html: string; cc?: string }
@@ -65,7 +77,7 @@ function nowIso(deps: WorkflowDeps) {
 }
 
 /** Envoie un email et l'inscrit au journal du dossier (destinataire, objet, succès ou échec). */
-async function sendLogged(deps: WorkflowDeps, requestId: string, email: Email) {
+export async function sendLogged(deps: WorkflowDeps, requestId: string, email: Email) {
   const { success } = await deps.send(email)
   await deps.log({
     action: success ? 'Email envoyé' : "Échec d'envoi d'email",
