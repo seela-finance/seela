@@ -97,11 +97,14 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
   expect(request).toMatchObject({ status: RS.offers_available, total_amount: 12000, document_type: 'devis', user_id: run.users.client.id })
 
   // Le loyer vient de la grille du leaser de test : 12 000 € × 0,031
-  const { data: offer } = await db.from('offers').select('id, monthly_payment, status').eq('request_id', requestId).eq('leaser_name', run.leaser.name).single()
+  const { data: offer } = await db.from('offers').select('id, monthly_payment, status, public_name').eq('request_id', requestId).eq('leaser_name', run.leaser.name).single()
+  expect(offer!.public_name).toMatch(/^Financeur [A-Z] · /)
   expect(Number(offer!.monthly_payment)).toBe(372)
 
   await test.step('page du dossier et détail de l’offre, sans condition inventée', async () => {
-    await expect(client.getByText(run.leaser.name).first()).toBeVisible()
+    // Le client voit le nom public, jamais le nom du leaser (ni à l'écran ni dans le HTML)
+    await expect(client.getByText(offer!.public_name!).first()).toBeVisible()
+    expect(await client.content()).not.toContain(run.leaser.name)
     await shot(client, '04-offres')
     await client.locator(`a[href="/app/offres/${requestId}/${offer!.id}"]`).first().click()
     await expect(client.getByRole('button', { name: 'Confirmer ma sélection' })).toBeVisible()
@@ -140,7 +143,8 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
     // Dossier confirmé : la page de l'offre renvoie vers le contrat
     await client.goto(`/app/offres/${requestId}/${offer!.id}`)
     await expect(client).toHaveURL(new RegExp(`/app/contrats/${requestId}`))
-    await expect(client.getByText(/Financé par/)).toContainText(run.leaser.name)
+    await expect(client.getByText(/Financé par/)).toContainText(offer!.public_name!)
+    expect(await client.content()).not.toContain(run.leaser.name)
     await expect(client.getByText(/372\s€/).first()).toBeVisible()
     await shot(client, '07-contrat')
   })
@@ -347,7 +351,8 @@ test('sans offre : l’admin voit pourquoi, note le dossier et relance le matchi
   await test.step('le client voit l’offre, jamais la note', async () => {
     const client = await pageAs(browser, 'client')
     await client.goto(`/app/offres/${request!.id}`)
-    await expect(client.getByText(run.leaser.name).first()).toBeVisible()
+    await expect(client.getByText(/Financeur [A-Z] · /).first()).toBeVisible()
+    expect(await client.content()).not.toContain(run.leaser.name)
     await expect(client.getByText(note)).toHaveCount(0)
   })
 })
@@ -448,6 +453,46 @@ test('offre manuelle puis contre-proposition : le client voit l’ancien loyer b
   })
 
   await admin.context().close()
+  await client.context().close()
+})
+
+test('anonymat : le nom du leaser n’apparaît nulle part côté client, ni par un appel direct', async ({ browser }) => {
+  test.setTimeout(120_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const { data: request, error } = await db
+    .from('financing_requests')
+    .insert({ user_id: run.users.client.id, status: RS.offers_available, document_type: 'devis', total_amount: 8000, duration_months: 36 })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  const { data: offer } = await db
+    .from('offers')
+    .insert({ request_id: request!.id, leaser_name: run.leaser.name, monthly_payment: 250, duration_months: 36, status: OS.indicative })
+    .select('id, public_name, leaser_id')
+    .single()
+  expect(offer).toMatchObject({ public_name: 'Financeur A · Établissement financier', leaser_id: run.leaser.id })
+
+  const client = await pageAs(browser, 'client')
+  // Tableau de bord et liste : le financeur n'y figure qu'une fois l'offre choisie ; le nom réel ne doit jamais y être
+  for (const path of ['/app/dashboard', '/app/offres', `/app/offres/${request!.id}`, `/app/offres/${request!.id}/${offer!.id}`]) {
+    await client.goto(path)
+    if (path.includes(request!.id)) await expect(client.getByText(/Financeur A/).first()).toBeVisible()
+    else await expect(client.getByRole('heading').first()).toBeVisible()
+    expect(await client.content(), path).not.toContain(run.leaser.name)
+  }
+
+  const direct = directClient('client')
+  expect((await direct.from('leasers').select('name')).error).not.toBeNull()
+  expect((await direct.from('leaser_rates').select('coefficient')).error).not.toBeNull()
+  expect((await direct.from('offers').select('leaser_name').eq('id', offer!.id)).error).not.toBeNull()
+  expect((await direct.from('offers').select('*').eq('id', offer!.id)).error).not.toBeNull()
+  const { data: allowed } = await direct.from('offers').select('public_name, monthly_payment').eq('id', offer!.id).single()
+  expect(allowed).toMatchObject({ public_name: 'Financeur A · Établissement financier' })
+
+  const visitor = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } })
+  const { data: anonymous } = await visitor.from('leasers').select('name')
+  expect(anonymous ?? []).toEqual([])
   await client.context().close()
 })
 

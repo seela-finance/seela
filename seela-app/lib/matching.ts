@@ -75,6 +75,7 @@ export async function runMatching(db: SupabaseClient, requestId: string): Promis
       const monthly = Math.round(criteria.amount * rate.coefficient * 100) / 100
       return {
         request_id: requestId,
+        leaser_id: leaser.id,
         leaser_name: leaser.name,
         monthly_payment: monthly,
         duration_months: criteria.duration,

@@ -14,7 +14,7 @@ export default async function ContratsPage() {
 
   const { data: requests } = await supabase
     .from('financing_requests')
-    .select('*, supplier_name, document_number, offers(monthly_payment, selected, leaser_name, duration_months), line_items(description, selected, quantity)')
+    .select('*, supplier_name, document_number, offers(monthly_payment, selected, leaser_name:public_name, duration_months), line_items(description, selected, quantity)')
     .eq('user_id', user.id)
     .in('status', requestStatusesIn('contrats'))
     .order('created_at', { ascending: false })

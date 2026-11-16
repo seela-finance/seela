@@ -4,7 +4,7 @@ import { OS, RS, canTransitionOffer, canTransitionRequest, type RequestStatus } 
 import { requestLabel } from '@/lib/request-label'
 import { PERIODICITES } from '@/lib/client-workflow'
 import { emailClientCounterOffer, emailClientNewOffer } from '@/lib/email'
-import { WorkflowError, sendLogged, type WorkflowDeps } from '@/lib/admin-workflow'
+import { WorkflowError, clientFacingName, sendLogged, type WorkflowDeps } from '@/lib/admin-workflow'
 
 export const OFFER_DURATIONS = [12, 24, 36, 48, 60, 72, 84] as const
 type Periodicite = (typeof PERIODICITES)[number]
@@ -111,8 +111,9 @@ export async function addManualOffer(deps: WorkflowDeps, requestId: string, inpu
 
   const moved = request.status !== RS.offers_available
   if (moved) await deps.store.transitionRequest(request.id, request.status, RS.offers_available as RequestStatus)
+  let publicName: string | null = null
   try {
-    await deps.store.insertOffer({
+    publicName = await deps.store.insertOffer({
       request_id: request.id,
       leaser_name: input.leaserName,
       monthly_payment: input.monthlyPayment,
@@ -143,7 +144,7 @@ export async function addManualOffer(deps: WorkflowDeps, requestId: string, inpu
     await sendLogged(deps, request.id, emailClientNewOffer({
       userEmail: ctx.profile.email,
       companyName: ctx.profile.company_name ?? 'Entreprise',
-      leaserName: input.leaserName,
+      leaserName: clientFacingName({ public_name: publicName }),
       monthlyPayment: input.monthlyPayment,
       durationMonths: input.durationMonths,
       requestRef: requestLabel(request),
@@ -213,7 +214,7 @@ export async function proposeCounterOffer(deps: WorkflowDeps, offerId: string, i
     await sendLogged(deps, request.id, emailClientCounterOffer({
       userEmail: ctx.profile.email,
       companyName: ctx.profile.company_name ?? 'Entreprise',
-      leaserName: offer.leaser_name,
+      leaserName: clientFacingName(offer),
       previousMonthly: previous.monthly_payment,
       monthlyPayment: input.monthlyPayment,
       durationMonths: input.durationMonths,

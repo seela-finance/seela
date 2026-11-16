@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const [{ data: requests }, { data: profile }] = await Promise.all([
     supabase
       .from('financing_requests')
-      .select('*, supplier_name, document_number, offers(monthly_payment, selected, leaser_name, duration_months), line_items(description, selected, quantity)')
+      .select('*, supplier_name, document_number, offers(monthly_payment, selected, leaser_name:public_name, duration_months), line_items(description, selected, quantity)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase

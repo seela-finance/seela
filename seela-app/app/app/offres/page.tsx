@@ -244,7 +244,7 @@ export default async function OffresPage() {
 
   const { data } = await supabase
     .from('financing_requests')
-    .select('id, total_amount, duration_months, created_at, status, supplier_name, document_number, line_items(description, category, selected, quantity), offers(id, leaser_name, monthly_payment, selected, status)')
+    .select('id, total_amount, duration_months, created_at, status, supplier_name, document_number, line_items(description, category, selected, quantity), offers(id, leaser_name:public_name, monthly_payment, selected, status)')
     .eq('user_id', user.id)
     .in('status', requestStatusesIn('offres'))
     .order('created_at', { ascending: false })

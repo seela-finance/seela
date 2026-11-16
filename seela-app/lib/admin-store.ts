@@ -18,7 +18,7 @@ export function supabaseWorkflowStore(db: SupabaseClient): WorkflowStore {
     async loadOffer(offerId) {
       const { data: offer } = await db
         .from('offers')
-        .select('id, request_id, leaser_name, monthly_payment, duration_months, status, rate, conditions, total_cost, source')
+        .select('id, request_id, leaser_name, public_name, monthly_payment, duration_months, status, rate, conditions, total_cost, source')
         .eq('id', offerId)
         .maybeSingle()
       if (!offer) return null
@@ -63,8 +63,9 @@ export function supabaseWorkflowStore(db: SupabaseClient): WorkflowStore {
     },
     runMatching: requestId => runMatching(db, requestId),
     async insertOffer(values) {
-      const { error } = await db.from('offers').insert(values)
+      const { data, error } = await db.from('offers').insert(values).select('public_name').single()
       if (error) throw new Error(`Offre : écriture impossible (${error.message})`)
+      return (data?.public_name as string | null) ?? null
     },
   }
 }

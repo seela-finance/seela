@@ -31,5 +31,14 @@ export function formatRate(rate: number | null | undefined): string | null {
 }
 
 export function leaserInitials(name: string): string {
+  // Nom public « Financeur A · Banque » → « A »
+  const anonymous = name.match(/^Financeur (\w+)/)
+  if (anonymous) return anonymous[1].toUpperCase()
   return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
 }
+
+/**
+ * Colonnes d'une offre lisibles par le client. Le nom du leaser n'en fait pas partie (droits par colonne en base) :
+ * `leaser_name` y est le nom public de l'offre, « Financeur A · Banque ».
+ */
+export const CLIENT_OFFER_COLUMNS = 'id, leaser_name:public_name, monthly_payment, duration_months, status, selected, rate, total_cost, notes, confirmed_at, seela_validated_at, leaser_confirmed_at, source, previous_terms, conditions, client_message, periodicite, frais_dossier, depot_garantie, created_at'
