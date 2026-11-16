@@ -52,9 +52,12 @@ Circuit validé par Louis le 04/11/2026 :
 - **`main`** : la prod. Une fois par jour, Louis teste `develop`, puis l'agent ouvre **une** PR
   `develop` → `main` avec le récapitulatif et la liste de ce qu'il reste à juger à l'œil.
   **Seul l'accord explicite de Louis pour cette PR permet de la merger.**
-- **Migration SQL** : l'agent ne l'exécute jamais. Une PR qui en contient une attend que Louis
-  l'ait appliquée sur staging avant d'entrer dans `develop`, et le récapitulatif quotidien rappelle
-  de l'appliquer en prod avant le merge dans `main`.
+- **Migration SQL** : l'agent autonome ne l'exécute jamais. Une PR qui en contient une attend son
+  application sur staging avant d'entrer dans `develop`, et le récapitulatif quotidien rappelle
+  à Louis de l'appliquer en prod avant le merge dans `main`.
+  Une session Claude **pilotée par un humain** peut appliquer la migration sur **staging uniquement**,
+  via le connecteur `supabase-staging` (`.mcp.json`, limité au projet `fmbvvzmoepsyjlhrmbpy`),
+  après l'avoir testée en local (accord de Louis du 16/11/2026). La prod reste appliquée par Louis.
 
 Chaque issue porte un label de risque. En l'absence de label → traiter comme `risk:high`.
 
@@ -78,10 +81,11 @@ le signaler en tête de PR) :
 
 - Pousser sur `main` ou `develop` hors PR, merger dans `main` sans l'accord de Louis, forcer un push, réécrire l'historique.
 - Lancer des tests connectés ailleurs que sur le staging, ou donner le rôle admin à `test@everlease.fr`.
-- Toucher à la base de **production** Supabase, ou exécuter du SQL où que ce soit.
+- Toucher à la base de **production** Supabase, ou exécuter du SQL ailleurs qu'en staging via
+  `supabase-staging` dans une session pilotée par un humain (§2).
   Toute évolution de schéma = un **nouveau** fichier `supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`
-  dans la PR (jamais de modification d'une migration existante). Louis l'applique d'abord sur staging,
-  puis en prod. `supabase/legacy/` contient les anciens scripts, déjà inclus dans la baseline.
+  dans la PR (jamais de modification d'une migration existante), appliqué d'abord sur staging,
+  puis en prod par Louis. `supabase/legacy/` contient les anciens scripts, déjà inclus dans la baseline.
 - Committer un secret, une clé, un `.env*`.
 - Modifier `seela-bos/` (workspace business, hors périmètre de l'agent).
 - Partager le CSS entre la landing (`app/landing.css`, scopé `.lp`) et l'app (`app/globals.css`).

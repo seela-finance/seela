@@ -38,9 +38,9 @@ Termine par : ce qui est prêt, ce qui manque, les PR ouvertes qui touchent la z
 - Pas de force push, pas de réécriture d'historique sur une branche partagée.
 
 **Base de données**
-- Ne jamais exécuter de SQL, ni toucher la base de **production**.
+- Ne jamais toucher la base de **production**. Le seul SQL autorisé passe par le connecteur `supabase-staging` (`.mcp.json`, limité au projet staging `fmbvvzmoepsyjlhrmbpy`) : vérifier que le projet visé est bien celui-là avant toute écriture.
 - Toute évolution de schéma = un **nouveau** fichier `seela-app/supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`, rejouable (`IF NOT EXISTS`, blocs `DO $$ … duplicate_object`). Ne jamais modifier une migration existante.
-- Louis l'applique sur le staging, puis en prod. Une PR avec migration attend son application sur le staging avant d'entrer dans `develop`.
+- Sur le staging, la session l'applique elle-même via `supabase-staging` (outil `apply_migration`, nom = nom du fichier), une fois testée en local et avec l'accord de l'humain présent. En prod, c'est Louis. Une PR avec migration attend son application sur le staging avant d'entrer dans `develop`.
 - Le code doit fonctionner **avant comme après** la migration, sinon le dire dans la PR avec l'ordre exact (exemple : `requireAdmin` lit `admins.*` pour survivre à l'ajout de la colonne `role`).
 - Tester la migration en local avant la PR, par exemple avec PGlite sur une copie des tables concernées, y compris avec des données qui ressemblent à la prod.
 
