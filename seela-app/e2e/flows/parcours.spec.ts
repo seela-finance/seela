@@ -504,12 +504,13 @@ test('onglet Leasers : liste, simulateur comparatif, et fiche éditable (barème
 
   await test.step('la liste montre Grenke actif, avec ses champs à compléter', async () => {
     await admin.goto('/admin/leasers')
-    const grenke = admin.getByRole('row').filter({ hasText: 'Grenke' })
+    // Première ligne : la liste (Grenke figure aussi dans le comparatif en dessous)
+    const grenke = admin.getByRole('row').filter({ hasText: 'Grenke' }).first()
     await expect(grenke).toContainText('Actif')
     await expect(grenke).toContainText(/18 à 63 mois/)
     await expect(grenke).toContainText(/\d+ champs/)
     // Les leasers fictifs sont désactivés, le leaser de test n'apparaît pas
-    await expect(admin.getByRole('row').filter({ hasText: 'BNP Lease' })).toContainText('Inactif')
+    await expect(admin.getByRole('row').filter({ hasText: 'BNP Lease' }).first()).toContainText('Inactif')
     await expect(admin.getByText(run.leaser.name)).toHaveCount(0)
     await shot(admin, '20-admin-leasers')
   })

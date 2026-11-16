@@ -137,7 +137,7 @@ export default function LeaserSimulator({ leasers, single = false }: { leasers: 
       {excluded.length > 0 && (
         <div>
           <p className="ev-kicker mb-2">{single ? 'Ce leaser ne finance pas ce dossier' : 'Leasers exclus'}</p>
-          <ul className="divide-y" style={{ borderColor: 'var(--line)' }}>
+          <ul className="divide-y divide-[var(--line)]">
             {excluded.map(s => (
               <li key={s.leaser.id} className="py-2 flex flex-col sm:flex-row sm:gap-4 text-sm">
                 {!single && <span className="font-medium sm:w-56 sm:shrink-0" style={{ color: 'var(--ink)' }}>{s.leaser.name}</span>}

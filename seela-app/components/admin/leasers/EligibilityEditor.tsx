@@ -51,7 +51,7 @@ export default function EligibilityEditor({ leaserId, rows }: { leaserId: string
     <form action={submit} className="px-4 py-4 space-y-3">
       <input type="hidden" name="leaserId" value={leaserId} />
       <input type="hidden" name="eligibility" value={payload} />
-      <div className="divide-y" style={{ borderColor: 'var(--line)' }}>
+      <div className="divide-y divide-[var(--line)]">
         {EQUIPMENT_FAMILIES.map(f => (
           <div key={f.slug} className="py-1">
             {statusRow(f.slug, null, f.label)}
