@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import TopActions from '@/components/TopActions'
 import { MAX_DOCUMENT_BYTES, MAX_IMAGE_BYTES } from '@/lib/documents'
 import { RS, requestDestination } from '@/lib/status'
+import { equipmentOf } from '@/lib/matching-rules'
+import { FALLBACK_DURATIONS, type EstimateOption } from '@/lib/estimates'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +19,8 @@ interface LineItem {
   unit_price: number | null
   total_price: number | null
   category?: string | null
+  equipment_family?: string | null
+  equipment_type?: string | null
   selected?: boolean
 }
 
@@ -28,13 +32,10 @@ interface DocumentMeta {
   document_date: string | null
 }
 
-type Duration = 24 | 36 | 48 | 60
+type Duration = number
 type Periodicite = 'mensuelle' | 'trimestrielle' | 'annuelle'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-const COEFFICIENTS: Record<Duration, number> = { 24: 0.048, 36: 0.034, 48: 0.027, 60: 0.023 }
-
 
 const STEP_LABELS = [
   'Document',
@@ -629,11 +630,15 @@ const PERIODICITE_OPTIONS: { key: Periodicite; label: string; sub: string; mult:
 
 function Step3Config({
   totalAmount,
+  documentType,
+  lines,
   initial,
   onBack,
   onNext,
 }: {
   totalAmount: number
+  documentType: 'devis' | 'facture'
+  lines: LineItem[]
   initial: { duration: Duration; notes: string; periodicite: Periodicite }
   onBack: (duration: Duration, notes: string, periodicite: Periodicite) => void
   onNext: (duration: Duration, notes: string, periodicite: Periodicite) => void
@@ -641,10 +646,33 @@ function Step3Config({
   const [duration, setDuration] = useState<Duration>(initial.duration)
   const [periodicite, setPeriodicite] = useState<Periodicite>(initial.periodicite)
   const [notes, setNotes] = useState(initial.notes)
+  // Durées et loyers estimés d'après les barèmes en base (serveur) ; null = en cours de calcul
+  const [options, setOptions] = useState<EstimateOption[] | null>(null)
+  const equipment = useMemo(() => equipmentOf(lines.map(l => ({
+    total_price: l.total_price, category: l.category ?? null, equipment_family: l.equipment_family ?? null, equipment_type: l.equipment_type ?? null,
+  }))).mainEquipment, [lines])
 
-  const monthly = totalAmount * COEFFICIENTS[duration]
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: totalAmount, documentType, equipment }),
+    })
+      .then(res => res.json())
+      .then((data: { options?: EstimateOption[] }) => { if (!cancelled) setOptions(data.options ?? []) })
+      .catch(() => { if (!cancelled) setOptions([]) })
+    return () => { cancelled = true }
+  }, [totalAmount, documentType, equipment])
+
+  const durations = options === null ? [] : options.length ? options.map(o => o.months) : FALLBACK_DURATIONS
+  // La durée choisie doit exister dans le barème : sinon, la plus proche de 36 mois
+  const effectiveDuration = durations.includes(duration) || durations.length === 0
+    ? duration
+    : [...durations].sort((a, b) => Math.abs(a - 36) - Math.abs(b - 36))[0]
+  const monthly = options?.find(o => o.months === effectiveDuration)?.monthly ?? null
   const opt = PERIODICITE_OPTIONS.find(o => o.key === periodicite)!
-  const periodAmount = monthly * opt.mult
+  const periodAmount = monthly == null ? null : monthly * opt.mult
   const periodLabel = periodicite === 'mensuelle' ? '/mois' : periodicite === 'trimestrielle' ? '/trimestre' : '/an'
 
   return (
@@ -658,21 +686,27 @@ function Step3Config({
 
       <div className="mb-8">
         <p className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Durée souhaitée</p>
-        <div className="flex gap-3 flex-wrap">
-          {([24, 36, 48, 60] as Duration[]).map(d => (
-            <button
-              key={d}
-              onClick={() => setDuration(d)}
-              className={`ev-card ${duration === d ? 'ev-card--selected' : 'ev-card--interactive'} px-5 py-2.5 text-sm font-medium transition-all`}
-              style={{
-                background: duration === d ? 'var(--accent-soft)' : 'var(--surface)',
-                color: duration === d ? 'var(--accent-ink)' : 'var(--ink)',
-              }}
-            >
-              {d} mois
-            </button>
-          ))}
-        </div>
+        {options === null ? (
+          <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Calcul des durées disponibles…</p>
+        ) : (
+          <div className="flex gap-3 flex-wrap">
+            {durations.map(d => (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={effectiveDuration === d}
+                onClick={() => setDuration(d)}
+                className={`ev-card ${effectiveDuration === d ? 'ev-card--selected' : 'ev-card--interactive'} px-5 py-2.5 text-sm font-medium transition-all`}
+                style={{
+                  background: effectiveDuration === d ? 'var(--accent-soft)' : 'var(--surface)',
+                  color: effectiveDuration === d ? 'var(--accent-ink)' : 'var(--ink)',
+                }}
+              >
+                {d} mois
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mb-8">
@@ -707,17 +741,27 @@ function Step3Config({
       {/* Estimate */}
       <div className="ev-card ev-card--paper p-6 mb-8">
         <p className="ev-kicker mb-1">Loyer estimé</p>
-        <p className="ev-mono" style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.03em' }}>
-          {fmt(periodAmount)}
-          <span className="text-base font-normal ml-1 font-sans" style={{ color: 'var(--ink-3)', letterSpacing: 0 }}>{periodLabel}</span>
-        </p>
-        {periodicite !== 'mensuelle' && (
-          <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>
-            soit <span className="ev-mono">{fmt(monthly)}</span>/mois équivalent
+        {periodAmount == null ? (
+          <p className="text-sm" style={{ color: 'var(--ink-2)' }}>
+            {options === null
+              ? 'Calcul en cours…'
+              : 'Pas d’estimation automatique pour ce dossier : un conseiller Everlease l’étudie après la transmission.'}
           </p>
+        ) : (
+          <>
+            <p className="ev-mono" style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.03em' }}>
+              {fmt(periodAmount)}
+              <span className="text-base font-normal ml-1 font-sans" style={{ color: 'var(--ink-3)', letterSpacing: 0 }}>{periodLabel}</span>
+            </p>
+            {periodicite !== 'mensuelle' && monthly != null && (
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>
+                soit <span className="ev-mono">{fmt(monthly)}</span>/mois équivalent
+              </p>
+            )}
+          </>
         )}
         <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
-          Sur {duration} mois. Estimation indicative, hors assurance et services.
+          Exemple illustratif sur {effectiveDuration} mois, hors assurance et services.
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>
           Sous réserve d&apos;acceptation du dossier par le financeur.
@@ -737,7 +781,11 @@ function Step3Config({
         />
       </div>
 
-      <NavButtons onBack={() => onBack(duration, notes, periodicite)} onNext={() => onNext(duration, notes, periodicite)} />
+      <NavButtons
+        onBack={() => onBack(effectiveDuration, notes, periodicite)}
+        onNext={() => onNext(effectiveDuration, notes, periodicite)}
+        disabled={options === null}
+      />
     </div>
   )
 }
@@ -788,6 +836,8 @@ function Step4Confirmation({
             unit_price: i.unit_price,
             total_price: i.total_price,
             category: i.category ?? null,
+            equipment_family: i.equipment_family ?? null,
+            equipment_type: i.equipment_type ?? null,
           })),
           durationMonths: duration,
           periodicite,
@@ -1007,6 +1057,8 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
             {step === 3 && (
               <Step3Config
                 totalAmount={totalAmount}
+                documentType={documentType}
+                lines={(lines?.items ?? []).filter(i => lines?.selected.includes(i.id))}
                 initial={config}
                 onBack={(duration, notes, periodicite) => { setConfig({ duration, notes, periodicite }); setStep(2) }}
                 onNext={(duration, notes, periodicite) => { setConfig({ duration, notes, periodicite }); setStep(4) }}

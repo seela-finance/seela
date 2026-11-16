@@ -60,7 +60,10 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     ['leaser_equipment_categories', { category: 'Informatique' }],
     ['leaser_financing_types', { financing_type: 'leasing' }],
     ['leaser_financing_types', { financing_type: 'lease_back' }],
-    ['leaser_rates', { duration_months: 36, coefficient, taux_nominal: 5.5 }],
+    // Barème : 3,1 % par mois sur 36 mois, de 0 € sans plafond ; informatique et affichage financés
+    ['leaser_rate_grid', { amount_min: 0, amount_max: null, duration_months: 36, coefficient_pct: coefficient * 100 }],
+    ['leaser_eligibility', { equipment_family: 'informatique', equipment_type: null, status: 'yes' }],
+    ['leaser_eligibility', { equipment_family: 'audiovisuel', equipment_type: null, status: 'yes' }],
   ] as const) {
     const { error } = await db.from(table).insert({ leaser_id: leaser.id, ...row })
     if (error) throw new Error(`${table} : ${error.message}`)

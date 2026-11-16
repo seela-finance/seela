@@ -81,7 +81,11 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
 
   await test.step('étape 3 : configuration et loyer estimé', async () => {
     await client.getByRole('button', { name: '36 mois' }).click()
-    await expect(client.getByText(/408\s€/)).toBeVisible() // 12 000 € × 0,034
+    // Meilleur loyer des barèmes en base : leaser de test, 12 000 € × 3,1 % (Grenke : 3,24 %)
+    await expect(client.getByText(/372\s€/).first()).toBeVisible()
+    // Durées des barèmes (Grenke : 18 à 63 mois), jamais de nom de leaser
+    await expect(client.getByRole('button', { name: '18 mois' })).toBeVisible()
+    expect(await client.content()).not.toMatch(/Grenke|Leaser E2E/)
     await shot(client, '03-configuration')
     await client.getByRole('button', { name: 'Continuer' }).click()
   })
@@ -531,18 +535,19 @@ test('onglet Leasers : liste, simulateur comparatif, et fiche éditable (barème
 
   const leaserPage = `/admin/leasers/${run.leaser.id}`
 
-  await test.step('barème : ajout d’une tranche et d’une durée, enregistré en base', async () => {
+  // Les autres parcours tournent en même temps sur ce leaser (36 mois, informatique) : on n'y touche pas
+  const grid = async () => ((await db.from('leaser_rate_grid').select('amount_min, amount_max, duration_months, coefficient_pct').eq('leaser_id', run.leaser.id).order('duration_months')).data ?? [])
+    .map(r => [Number(r.amount_min), r.amount_max == null ? null : Number(r.amount_max), r.duration_months, Number(r.coefficient_pct)])
+
+  await test.step('barème : ajout d’une durée, enregistré en base', async () => {
     await admin.goto(leaserPage)
-    await admin.getByRole('button', { name: '+ Tranche' }).click()
-    await admin.getByLabel('Tranche 1, minimum').fill('1000')
-    await admin.getByLabel('Tranche 1, maximum').fill('50000')
+    await expect(admin.getByLabel('Coefficient 36 mois, tranche 1')).toHaveValue('3,1')
     await admin.getByRole('button', { name: '+ Durée' }).click()
-    await admin.getByLabel('Durée, ligne 1').fill('48')
+    await admin.getByLabel('Durée, ligne 2').fill('48')
     await admin.getByLabel('Coefficient 48 mois, tranche 1').fill('2,55')
     await admin.getByRole('button', { name: 'Enregistrer le barème' }).click()
-    await expect(admin.getByRole('status').filter({ hasText: 'Barème enregistré : 1 coefficient' })).toBeVisible({ timeout: 30_000 })
-    const { data } = await db.from('leaser_rate_grid').select('amount_min, amount_max, duration_months, coefficient_pct').eq('leaser_id', run.leaser.id)
-    expect(data?.map(r => [Number(r.amount_min), Number(r.amount_max), r.duration_months, Number(r.coefficient_pct)])).toEqual([[1000, 50000, 48, 2.55]])
+    await expect(admin.getByRole('status').filter({ hasText: 'Barème enregistré : 2 coefficients' })).toBeVisible({ timeout: 30_000 })
+    expect(await grid()).toEqual([[0, null, 36, 3.1], [0, null, 48, 2.55]])
   })
 
   await test.step('une saisie invalide est refusée sans rien écrire', async () => {
@@ -550,18 +555,22 @@ test('onglet Leasers : liste, simulateur comparatif, et fiche éditable (barème
     await admin.getByLabel('Coefficient 48 mois, tranche 1').fill('35')
     await admin.getByRole('button', { name: 'Enregistrer le barème' }).click()
     await expect(admin.getByRole('status').filter({ hasText: 'hors bornes' })).toBeVisible({ timeout: 30_000 })
-    const { data } = await db.from('leaser_rate_grid').select('coefficient_pct').eq('leaser_id', run.leaser.id)
-    expect(data?.map(r => Number(r.coefficient_pct))).toEqual([2.55])
+    expect(await grid()).toEqual([[0, null, 36, 3.1], [0, null, 48, 2.55]])
   })
 
-  await test.step('éligibilité : CHR exclu', async () => {
+  await test.step('éligibilité : CHR exclu, le reste conservé', async () => {
     await admin.reload()
+    await expect(admin.getByLabel('Éligibilité : Informatique & bureautique')).toHaveValue('yes')
     await admin.getByLabel('Éligibilité : CHR & métiers de bouche').selectOption('no')
     await admin.getByLabel('Conditions : CHR & métiers de bouche').fill('Hors périmètre E2E')
     await admin.getByRole('button', { name: 'Enregistrer l’éligibilité' }).click()
     await expect(admin.getByRole('status').filter({ hasText: 'Éligibilité enregistrée' })).toBeVisible({ timeout: 30_000 })
-    const { data } = await db.from('leaser_eligibility').select('equipment_family, equipment_type, status, conditions').eq('leaser_id', run.leaser.id)
-    expect(data).toEqual([{ equipment_family: 'chr', equipment_type: null, status: 'no', conditions: 'Hors périmètre E2E' }])
+    const { data } = await db.from('leaser_eligibility').select('equipment_family, equipment_type, status, conditions').eq('leaser_id', run.leaser.id).order('equipment_family')
+    expect(data).toEqual([
+      { equipment_family: 'audiovisuel', equipment_type: null, status: 'yes', conditions: null },
+      { equipment_family: 'chr', equipment_type: null, status: 'no', conditions: 'Hors périmètre E2E' },
+      { equipment_family: 'informatique', equipment_type: null, status: 'yes', conditions: null },
+    ])
   })
 
   await test.step('conditions : frais de dossier et frais client, journalisés', async () => {

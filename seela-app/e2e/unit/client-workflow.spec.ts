@@ -72,7 +72,12 @@ test('payload : total recalculé côté serveur, valeurs nettoyées', () => {
 
 test('payload invalide : aucune ligne, durée hors grille, montant négatif', () => {
   expect(() => parseSubmitPayload(body({ lines: [] }))).toThrow(ClientActionError)
-  expect(() => parseSubmitPayload(body({ durationMonths: 12 }))).toThrow('Durée')
+  // Durées des barèmes (18 à 63 mois chez Grenke) acceptées ; hors bornes ou non entières refusées
+  expect(parseSubmitPayload(body({ durationMonths: 18 })).durationMonths).toBe(18)
+  expect(parseSubmitPayload(body({ durationMonths: 63 })).durationMonths).toBe(63)
+  expect(() => parseSubmitPayload(body({ durationMonths: 6 }))).toThrow('Durée')
+  expect(() => parseSubmitPayload(body({ durationMonths: 36.5 }))).toThrow('Durée')
+  expect(() => parseSubmitPayload(body({ durationMonths: '36' }))).toThrow('Durée')
   expect(() => parseSubmitPayload(body({ lines: [{ total_price: -5 }] }))).toThrow('invalide')
   expect(parseSubmitPayload(body({ periodicite: 'hebdo', meta: { document_date: 'demain' } }))).toMatchObject({ periodicite: 'mensuelle', meta: { document_date: null } })
 })

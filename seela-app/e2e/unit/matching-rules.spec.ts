@@ -1,76 +1,80 @@
 import { test, expect } from '@playwright/test'
-import { leaserExclusions, pickRate, type MatchingCriteria, type MatchingLeaser, type MatchingRate } from '../../lib/matching-rules'
+import { equipmentOf, lineFamily, matchLeaser, type MatchingCriteria, type MatchingLeaser } from '../../lib/matching-rules'
+import { estimateOptions } from '../../lib/estimates'
+import type { GridRow } from '../../lib/leaser-pricing'
 
-const rate = (over: Partial<MatchingRate> = {}): MatchingRate => ({
-  duration_months: 36, equipment_category: null, financing_type: 'leasing', coefficient: 0.03, taux_nominal: 5, ...over,
+const row = (over: Partial<GridRow> = {}): GridRow => ({
+  amount_min: 500, amount_max: 350000, duration_months: 36, coefficient_pct: 3.23, equipment_family: null, financing_type: null, ...over,
 })
 
 const leaser = (over: Partial<MatchingLeaser> = {}): MatchingLeaser => ({
-  id: 'l1',
-  name: 'Financeur A',
-  min_amount: 1000,
-  max_amount: 500000,
-  anciennete_min_mois: 0,
-  periodicites: ['mensuelle'],
-  score_seela_min: null,
-  leaser_equipment_categories: [{ category: 'Informatique' }],
-  leaser_financing_types: [{ financing_type: 'leasing' }],
-  leaser_advantages: [],
-  leaser_rates: [rate()],
+  id: 'l1', name: 'Grenke', is_active: true, min_amount: 500, max_amount: 350000, rent_timing: null, residual_value_pct: null,
+  commission_included_pct: 2, markup_pct: 0, client_fee_rules: null, financing_types: ['leasing', 'lease_back'],
+  grid: [row(), row({ duration_months: 60, coefficient_pct: 2.07 })],
+  eligibility: [
+    { equipment_family: 'informatique', equipment_type: null, status: 'yes', conditions: null },
+    { equipment_family: 'chr', equipment_type: null, status: 'yes', conditions: null },
+    { equipment_family: 'vehicules', equipment_type: null, status: 'no', conditions: 'Véhicules immatriculés exclus' },
+  ],
+  anciennete_min_mois: 0, periodicites: null, score_seela_min: null, advantages: [],
   ...over,
 })
 
 const criteria = (over: Partial<MatchingCriteria> = {}): MatchingCriteria => ({
-  amount: 12000, ageMonths: 48, score: 50, categories: ['Informatique'], financingType: 'leasing',
-  periodicite: 'mensuelle', duration: 36, alreadyOffered: [], ...over,
+  amount: 20000, ageMonths: 48, score: 50, mainEquipment: 'postes-serveurs', families: ['informatique'],
+  financingType: 'leasing', periodicite: 'mensuelle', duration: 36, alreadyOffered: [], ...over,
 })
 
-test('un leaser qui correspond n’a aucune raison d’être écarté', () => {
-  expect(leaserExclusions(leaser(), criteria())).toEqual([])
+test('un leaser qui correspond propose le loyer de son barème', () => {
+  const { reasons, simulation } = matchLeaser(leaser(), criteria())
+  expect(reasons).toEqual([])
+  expect(simulation.monthly).toBe(646) // 20 000 € × 3,23 %
+  expect(simulation.row?.coefficient_pct).toBe(3.23)
 })
 
 test('chaque critère non rempli donne sa raison', () => {
-  const reasons = (l: Partial<MatchingLeaser>, c: Partial<MatchingCriteria> = {}) => leaserExclusions(leaser(l), criteria(c)).join()
-  expect(reasons({}, { amount: 500 })).toMatch(/sous le minimum de 1\s000\s€/)
-  expect(reasons({}, { amount: 600000 })).toMatch(/au-dessus du maximum de 500\s000\s€/)
+  const reasons = (l: Partial<MatchingLeaser>, c: Partial<MatchingCriteria> = {}) => matchLeaser(leaser(l), criteria(c)).reasons.join(' | ')
+  expect(reasons({}, { amount: 400 })).toMatch(/sous le minimum de 500/)
   expect(reasons({ anciennete_min_mois: 60 })).toContain('Ancienneté 48 mois, minimum 60 mois')
+  expect(reasons({ anciennete_min_mois: null })).toContain('Ancienneté minimale à renseigner')
   expect(reasons({ score_seela_min: 70 })).toContain('Score 50, minimum 70')
-  expect(reasons({ leaser_equipment_categories: [{ category: 'BTP' }] })).toContain('Catégorie non couverte : Informatique')
-  expect(reasons({ leaser_financing_types: [{ financing_type: 'leasing' }] }, { financingType: 'lease_back' })).toContain('Financement non couvert : lease-back')
   expect(reasons({}, { periodicite: 'trimestrielle' })).toContain('Périodicité non couverte : trimestrielle')
-  expect(reasons({}, { duration: 60 })).toContain('Aucun taux pour 60 mois')
-  expect(reasons({ min_amount: null })).toContain('à renseigner sur la fiche')
+  expect(reasons({}, { duration: 48 })).toContain('Durée de 48 mois absente du barème')
+  expect(reasons({}, { mainEquipment: 'vehicules-immatricules', families: ['vehicules'] })).toMatch(/Matériel exclu/)
+  expect(reasons({}, { financingType: 'credit_bail' })).toMatch(/crédit-bail/)
+  expect(reasons({ max_amount: null })).toContain('Montants min. et max. à renseigner sur la fiche')
 })
 
-test('plusieurs raisons sont toutes listées', () => {
-  expect(leaserExclusions(leaser({ anciennete_min_mois: 60 }), criteria({ amount: 500, duration: 60 }))).toHaveLength(3)
+test('une famille secondaire exclue ou non renseignée écarte aussi le leaser', () => {
+  expect(matchLeaser(leaser(), criteria({ families: ['informatique', 'vehicules'] })).reasons).toContain('Matériel exclu : Véhicules')
+  expect(matchLeaser(leaser(), criteria({ families: ['informatique', 'medical'] })).reasons).toContain('Éligibilité non renseignée : Médical & santé')
+  expect(matchLeaser(leaser(), criteria({ families: ['informatique', 'chr'] })).reasons).toEqual([])
 })
 
-test('sans catégorie sur le dossier, la catégorie du leaser n’écarte personne', () => {
-  expect(leaserExclusions(leaser({ leaser_equipment_categories: [] }), criteria({ categories: [] }))).toEqual([])
+test('un leaser déjà proposé sur le dossier n’est pas reproposé', () => {
+  expect(matchLeaser(leaser(), criteria({ alreadyOffered: ['Grenke'] })).reasons).toEqual(['Offre déjà faite sur ce dossier'])
 })
 
-test('un leaser refusé ou déjà proposé n’est pas reproposé', () => {
-  expect(leaserExclusions(leaser(), criteria({ alreadyOffered: ['Financeur A'] }))).toEqual(['Offre déjà faite sur ce dossier'])
+test('matériel du dossier : la ligne au plus gros montant fixe le barème ; anciennes catégories reprises', () => {
+  const lines = [
+    { total_price: 2000, category: 'Informatique', equipment_family: null, equipment_type: null },
+    { total_price: 10000, category: null, equipment_family: 'chr', equipment_type: 'cuisine-pro' },
+    { total_price: 500, category: 'Autre', equipment_family: null, equipment_type: null },
+  ]
+  expect(equipmentOf(lines)).toEqual({ mainEquipment: 'cuisine-pro', families: ['informatique', 'chr'] })
+  expect(lineFamily({ total_price: 1, category: 'Véhicule', equipment_family: null, equipment_type: null })).toBe('vehicules')
+  expect(equipmentOf([])).toEqual({ mainEquipment: null, families: [] })
 })
 
-test('le taux : durée exacte, puis catégorie, générique, autre catégorie', () => {
-  const c = criteria()
-  const generic = rate({ coefficient: 0.031 })
-  const category = rate({ coefficient: 0.032, equipment_category: 'Informatique' })
-  const other = rate({ coefficient: 0.033, equipment_category: 'BTP' })
-  const otherDuration = rate({ coefficient: 0.04, duration_months: 24, equipment_category: 'Informatique' })
-
-  expect(pickRate([other, generic, category, otherDuration], c)).toBe(category)
-  expect(pickRate([other, generic, otherDuration], c)).toBe(generic)
-  expect(pickRate([other, otherDuration], c)).toBe(other)
-  expect(pickRate([otherDuration], c)).toBeNull()
+test('estimation client : meilleur loyer par durée couverte, sans nom de leaser', () => {
+  const cheaper = leaser({ id: 'l2', name: 'B', grid: [row({ coefficient_pct: 3.1 })] })
+  const options = estimateOptions([leaser(), cheaper], { amount: 20000, equipment: 'postes-serveurs', financingType: 'leasing' })
+  expect(options).toEqual([{ months: 36, monthly: 620 }, { months: 60, monthly: 414 }])
+  expect(JSON.stringify(options)).not.toMatch(/Grenke|"B"/)
 })
 
-test('le taux du type de financement du dossier passe avant la catégorie', () => {
-  const leasing = rate({ coefficient: 0.03, equipment_category: 'Informatique', financing_type: 'leasing' })
-  const leaseBack = rate({ coefficient: 0.035, financing_type: 'lease_back' })
-  expect(pickRate([leasing, leaseBack], criteria({ financingType: 'lease_back' }))).toBe(leaseBack)
-  // Grille sans taux pour ce type : on garde le taux disponible plutôt que d'écarter le leaser
-  expect(pickRate([leasing], criteria({ financingType: 'lease_back' }))).toBe(leasing)
+test('estimation client : rien si aucun leaser ne finance ce montant ou ce matériel', () => {
+  expect(estimateOptions([leaser()], { amount: 400, equipment: null, financingType: 'leasing' })).toEqual([])
+  expect(estimateOptions([leaser()], { amount: 20000, equipment: 'vehicules-immatricules', financingType: 'leasing' })).toEqual([])
+  expect(estimateOptions([leaser()], { amount: 0, equipment: null, financingType: 'leasing' })).toEqual([])
 })

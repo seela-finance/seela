@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DraftMeta, DraftStore, SavedLine } from '@/lib/draft-workflow'
 import { RS } from '@/lib/status'
 
-const LINE_COLUMNS = 'id, description, quantity, unit_price, total_price, category, selected'
+const LINE_COLUMNS = 'id, description, quantity, unit_price, total_price, category, equipment_family, equipment_type, selected'
 const META_COLUMNS = 'supplier_name, supplier_address, supplier_siren, document_number, document_date'
 const EMPTY_META: DraftMeta = { supplier_name: null, supplier_address: null, supplier_siren: null, document_number: null, document_date: null }
 

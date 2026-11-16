@@ -7,7 +7,7 @@ const USER = 'u1'
 const SUPABASE = 'https://projet.supabase.co'
 const url = (name: string, owner = USER) => `${SUPABASE}/storage/v1/object/public/documents/${owner}/${name}`
 const META = { supplier_name: 'Dell', supplier_address: null, supplier_siren: null, document_number: 'D1', document_date: null }
-const LINE: SavedLine = { id: 'l1', description: 'Serveur', quantity: 1, unit_price: 100, total_price: 100, category: null, selected: true }
+const LINE: SavedLine = { id: 'l1', description: 'Serveur', quantity: 1, unit_price: 100, total_price: 100, category: null, equipment_family: null, equipment_type: null, selected: true }
 
 test.beforeAll(() => { process.env.NEXT_PUBLIC_SUPABASE_URL = SUPABASE })
 
@@ -66,6 +66,15 @@ test('l’IA n’est jamais appelée pour le dossier d’un autre, déjà transm
   await rejects(analyzeDraft(makeStore(null).store, USER, 'r1', noAi), 404)
   await rejects(analyzeDraft(makeStore({ status: RS.submitted }).store, USER, 'r1', noAi), 409)
   await rejects(analyzeDraft(makeStore({ document_url: null }).store, USER, 'r1', noAi), 400)
+})
+
+test('parseAnalysis : le type de matériel n’est repris que s’il existe, la famille en découle', () => {
+  const { lines } = parseAnalysis({ items: [
+    { description: 'Four mixte', total_price: 9000, equipment_type: 'cuisine-pro' },
+    { description: 'Objet', total_price: 100, equipment_type: 'inventé' },
+  ] })
+  expect(lines[0]).toMatchObject({ equipment_type: 'cuisine-pro', equipment_family: 'chr', category: 'CHR & métiers de bouche' })
+  expect(lines[1]).toMatchObject({ equipment_type: null, equipment_family: null })
 })
 
 test('parseAnalysis ne reprend que des valeurs valides et décoche les lignes sans montant', () => {
