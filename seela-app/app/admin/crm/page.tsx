@@ -6,7 +6,9 @@ import { ACTIVITY_LABEL, PRIORITY_LABEL, type ActivityType, type Priority } from
 import { groupTasks, TASK_BUCKET_LABEL, type TaskBucket } from '@/lib/crm-deals'
 import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { CompleteTaskButton } from '@/components/admin/crm/FicheForms'
-import { LemlistSyncButton } from '@/components/admin/crm/CrmForms'
+import { LemlistSyncButton, MailboxActions, MailboxConnectForm } from '@/components/admin/crm/CrmForms'
+import { syncMailbox, type Mailbox } from '@/lib/mailbox-sync'
+import { isSecretBoxConfigured } from '@/lib/secret-box'
 import { isLemlistConfigured, syncLemlist } from '@/lib/lemlist-sync'
 import { syncIsDue } from '@/lib/crm-lemlist'
 
@@ -25,6 +27,11 @@ export default async function CrmHomePage() {
   // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
   if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
     after(() => syncLemlist(db).catch(err => console.error('[lemlist auto]', err)))
+  }
+  const { data: mailboxRow } = db ? await db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle() : { data: null }
+  const mailbox = mailboxRow as (Mailbox & { last_sync_at: string | null; last_error: string | null; last_result: { imported: number } | null }) | null
+  if (db && mailbox && syncIsDue(mailbox.last_sync_at, new Date())) {
+    after(() => syncMailbox(db, mailbox).catch(err => console.error('[mailbox auto]', err)))
   }
   const [tasksRes, mentionsRes, adminsRes] = db
     ? await Promise.all([
@@ -89,6 +96,24 @@ export default async function CrmHomePage() {
                 <LemlistSyncButton neverSynced={!lemlist?.last_run_at} />
               </div>
             )}
+        </section>
+        <section className="ev-card px-5 py-4">
+          <h2 className="ev-kicker mb-2">Ma boîte mail</h2>
+          {!isSecretBoxConfigured()
+            ? <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Clé de chiffrement absente : ajoutez EMAIL_ENCRYPTION_KEY aux réglages du serveur.</p>
+            : mailbox
+              ? (
+                <div className="flex flex-col gap-2 text-sm">
+                  <p style={{ color: 'var(--ink-2)' }}>
+                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{mailbox.email}</span>
+                    {' · '}{mailbox.last_sync_at ? `synchronisée ${fmtDateTime(mailbox.last_sync_at)}${mailbox.last_result ? `, ${mailbox.last_result.imported} échange(s)` : ''}` : 'import en cours…'}
+                    . Automatique toutes les 15 min quand le CRM est ouvert.
+                  </p>
+                  {mailbox.last_error && <p className="ev-alert ev-alert--danger">Dernière erreur : {mailbox.last_error}</p>}
+                  <MailboxActions />
+                </div>
+              )
+              : <MailboxConnectForm defaultEmail={admin.email ?? ''} />}
         </section>
         <section className="ev-card px-5 py-4">
           <h2 className="ev-kicker mb-2">On vous a mentionné</h2>

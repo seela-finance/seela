@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { logAdminEvent, requireAdmin, type Admin } from '@/lib/admin'
 import { can } from '@/lib/admin-roles'
 import { isUuid } from '@/lib/admin-request-detail'
@@ -9,6 +10,8 @@ import { parseContactInput } from '@/lib/crm-activities'
 import { isDealStage, parseContactPatch, parseDealInput, DEAL_STAGE_LABEL } from '@/lib/crm-deals'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { syncLemlist } from '@/lib/lemlist-sync'
+import { syncMailbox, testImapLogin, type Mailbox } from '@/lib/mailbox-sync'
+import { isSecretBoxConfigured, seal } from '@/lib/secret-box'
 
 export type CrmFormState = { ok: boolean; message: string; id?: string } | null
 type Db = ReturnType<typeof createAdminClient>
@@ -113,5 +116,47 @@ export async function syncLemlistAction(_: CrmFormState, form: FormData): Promis
     if ('skipped' in result) throw new CrmError(result.skipped)
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
     return { message: `${result.imported} événement(s) importé(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+  })
+}
+
+// ─── Boîte mail (IMAP, lecture seule) ────────────────────────────────────────
+
+export async function connectMailboxAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    if (!isSecretBoxConfigured()) throw new CrmError('Clé de chiffrement absente sur le serveur (EMAIL_ENCRYPTION_KEY).')
+    const email = String(form.get('email') ?? '').trim().toLowerCase()
+    const password = String(form.get('password') ?? '')
+    const host = String(form.get('imap_host') ?? '').trim().toLowerCase() || 'imap.hostinger.com'
+    const port = Number(form.get('imap_port') ?? 993) || 993
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password) throw new CrmError('Indiquez votre email et votre mot de passe.')
+    if (!/^[a-z0-9.-]+$/.test(host) || port < 1 || port > 65535) throw new CrmError('Serveur ou port invalide.')
+    const refused = await testImapLogin({ email, imap_host: host, imap_port: port }, password)
+    if (refused) throw new CrmError(refused)
+    const { data, error } = await db.from('crm_mailboxes')
+      .upsert({ user_id: admin.userId, email, imap_host: host, imap_port: port, password_enc: seal(password), folders: {}, last_error: null, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+      .select('*').single()
+    if (error) throw error
+    await logAdminEvent(admin, { action: 'CRM : boîte mail connectée', after: { email, imap_host: host } })
+    after(() => syncMailbox(createAdminClient(), data as Mailbox).catch(err => console.error('[mailbox initial]', err)))
+    return { message: 'Boîte connectée. Import des 90 derniers jours en cours : rafraîchissez dans une minute.' }
+  })
+}
+
+export async function syncMailboxAction(): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    const { data } = await db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle()
+    if (!data) throw new CrmError('Aucune boîte connectée.')
+    const result = await syncMailbox(db, data as Mailbox)
+    if ('skipped' in result) throw new CrmError(result.skipped)
+    return { message: `${result.scanned} email(s) parcouru(s), ${result.imported} échange(s) avec des contacts enregistré(s).` }
+  })
+}
+
+export async function disconnectMailboxAction(): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    const { error } = await db.from('crm_mailboxes').delete().eq('user_id', admin.userId)
+    if (error) throw error
+    await logAdminEvent(admin, { action: 'CRM : boîte mail déconnectée' })
+    return { message: 'Boîte déconnectée, mot de passe effacé. Les emails déjà enregistrés restent sur les fiches.' }
   })
 }

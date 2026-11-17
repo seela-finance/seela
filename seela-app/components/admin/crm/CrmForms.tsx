@@ -2,7 +2,10 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createContactAction, createDealAction, moveDealAction, syncLemlistAction, updateContactAction, type CrmFormState } from '@/app/admin/crm/crm-actions'
+import {
+  connectMailboxAction, createContactAction, createDealAction, disconnectMailboxAction, moveDealAction, syncLemlistAction, syncMailboxAction,
+  updateContactAction, type CrmFormState,
+} from '@/app/admin/crm/crm-actions'
 import { PERSONAS } from '@/lib/crm-activities'
 import { DEAL_STAGES, DEAL_STAGE_LABEL, type DealStage } from '@/lib/crm-deals'
 
@@ -242,5 +245,41 @@ export function LemlistSyncButton({ neverSynced }: { neverSynced: boolean }) {
       </button>
       <Alert state={state} />
     </form>
+  )
+}
+
+// ─── Boîte mail ──────────────────────────────────────────────────────────────
+
+export function MailboxConnectForm({ defaultEmail }: { defaultEmail: string }) {
+  const [state, submit, pending] = useActionState<CrmFormState, FormData>(connectMailboxAction, null)
+  return (
+    <form action={submit} className="flex flex-col gap-2">
+      <div>{label('mb-email', 'Email')}<input id="mb-email" name="email" type="email" defaultValue={defaultEmail} required className="ev-input" autoComplete="username" /></div>
+      <div>{label('mb-password', 'Mot de passe de la boîte')}<input id="mb-password" name="password" type="password" required className="ev-input" autoComplete="current-password" /></div>
+      <details className="text-xs" style={{ color: 'var(--ink-3)' }}>
+        <summary className="cursor-pointer">Serveur (Hostinger par défaut)</summary>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <input name="imap_host" defaultValue="imap.hostinger.com" aria-label="Serveur IMAP" className="ev-input col-span-2" />
+          <input name="imap_port" defaultValue="993" inputMode="numeric" aria-label="Port" className="ev-input ev-mono" />
+        </div>
+      </details>
+      <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Lecture seule. Le mot de passe est chiffré avant d’être stocké. Seuls les échanges avec des contacts du CRM sont enregistrés.</p>
+      <Alert state={state} />
+      <button type="submit" className="ev-btn ev-btn--primary ev-btn--sm self-start" disabled={pending}>{pending ? 'Vérification…' : 'Connecter ma boîte'}</button>
+    </form>
+  )
+}
+
+export function MailboxActions() {
+  const [syncState, sync, syncing] = useActionState<CrmFormState, FormData>(syncMailboxAction, null)
+  const [offState, disconnect, leaving] = useActionState<CrmFormState, FormData>(disconnectMailboxAction, null)
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <form action={sync}><button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm" disabled={syncing}>{syncing ? 'Synchronisation…' : 'Synchroniser maintenant'}</button></form>
+        <form action={disconnect}><button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm" disabled={leaving}>Déconnecter</button></form>
+      </div>
+      <Alert state={syncState ?? offState} />
+    </div>
   )
 }
