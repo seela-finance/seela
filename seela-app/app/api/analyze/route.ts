@@ -7,6 +7,10 @@ import { fetchOwnDocument, DocumentError } from '@/lib/documents'
 import { supabaseDraftStore } from '@/lib/draft-store'
 import { analyzeDraft } from '@/lib/draft-workflow'
 import { EQUIPMENT_FAMILIES } from '@/lib/equipment'
+import { ANALYSIS_TOOL, ANALYSIS_TOOL_NAME, readAnalysisResponse } from '@/lib/analysis-response'
+
+// Un long devis peut demander plusieurs minutes d'analyse
+export const maxDuration = 300
 
 const client = new Anthropic()
 
@@ -32,14 +36,7 @@ Extrait aussi :
 - "document_number" : le numéro de devis ou de facture (ex: DEV-2026-0142, FA-2024-00891)
 - "document_date" : la date d'émission au format YYYY-MM-DD
 
-Réponds UNIQUEMENT en JSON valide avec exactement ce format :
-{
-  "document_kind": "devis",
-  "supplier": { "name": "", "address": "", "siren": "" },
-  "document_number": "",
-  "document_date": "",
-  "items": [ { "description": "", "quantity": 0, "unit_price": 0, "total_price": 0, "equipment_type": "" } ]
-}
+Enregistre le résultat avec l'outil ${ANALYSIS_TOOL_NAME}, en reprenant toutes les lignes retenues, même si le document est long.
 Si une valeur est absente ou non trouvée, utilise null.`
 
 async function askClaude(db: SupabaseClient, documentUrl: string, userId: string): Promise<unknown> {
@@ -59,18 +56,16 @@ async function askClaude(db: SupabaseClient, documentUrl: string, userId: string
     },
   ]
 
+  // 16 000 tokens couvrent les 200 lignes retenues au plus (lib/draft-workflow.ts)
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
-    max_tokens: 2048,
+    max_tokens: 16000,
+    tools: [ANALYSIS_TOOL],
+    tool_choice: { type: 'tool', name: ANALYSIS_TOOL_NAME },
     messages,
   })
-
-  const textBlock = message.content.find(c => c.type === 'text')
-  if (!textBlock || textBlock.type !== 'text') throw new Error('No text in response')
-
-  const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('No JSON found in response')
-  return JSON.parse(jsonMatch[0])
+  if (message.stop_reason === 'max_tokens') console.error('Analyze truncated:', message.usage)
+  return readAnalysisResponse(message)
 }
 
 // Analyse le document d'un brouillon et enregistre ses lignes ; le document est lu en base, jamais fourni par le navigateur.

@@ -8,6 +8,11 @@ import { contactName } from '@/lib/crm-deals'
 import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { ActivityComposer } from '@/components/admin/crm/FicheForms'
 import { ContactPropertiesForm, type ContactValues } from '@/components/admin/crm/CrmForms'
+import LemlistCard from '@/components/admin/crm/LemlistCard'
+import CallButton from '@/components/admin/crm/CallButton'
+import EmailCard from '@/components/admin/crm/EmailCard'
+import { summarizeMail, type MailRow } from '@/lib/crm-mail'
+import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 
 type Contact = {
   id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null
@@ -23,15 +28,19 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [contactRes, companiesRes, adminsRes, activitiesRes] = await Promise.all([
+  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes, mailRes] = await Promise.all([
     db.from('contacts').select('*, companies ( name, lifecycle_stage )').eq('id', id).maybeSingle(),
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('contact_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
   ])
   const c = contactRes.data as Contact | null
   if (!c) notFound()
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
+  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
+  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
   const timeline = buildTimeline((activitiesRes.data ?? []) as ActivityRow[], [])
   const name = contactName(c)
@@ -43,7 +52,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   }
   const props: [string, React.ReactNode][] = [
     ['Email', c.email],
-    ['Téléphone', c.phone ? <span className="ev-mono">{c.phone}</span> : null],
+    ['Téléphone', c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : null],
     ['Poste', c.job_title],
     ['Persona', c.persona],
     ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Profil</a> : null],
@@ -64,6 +73,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
           <section className="ev-card p-5 flex flex-col gap-2">
             <h1 className="ev-display text-2xl">{name}</h1>
             {c.job_title && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{c.job_title}</p>}
+            {c.phone && <div><CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={name} /></div>}
             <div className="flex flex-wrap gap-1.5">
               {c.user_id && <Link href={`/admin/societes/${c.user_id}`} className="ev-tag ev-tag--accent">Accès app · voir le compte client</Link>}
               {c.persona && <span className="ev-tag">{c.persona}</span>}
@@ -84,6 +94,8 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
+          <LemlistCard s={summarizeLemlist((lemlistRes.data ?? []) as LemlistRow[])} />
+          <EmailCard s={summarizeMail((mailRes.data ?? []) as MailRow[])} names={mailboxNames} />
           <section className="ev-card px-5 py-4">
             <h2 className="ev-kicker mb-2">Ajouter une activité</h2>
             {c.company_id
@@ -100,9 +112,10 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
                     <span className="font-medium" style={{ color: 'var(--ink)' }}>{e.label}</span>
                     {e.outcome && <span className={OUTCOME_TAG[e.outcome] ?? 'ev-tag'}>{OUTCOME_LABEL[e.outcome]}</span>}
                   </div>
-                  {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
+                  {e.title && <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{e.title}</p>}
+                    {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
                   <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                    {nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
+                    {e.summary ?? nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
                     {e.mentions.length > 0 && ` · mentionne ${e.mentions.map(m => nameOf(m)).filter(Boolean).join(', ')}`}
                   </p>
                 </li>

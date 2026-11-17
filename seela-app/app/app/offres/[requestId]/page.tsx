@@ -4,7 +4,7 @@ import Link from 'next/link'
 import TopActions from '@/components/TopActions'
 import { OS, RS, offerStatusInfo, requestDestination, requestStatusInfo } from '@/lib/status'
 import CounterOfferActions from './CounterOfferActions'
-import { CLIENT_OFFER_COLUMNS, RECOMMENDATION_REASON, formatRate, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
+import { CLIENT_OFFER_COLUMNS, RECOMMENDATION_REASON, formatRate, highlightedOffer, leaserInitials, recommendedOffer, sortOffers } from '@/lib/offers'
 import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
 import { loadActiveLeasers } from '@/lib/matching'
 import { equipmentOf } from '@/lib/matching-rules'
@@ -55,6 +55,8 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
   const offers: OfferRow[] = sortOffers(request.offers ?? [])
   const counterOffer = offers.find(o => o.status === OS.counter_offer)
   const recommended = recommendedOffer(offers)
+  // Mise en avant : la recommandée, ou l'offre seule (sinon elle aurait l'air écartée)
+  const highlighted = highlightedOffer(offers)
 
   const selectedLines: LineItem[] = (request.line_items ?? []).filter((l: LineItem) => l.selected)
   const firstLine = selectedLines[0]
@@ -230,17 +232,19 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                 {offers.map((offer) => {
                   const rate = formatRate(offer.rate)
 
-                  if (offer.id === recommended?.id) {
+                  if (offer.id === highlighted?.id) {
                     return (
                       <div key={offer.id} className="ev-card p-6" style={{ background: 'var(--ink)', borderColor: 'var(--ink)' }}>
-                        <div className="flex items-center gap-2 mb-5">
-                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                            <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="rgba(255,255,255,0.7)" />
-                          </svg>
-                          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-                            Recommandée par Everlease · {RECOMMENDATION_REASON}
-                          </span>
-                        </div>
+                        {offer.id === recommended?.id && (
+                          <div className="flex items-center gap-2 mb-5">
+                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                              <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="rgba(255,255,255,0.7)" />
+                            </svg>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+                              Recommandée par Everlease · {RECOMMENDATION_REASON}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-start justify-between flex-wrap gap-4">
                           <div className="flex items-center gap-3">
                             <div

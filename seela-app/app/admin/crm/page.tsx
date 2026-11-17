@@ -1,11 +1,18 @@
 import Link from 'next/link'
+import { after } from 'next/server'
 import { requireCapability } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { ACTIVITY_LABEL, PRIORITY_LABEL, type ActivityType, type Priority } from '@/lib/crm-activities'
 import { groupTasks, TASK_BUCKET_LABEL, type TaskBucket } from '@/lib/crm-deals'
 import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { CompleteTaskButton } from '@/components/admin/crm/FicheForms'
+import { LemlistSyncButton, MailboxActions, MailboxConnectForm } from '@/components/admin/crm/CrmForms'
+import { syncMailbox, type Mailbox } from '@/lib/mailbox-sync'
+import { isSecretBoxConfigured } from '@/lib/secret-box'
+import { isLemlistConfigured, syncLemlist } from '@/lib/lemlist-sync'
+import { syncIsDue } from '@/lib/crm-lemlist'
 
+type SyncState = { last_run_at: string | null; last_error: string | null; last_result: { imported: number } | null } | null
 type Task = { id: string; title: string; due_date: string | null; priority: string; company_id: string | null; companies: { name: string } | null }
 type Mention = { crm_activities: { id: string; type: string; body: string | null; occurred_at: string; author_id: string | null; company_id: string | null; companies: { name: string } | null } | null }
 
@@ -15,6 +22,17 @@ export default async function CrmHomePage() {
   const admin = await requireCapability('crm')
   const configured = isServiceRoleConfigured()
   const db = configured ? createAdminClient() : null
+  const { data: syncState } = db ? await db.from('crm_sync_state').select('last_run_at, last_error, last_result').eq('source', 'lemlist').maybeSingle() : { data: null }
+  const lemlist = syncState as SyncState
+  // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
+  if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
+    after(() => syncLemlist(db).catch(err => console.error('[lemlist auto]', err)))
+  }
+  const { data: mailboxRow } = db ? await db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle() : { data: null }
+  const mailbox = mailboxRow as (Mailbox & { last_sync_at: string | null; last_error: string | null; last_result: { imported: number } | null }) | null
+  if (db && mailbox && syncIsDue(mailbox.last_sync_at, new Date())) {
+    after(() => syncMailbox(db, mailbox).catch(err => console.error('[mailbox auto]', err)))
+  }
   const [tasksRes, mentionsRes, adminsRes] = db
     ? await Promise.all([
       db.from('crm_tasks').select('id, title, due_date, priority, company_id, companies ( name )').eq('assignee_id', admin.userId).is('done_at', null).limit(300),
@@ -62,7 +80,42 @@ export default async function CrmHomePage() {
           ))}
         </section>
 
-        <section className="ev-card px-5 py-4 min-w-0" style={{ flex: '1 1 300px' }}>
+        <div className="flex flex-col gap-4 min-w-0" style={{ flex: '1 1 300px' }}>
+        <section className="ev-card px-5 py-4">
+          <h2 className="ev-kicker mb-2">Lemlist</h2>
+          {!isLemlistConfigured()
+            ? <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Clé Lemlist absente : ajoutez LEMLIST_API_KEY aux réglages du serveur.</p>
+            : (
+              <div className="flex flex-col gap-2 text-sm">
+                <p style={{ color: 'var(--ink-2)' }}>
+                  {lemlist?.last_run_at
+                    ? <>Dernière synchronisation {fmtDateTime(lemlist.last_run_at)}{lemlist.last_result ? ` · ${lemlist.last_result.imported} importé(s)` : ''}. Automatique toutes les 15 min quand le CRM est ouvert.</>
+                    : 'Jamais synchronisé. Importez l’historique de vos campagnes : envois, réponses, leads intéressés et LinkedIn arrivent sur les fiches.'}
+                </p>
+                {lemlist?.last_error && <p className="ev-alert ev-alert--danger">Dernière erreur : {lemlist.last_error}</p>}
+                <LemlistSyncButton neverSynced={!lemlist?.last_run_at} />
+              </div>
+            )}
+        </section>
+        <section className="ev-card px-5 py-4">
+          <h2 className="ev-kicker mb-2">Ma boîte mail</h2>
+          {!isSecretBoxConfigured()
+            ? <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Clé de chiffrement absente : ajoutez EMAIL_ENCRYPTION_KEY aux réglages du serveur.</p>
+            : mailbox
+              ? (
+                <div className="flex flex-col gap-2 text-sm">
+                  <p style={{ color: 'var(--ink-2)' }}>
+                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{mailbox.email}</span>
+                    {' · '}{mailbox.last_sync_at ? `synchronisée ${fmtDateTime(mailbox.last_sync_at)}${mailbox.last_result ? `, ${mailbox.last_result.imported} échange(s)` : ''}` : 'import en cours…'}
+                    . Automatique toutes les 15 min quand le CRM est ouvert.
+                  </p>
+                  {mailbox.last_error && <p className="ev-alert ev-alert--danger">Dernière erreur : {mailbox.last_error}</p>}
+                  <MailboxActions />
+                </div>
+              )
+              : <MailboxConnectForm defaultEmail={admin.email ?? ''} />}
+        </section>
+        <section className="ev-card px-5 py-4">
           <h2 className="ev-kicker mb-2">On vous a mentionné</h2>
           {mentions.length === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Aucune mention.</p>}
           <ul className="divide-y divide-[var(--line)]">
@@ -78,6 +131,7 @@ export default async function CrmHomePage() {
             ))}
           </ul>
         </section>
+        </div>
       </div>
     </div>
   )

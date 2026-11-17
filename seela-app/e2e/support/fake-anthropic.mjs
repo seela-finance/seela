@@ -1,6 +1,6 @@
 // Faux service IA pour `npm run test:staging` : les vraies routes tournent (analyse du document, analyse
 // crédit), seule la réponse du modèle est simulée (aucun coût, résultat stable). La réponse dépend du
-// prompt système : l'analyste crédit reçoit une fiche d'analyse, l'analyse de document ses lignes.
+// prompt système : l'analyse de document reçoit ses lignes (appel d'outil), l'analyste crédit une fiche (texte).
 import { createServer } from 'node:http'
 
 const ANALYSIS = {
@@ -40,14 +40,16 @@ createServer((req, res) => {
   req.on('end', () => {
     res.setHeader('content-type', 'application/json')
     if (req.method === 'GET') return res.end('{"ok":true}')
-    const payload = isCreditAnalyst(body) ? CREDIT_MEMO : ANALYSIS
+    const credit = isCreditAnalyst(body)
     res.end(JSON.stringify({
       id: 'msg_e2e',
       type: 'message',
       role: 'assistant',
       model: 'fake',
-      content: [{ type: 'text', text: JSON.stringify(payload) }],
-      stop_reason: 'end_turn',
+      content: credit
+        ? [{ type: 'text', text: JSON.stringify(CREDIT_MEMO) }]
+        : [{ type: 'tool_use', id: 'toolu_e2e', name: 'enregistrer_analyse', input: ANALYSIS }],
+      stop_reason: credit ? 'end_turn' : 'tool_use',
       stop_sequence: null,
       usage: { input_tokens: 1, output_tokens: 1 },
     }))
