@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { requireCapability } from '@/lib/admin'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
-import { buildPipeline, DEAL_STAGE_LABEL, isDealStage, type DealRow } from '@/lib/crm-deals'
+import { buildPipeline, CLOSED_DEAL_STAGES, DEAL_STAGE_LABEL, isDealStage, type DealRow } from '@/lib/crm-deals'
 import { daysUntil } from '@/lib/crm-activities'
 import { eur, fmtDate } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
@@ -24,7 +24,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: Pro
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
   const columns = buildPipeline(deals, { mine, me: admin.userId })
-  const open = columns.filter(c => c.stage !== 'signe' && c.stage !== 'perdu')
+  const open = columns.filter(c => !CLOSED_DEAL_STAGES.includes(c.stage))
   const today = new Date().toISOString().slice(0, 10)
 
   return (
@@ -77,7 +77,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: Pro
                       {d.next_action ?? 'Prochaine action'}{d.next_action_date ? ` · ${fmtDate(d.next_action_date)}` : ''}
                     </p>
                   )}
-                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'a_contacter'} />
+                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'pending_qualification'} />
                 </article>
               )
             })}
