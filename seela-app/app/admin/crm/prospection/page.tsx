@@ -41,7 +41,7 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
           {c.lead_status === 'pas_maintenant' && c.lead_next_date ? ` · relance le ${fmtDate(c.lead_next_date)}` : ''}
           {c.lead_status === 'disqualifie' && c.lead_exit_reason ? ` · ${c.lead_exit_reason}` : ''}
         </span>
-        <LeadStatusControl companyId={c.id} status={c.lead_status} channel={c.lead_channel} compact />
+        <LeadStatusControl key={`${c.lead_status}-${c.lead_channel}`} companyId={c.id} status={c.lead_status} channel={c.lead_channel} compact />
       </article>
     )
   }

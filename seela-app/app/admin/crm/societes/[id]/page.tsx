@@ -131,7 +131,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
             </div>
           </section>
           <Card title="Prospection">
-            <LeadStatusControl companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
+            <LeadStatusControl key={`${c.lead_status}-${c.lead_channel}`} companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
             {c.lead_status && (
               <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
                 {[c.lead_signal && `Entrée : ${LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}`, c.lead_entered_at && `le ${fmtDate(c.lead_entered_at)}`,
