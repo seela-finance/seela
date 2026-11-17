@@ -7,16 +7,17 @@ import ResponsiveNav from '../ResponsiveNav'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LABEL, can, type AdminRole, type Capability } from '@/lib/admin-roles'
 
-// Chaque section n'apparaît qu'aux rôles qui y ont accès (la page renvoie 404 aux autres)
-const NAV: { href: string | null; label: string; capability: Capability }[] = [
-  { href: '/admin/crm', label: 'Ma journée', capability: 'crm' },
-  { href: '/admin/crm/prospection', label: 'Prospection', capability: 'crm' },
-  { href: '/admin/crm/societes', label: 'Sociétés', capability: 'crm' },
-  { href: '/admin/crm/contacts', label: 'Contacts', capability: 'crm' },
-  { href: '/admin/crm/deals', label: 'Deals', capability: 'crm' },
-  { href: '/admin', label: 'Dossiers', capability: 'view' },
-  { href: '/admin/leasers', label: 'Leasers', capability: 'manage_leasers' },
-  { href: '/admin/equipe', label: 'Équipe', capability: 'manage_team' },
+// Regroupé par usage : vendre (leads → deals), la base clients, le traitement des financements, l'équipe.
+// Chaque entrée n'apparaît qu'aux rôles qui y ont accès (la page renvoie 404 aux autres).
+const NAV: { href: string; label: string; hint?: string; section: string | null; capability: Capability }[] = [
+  { href: '/admin/crm', label: 'Ma journée', section: null, capability: 'crm' },
+  { href: '/admin/crm/prospection', label: 'Leads', hint: 'Qualification inbound et prospection outbound', section: 'Vente', capability: 'crm' },
+  { href: '/admin/crm/deals', label: 'Deals', hint: 'Opportunités après le RDV', section: 'Vente', capability: 'crm' },
+  { href: '/admin/crm/societes', label: 'Sociétés', section: 'Base', capability: 'crm' },
+  { href: '/admin/crm/contacts', label: 'Contacts', section: 'Base', capability: 'crm' },
+  { href: '/admin', label: 'Dossiers', hint: 'Demandes de financement à traiter', section: 'Financement', capability: 'view' },
+  { href: '/admin/leasers', label: 'Leasers', section: 'Financement', capability: 'manage_leasers' },
+  { href: '/admin/equipe', label: 'Équipe', section: 'Réglages', capability: 'manage_team' },
 ]
 
 export default function AdminNav({ name, email, role }: { name: string; email: string; role: AdminRole }) {
@@ -40,26 +41,18 @@ export default function AdminNav({ name, email, role }: { name: string; email: s
       </div>
 
       <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
-        {items.map(item => {
-          if (!item.href) {
-            return (
-              <span
-                key={item.label}
-                className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-default"
-                style={{ color: 'var(--line-strong)' }}
-              >
-                {item.label}
-                <span className="text-xs">Bientôt</span>
-              </span>
-            )
-          }
+        {items.map((item, i) => {
+          const header = item.section && item.section !== items[i - 1]?.section
+            ? <p key={`s-${item.section}`} className="ev-kicker px-3 pt-4 pb-1" style={{ fontSize: 10 }}>{item.section}</p>
+            : null
           const active = item.href === '/admin'
             ? pathname === '/admin' || pathname.startsWith('/admin/dossiers')
             : item.href === '/admin/crm' ? pathname === item.href : pathname.startsWith(item.href)
-          return (
+          return [header, (
             <Link
               key={item.label}
               href={item.href}
+              title={item.hint}
               className="px-3 py-2 rounded-md text-sm transition-colors hover:bg-[var(--raised)]"
               style={{
                 background: active ? 'var(--raised)' : undefined,
@@ -69,7 +62,7 @@ export default function AdminNav({ name, email, role }: { name: string; email: s
             >
               {item.label}
             </Link>
-          )
+          )]
         })}
       </nav>
 

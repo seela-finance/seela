@@ -72,7 +72,7 @@ export default async function CrmHomePage() {
         <section className="ev-card px-5 py-4">
           <div className="flex items-baseline justify-between gap-2 mb-2">
             <h2 className="ev-kicker">À appeler aujourd’hui ({toCall.length})</h2>
-            <Link href="/admin/crm/prospection" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pré-pipe</Link>
+            <Link href="/admin/crm/prospection" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir les leads</Link>
           </div>
           {toCall.length === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Personne à appeler : le pré-pipe est vide ou à jour.</p>}
           <ul className="divide-y divide-[var(--line)]">

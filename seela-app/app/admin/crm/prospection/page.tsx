@@ -49,7 +49,10 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
   return (
     <div>
       <div className="h-12 flex items-center justify-between gap-3 px-6 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
-        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Prospection <span className="ev-mono text-xs" style={{ color: 'var(--ink-3)' }}>{all.length}</span></span>
+        <span className="text-sm" style={{ color: 'var(--ink-3)' }}>
+          <span className="font-medium" style={{ color: 'var(--ink)' }}>Leads</span> <span className="ev-mono text-xs">{all.length}</span>
+          <span className="hidden sm:inline"> · qualification inbound et prospection outbound, avant les deals</span>
+        </span>
       </div>
       <div className="px-6 pt-3 flex flex-wrap items-center justify-between gap-2 border-b" style={{ borderColor: 'var(--line)' }}>
         <div className="flex gap-1" role="tablist" aria-label="Canal">
