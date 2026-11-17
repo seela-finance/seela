@@ -129,6 +129,13 @@ test('un client soumet un dossier, choisit une offre, l’admin la valide et le 
     await admin.goto(`/admin/dossiers/${requestId}`)
     await expect(admin.getByRole('heading', { name: run.companyName })).toBeVisible()
     await expect(admin.getByText('Serveur de calcul')).toBeVisible()
+    // Analyse crédit lancée après la réponse de soumission (faux modèle) : elle peut arriver quelques secondes plus tard
+    await expect(async () => {
+      await admin.reload()
+      await expect(admin.getByText('Synthèse E2E')).toBeVisible({ timeout: 3_000 })
+    }).toPass({ timeout: 45_000 })
+    await expect(admin.getByText('Favorable sous réserve')).toBeVisible()
+    await expect(admin.getByText('Dernière liasse fiscale')).toBeVisible()
     await shot(admin, '06-admin-dossier')
     await admin.getByRole('button', { name: 'Valider et transmettre' }).click()
     await expect(admin.getByText('Offre validée et transmise au leaser.')).toBeVisible({ timeout: 30_000 })
