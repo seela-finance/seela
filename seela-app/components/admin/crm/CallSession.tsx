@@ -4,6 +4,8 @@ import { useActionState, useEffect, useMemo, useRef, useState, useSyncExternalSt
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { addActivityAction, type FicheState } from '@/app/admin/crm/fiche-actions'
+import { checkEnrichmentAction, startEnrichmentAction } from '@/app/admin/crm/crm-actions'
+import { PHONE_CREDITS } from '@/lib/crm-enrich'
 import { CALL_OUTCOMES, OUTCOME_LABEL, type CallOutcome } from '@/lib/crm-activities'
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from '@/lib/crm-prepipe'
 import { formatPhone, toE164 } from '@/lib/phone'
@@ -45,11 +47,32 @@ function recordOutcome(companyId: string, outcome: string) {
 
 const DEFAULT_STATUSES: LeadStatus[] = ['a_contacter', 'qualification', 'tentative', 'connecte']
 
-export function SessionStart({ items }: { items: { id: string; status: string; channel: string | null }[] }) {
+export function SessionStart({ items, enrich }: {
+  items: { id: string; status: string; channel: string | null; missingPhones: number }[]
+  enrich: { configured: boolean; credits: number | null }
+}) {
   const router = useRouter()
   const [statuses, setStatuses] = useState<string[]>(DEFAULT_STATUSES)
   const [channel, setChannel] = useState<string>('outbound')
-  const picked = items.filter(i => statuses.includes(i.status) && (channel === 'tous' || i.channel === channel))
+  const [size, setSize] = useState(30)
+  const eligible = items.filter(i => statuses.includes(i.status) && (channel === 'tous' || i.channel === channel))
+  const count = Math.min(size, eligible.length)
+  const picked = eligible.slice(0, count)
+  const missing = picked.reduce((n, i) => n + i.missingPhones, 0)
+  const [enrichState, setEnrichState] = useState<{ running: boolean; message: string | null; ok: boolean }>({ running: false, message: null, ok: true })
+
+  async function runEnrichment() {
+    setEnrichState({ running: true, message: 'Envoi à FullEnrich…', ok: true })
+    const started = await startEnrichmentAction(picked.map(i => i.id))
+    if (!started?.ok || !started.enrichmentIds) { setEnrichState({ running: false, message: started?.message ?? 'Erreur', ok: false }); return }
+    setEnrichState({ running: true, message: started.message, ok: true })
+    for (let attempt = 0; attempt < 40; attempt++) {
+      await new Promise(r => setTimeout(r, 10_000))
+      const r = await checkEnrichmentAction(started.enrichmentIds)
+      if (r.done) { setEnrichState({ running: false, message: r.message, ok: true }); router.refresh(); return }
+    }
+    setEnrichState({ running: false, message: 'FullEnrich met plus de temps que prévu : les numéros arriveront sur les fiches dès que vous relancerez la relève.', ok: false })
+  }
   const countFor = (s: string) => items.filter(i => i.status === s && (channel === 'tous' || i.channel === channel)).length
 
   function start() {
@@ -79,8 +102,32 @@ export function SessionStart({ items }: { items: { id: string; status: string; c
           </label>
         ))}
       </fieldset>
-      <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Ordre : signal fort, relance du jour, nouveaux de moins de 48 h, puis les moins appelés.</p>
-      <button type="button" className="ev-btn ev-btn--primary self-start" disabled={!picked.length} onClick={start}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="session-size" className="ev-label">Nombre de sociétés dans la session : <span className="ev-mono" style={{ color: 'var(--ink)' }}>{count}</span> / {eligible.length}</label>
+        <input id="session-size" type="range" min={1} max={Math.max(1, eligible.length)} value={count || 1} disabled={!eligible.length}
+          onChange={e => setSize(Number(e.target.value))} style={{ accentColor: 'var(--accent)' }} />
+        <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Les {count} premières dans l’ordre : signal fort, relance du jour, nouveaux de moins de 48 h, puis les moins appelés.</p>
+      </div>
+
+      <div className="flex flex-col gap-2 p-3 rounded-lg" style={{ background: 'var(--raised)' }}>
+        <p className="text-sm" style={{ color: 'var(--ink)' }}>
+          <span className="ev-mono">{missing}</span> contact{missing > 1 ? 's' : ''} sans téléphone dans ces {count} sociétés
+        </p>
+        <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
+          FullEnrich : {PHONE_CREDITS} crédits par numéro trouvé, rien si rien n’est trouvé. Coût maximum ≈ <span className="ev-mono">{missing * PHONE_CREDITS}</span> crédits
+          {enrich.credits !== null && <> · solde : <span className="ev-mono" style={{ color: enrich.credits < missing * PHONE_CREDITS ? 'var(--danger)' : 'var(--ink)' }}>{enrich.credits}</span> crédits</>}
+        </p>
+        {!enrich.configured
+          ? <p className="text-xs" style={{ color: 'var(--danger)' }}>Clé FullEnrich absente sur le serveur.</p>
+          : (
+            <button type="button" className="ev-btn ev-btn--ghost ev-btn--sm self-start" disabled={!missing || enrichState.running} onClick={runEnrichment}>
+              {enrichState.running ? 'Enrichissement en cours…' : `Enrichir les téléphones (${missing})`}
+            </button>
+          )}
+        {enrichState.message && <p className="text-xs" style={{ color: enrichState.ok ? 'var(--ink-2)' : 'var(--danger)' }}>{enrichState.message}</p>}
+      </div>
+
+      <button type="button" className="ev-btn ev-btn--primary self-start" disabled={!picked.length || enrichState.running} onClick={start}>
         Lancer la session ({picked.length} société{picked.length > 1 ? 's' : ''})
       </button>
     </section>
