@@ -145,6 +145,17 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
           </section>
           <Card title="Prospection">
             <LeadStatusControl key={`${c.lead_status}-${c.lead_channel}`} companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
+            {(() => {
+              const files = requests.filter(r => r.status && r.status !== 'draft')
+              return (
+                <p className="text-sm mt-2 flex justify-between gap-2">
+                  <span style={{ color: 'var(--ink-3)' }}>Dossier déposé</span>
+                  {files.length
+                    ? <span className="ev-tag ev-tag--ok">Oui · {fmtDate(files[0].created_at)}{files.length > 1 ? ` (${files.length})` : ''}</span>
+                    : <span style={{ color: 'var(--ink-3)' }}>Non</span>}
+                </p>
+              )
+            })()}
             {c.lead_status && (
               <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
                 {[c.lead_signal && `Entrée : ${LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}`, c.lead_entered_at && `le ${fmtDate(c.lead_entered_at)}`,

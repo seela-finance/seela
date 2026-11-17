@@ -1,6 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { isWebmailDomain, normalizeDomain } from '@/lib/crm-companies'
+import { isWebmailDomain, nameFromDomain, normalizeDomain } from '@/lib/crm-companies'
 import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
 
 const like = (s: string) => s.replace(/[\\%_]/g, c => `\\${c}`)
@@ -49,4 +49,38 @@ export async function recordInboundLead(db: SupabaseClient, lead: {
   // Les demandes de fournisseurs ou de financeurs sont des partenariats, pas des prospects : pas de pré-pipe
   if (/fournisseur|distributeur|financeur/i.test(lead.origine ?? '')) return
   await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'expert', status: 'qualification', strong: true }, await getCrmSettings(db))
+}
+
+/**
+ * Inscription sur l'app, avant que la personne indique son entreprise : avec une adresse professionnelle, la société
+ * est retrouvée ou créée par le domaine et entre dans le pré-pipe inbound. Jamais de rattachement à une société où
+ * un autre client a déjà un compte (il verrait ses dossiers). L'onboarding complète ensuite cette société (SIREN, nom).
+ */
+export async function recordSignupLead(db: SupabaseClient, user: { id: string; email?: string | null }): Promise<'entered' | 'skipped'> {
+  const email = (user.email ?? '').trim().toLowerCase()
+  const domain = normalizeDomain(email)
+  if (!domain || isWebmailDomain(domain)) return 'skipped'
+
+  let { data: contact } = await db.from('contacts').select('id, company_id').eq('user_id', user.id).maybeSingle()
+  if (!contact) {
+    const { data, error } = await db.from('contacts').insert({ user_id: user.id, email }).select('id, company_id').single()
+    if (error) throw error
+    contact = data
+  }
+  if (!contact || contact.company_id) return 'skipped'
+
+  const { data: found } = await db.from('companies').select('id, contacts ( user_id )').ilike('domain', domain).order('created_at').limit(1)
+  const existing = found?.[0] as { id: string; contacts: { user_id: string | null }[] | null } | undefined
+  if (existing && (existing.contacts ?? []).some(c => c.user_id && c.user_id !== user.id)) return 'skipped'
+
+  let companyId = existing?.id ?? null
+  if (!companyId) {
+    const { data, error } = await db.from('companies').insert({ name: nameFromDomain(domain), domain, source: 'Inscription app' }).select('id').single()
+    if (error) throw error
+    companyId = data.id as string
+  }
+  const { error: cErr } = await db.from('contacts').update({ company_id: companyId, updated_at: new Date().toISOString() }).eq('id', contact.id)
+  if (cErr) throw cErr
+  await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'inscription_partielle', status: 'qualification', strong: true }, await getCrmSettings(db))
+  return 'entered'
 }
