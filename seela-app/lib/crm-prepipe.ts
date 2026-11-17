@@ -116,3 +116,26 @@ export function buildCallList<T extends CallCandidate>(items: T[], now: Date): (
     .filter((c): c is T & { priority: number } => c.priority !== null)
     .sort((a, b) => a.priority - b.priority || a.attempts - b.attempts || (a.lastCallAt ?? '').localeCompare(b.lastCallAt ?? ''))
 }
+
+/**
+ * Ordre d'une session d'appels sur les statuts choisis : même priorité que « À appeler aujourd'hui »
+ * (les statuts hors liste du jour passent après), puis moins d'appels, puis appel le plus ancien.
+ */
+export function orderForSession<T extends CallCandidate & { lead_channel: string | null }>(
+  items: T[], statuses: string[], channel: string | null, now: Date,
+): T[] {
+  return items
+    .filter(c => c.lead_status && statuses.includes(c.lead_status) && (!channel || c.lead_channel === channel))
+    .map(c => ({ c, p: callPriority(c, now) ?? 5 }))
+    .sort((a, b) => a.p - b.p || a.c.attempts - b.c.attempts || (a.c.lastCallAt ?? '').localeCompare(b.c.lastCallAt ?? ''))
+    .map(x => x.c)
+}
+
+/** Tag Lemlist d'un contact pendant l'appel : la réaction la plus forte. */
+export function contactReaction(events: (string | null)[]): string | null {
+  if (events.some(e => e === 'emailsInterested' || e === 'linkedinInterested')) return 'Intéressé'
+  if (events.some(e => e === 'emailsReplied' || e === 'linkedinReplied')) return 'A répondu'
+  if (events.includes('emailsClicked')) return 'A cliqué'
+  if (events.includes('emailsOpened')) return 'A ouvert'
+  return null
+}

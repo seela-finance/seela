@@ -70,9 +70,10 @@ export default async function CrmHomePage() {
       <div className="px-6 py-5 flex flex-wrap gap-4 items-start">
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 460px' }}>
         <section className="ev-card px-5 py-4">
-          <div className="flex items-baseline justify-between gap-2 mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h2 className="ev-kicker">À appeler aujourd’hui ({toCall.length})</h2>
             <Link href="/admin/crm/prospection" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir les leads</Link>
+            <Link href="/admin/crm/appels" className="ev-btn ev-btn--primary ev-btn--sm">Lancer une session d’appels</Link>
           </div>
           {toCall.length === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Personne à appeler : le pré-pipe est vide ou à jour.</p>}
           <ul className="divide-y divide-[var(--line)]">

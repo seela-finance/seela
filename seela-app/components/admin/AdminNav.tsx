@@ -12,6 +12,7 @@ import { ROLE_LABEL, can, type AdminRole, type Capability } from '@/lib/admin-ro
 const NAV: { href: string; label: string; hint?: string; section: string | null; capability: Capability }[] = [
   { href: '/admin/crm', label: 'Ma journée', section: null, capability: 'crm' },
   { href: '/admin/crm/prospection', label: 'Leads', hint: 'Qualification inbound et prospection outbound', section: 'Vente', capability: 'crm' },
+  { href: '/admin/crm/appels', label: 'Session d’appels', hint: 'Enchaîner les appels société par société', section: 'Vente', capability: 'crm' },
   { href: '/admin/crm/deals', label: 'Deals', hint: 'Opportunités après le RDV', section: 'Vente', capability: 'crm' },
   { href: '/admin/crm/societes', label: 'Sociétés', section: 'Base', capability: 'crm' },
   { href: '/admin/crm/contacts', label: 'Contacts', section: 'Base', capability: 'crm' },

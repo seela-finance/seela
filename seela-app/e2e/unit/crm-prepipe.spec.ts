@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { buildCallList, forward, lemlistEntry, sequenceProgress, statusAfterCall, type CallCandidate } from '../../lib/crm-prepipe'
+import { buildCallList, contactReaction, forward, orderForSession, lemlistEntry, sequenceProgress, statusAfterCall, type CallCandidate } from '../../lib/crm-prepipe'
 
 test('issues d’appel : contact pas intéressé garde la société (Connecté), seule « société disqualifiée » la sort', () => {
   expect(statusAfterCall(null, 'pas_de_reponse')).toBe('tentative')
@@ -53,4 +53,16 @@ test('à appeler aujourd’hui : signal fort, relance arrivée, entré récemmen
     c('rdv', { lead_status: 'rdv_pris' }),
   ], now)
   expect(list.map(x => x.id)).toEqual(['chaud', 'relance', 'frais', 'vieux-1', 'vieux-3'])
+})
+
+test('session d’appels : statuts et canal choisis, signal fort d’abord, puis moins d’appels', () => {
+  const now = new Date('2026-11-17T12:00:00Z')
+  const c = (id: string, p: Partial<CallCandidate & { lead_channel: string | null }>) =>
+    ({ id, lead_status: 'a_contacter', lead_channel: 'outbound', lead_signal: 'sequence', lead_entered_at: '2026-11-01T00:00:00Z', lead_next_date: null, attempts: 0, lastCallAt: null, ...p })
+  const items = [c('a', { attempts: 2 }), c('b', {}), c('chaud', { lead_signal: 'replied', attempts: 3 }), c('in', { lead_channel: 'inbound' }), c('rdv', { lead_status: 'rdv_pris' })]
+  expect(orderForSession(items, ['a_contacter'], 'outbound', now).map(x => x.id)).toEqual(['chaud', 'b', 'a'])
+  expect(orderForSession(items, ['a_contacter', 'rdv_pris'], null, now).map(x => x.id)).toEqual(['chaud', 'b', 'in', 'a', 'rdv'])
+  expect(contactReaction(['emailsSent', 'emailsOpened'])).toBe('A ouvert')
+  expect(contactReaction(['emailsOpened', 'emailsReplied'])).toBe('A répondu')
+  expect(contactReaction(['emailsSent'])).toBeNull()
 })
