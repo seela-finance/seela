@@ -1,24 +1,36 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { companyNameFor, newSince, pageReachedCursor, type LemlistActivity, type MappedActivity } from '@/lib/crm-lemlist'
+import { companyNameFor, emailHtmlToText, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
 const PAGE = 100
 const MAX_PAGES = 100
 const LOCK_MS = 5 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number }
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
+const authHeader = (key: string) => ({ Authorization: `Basic ${Buffer.from(`:${key}`).toString('base64')}` })
+
 async function fetchPage(key: string, offset: number): Promise<LemlistActivity[]> {
-  const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, {
-    headers: { Authorization: `Basic ${Buffer.from(`:${key}`).toString('base64')}` },
-    cache: 'no-store',
-  })
+  const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, { headers: authHeader(key), cache: 'no-store' })
   if (!res.ok) throw new Error(`Lemlist a répondu ${res.status}`)
   const json = await res.json()
   return (Array.isArray(json) ? json : json.activities ?? []) as LemlistActivity[]
+}
+
+/** Toute la conversation d'un contact dans la boîte Lemlist (contenu complet des emails envoyés et reçus). */
+async function fetchInbox(key: string, lemlistContactId: string): Promise<LemlistInboxMessage[]> {
+  const out: LemlistInboxMessage[] = []
+  for (let page = 1; page <= 10; page++) {
+    const res = await fetch(`https://api.lemlist.com/api/inbox/${encodeURIComponent(lemlistContactId)}?page=${page}`, { headers: authHeader(key), cache: 'no-store' })
+    if (!res.ok) break
+    const json = (await res.json()) as { data?: LemlistInboxMessage[]; pagination?: { nextPage?: number | null } }
+    out.push(...(json.data ?? []))
+    if (!json.pagination?.nextPage) break
+  }
+  return out
 }
 
 /** Contact du lead (créé s'il manque), rattaché à la société de son domaine ou de son nom (créée s'il le faut). */
@@ -63,7 +75,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
   if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -89,6 +101,19 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
       if (error) throw error
       stats.imported += data?.length ?? 0
     }
+    // Contenu complet : une lecture de la boîte Lemlist par contact ayant échangé des emails dans ce passage
+    const lemlistContacts = [...new Set(events.filter(e => e.event === 'emailsSent' || e.event === 'emailsReplied')
+      .map(e => e.metadata.lemlistContactId).filter((v): v is string => typeof v === 'string' && !!v))]
+    for (const cid of lemlistContacts) {
+      for (const m of await fetchInbox(key, cid)) {
+        const text = emailHtmlToText(m.message)
+        if (!m.messageId || !text) continue
+        const { data } = await db.from('crm_activities').update({ body: text })
+          .eq('source', 'lemlist').in('event', ['emailsSent', 'emailsReplied']).eq('metadata->>messageId', m.messageId).select('id')
+        stats.emailsWithContent += data?.length ?? 0
+      }
+    }
+
     const latest = all.reduce<string | null>((m, a) => (!m || a.createdAt > m ? a.createdAt : m), cursor)
     await db.from('crm_sync_state').upsert({
       source: 'lemlist', last_event_at: latest, last_run_at: new Date().toISOString(), running_since: null, last_error: null, last_result: stats,

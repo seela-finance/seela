@@ -32,7 +32,7 @@ export const lemlistEventLabel = (event: string | null) => (isLemlistEvent(event
 export type LemlistActivity = {
   _id: string; type: string; createdAt: string; leadEmail?: string | null; leadFirstName?: string | null; leadLastName?: string | null
   leadCompanyName?: string | null; campaignId?: string | null; campaignName?: string | null; subject?: string | null
-  messagePreview?: string | null; outOfOfficeEndsAt?: string | null; sendUserName?: string | null; sendUserEmail?: string | null; sequenceStep?: number | null; leadId?: string | null
+  messagePreview?: string | null; outOfOfficeEndsAt?: string | null; messageId?: string | null; contactId?: string | null; sendUserName?: string | null; sendUserEmail?: string | null; sequenceStep?: number | null; leadId?: string | null
 }
 
 export type MappedActivity = {
@@ -50,7 +50,8 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
   const email = clean(a.leadEmail, 320)?.toLowerCase()
   if (!email || !email.includes('@')) return null
   const domain = normalizeDomain(email)
-  const withText = ['emailsSent', 'emailsReplied', 'linkedinSent', 'linkedinReplied', 'outOfOffice'].includes(a.type)
+  // L'aperçu Lemlist ne fait que quelques mots : le contenu des emails vient de la boîte Lemlist (fetchInbox)
+  const withText = ['linkedinSent', 'linkedinReplied', 'outOfOffice'].includes(a.type)
   return {
     externalId: a._id,
     event: a.type,
@@ -63,7 +64,7 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
     title: clean(a.subject, 300),
     summary: [a.campaignName && `Campagne « ${a.campaignName.trim()} »`, a.sendUserName && `par ${a.sendUserName.trim()}`].filter(Boolean).join(' ') || null,
     body: withText ? clean(a.messagePreview, 5000) : null,
-    metadata: { campaignId: a.campaignId ?? null, campaignName: a.campaignName ?? null, sendUserEmail: a.sendUserEmail ?? null, sequenceStep: a.sequenceStep ?? null, leadId: a.leadId ?? null, outOfOfficeEndsAt: a.outOfOfficeEndsAt ?? null },
+    metadata: { campaignId: a.campaignId ?? null, campaignName: a.campaignName ?? null, sendUserEmail: a.sendUserEmail ?? null, sequenceStep: a.sequenceStep ?? null, leadId: a.leadId ?? null, outOfOfficeEndsAt: a.outOfOfficeEndsAt ?? null, messageId: a.messageId ?? null, lemlistContactId: a.contactId ?? null },
   }
 }
 
@@ -129,4 +130,36 @@ export function summarizeLemlist(rows: LemlistRow[]): LemlistSummary {
     lastReply: reply ? { at: reply.occurred_at, text: reply.body } : null,
     emails: [...sorted].reverse().filter(r => r.event === 'emailsSent' || r.event === 'emailsReplied').slice(0, 30),
   }
+}
+
+// ─── Contenu complet des emails (boîte Lemlist d'un contact : GET /api/inbox/{contactId}) ──────
+
+export type LemlistInboxMessage = { messageId?: string | null; type?: string | null; message?: string | null; subject?: string | null; createdAt?: string | null }
+
+const ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", '#39': "'" }
+
+/**
+ * HTML d'un email → texte lisible, sans l'historique cité (bloc de citation Gmail / Outlook / Apple, « Le … a écrit : »).
+ * Paragraphes conservés, 10 000 caractères au plus.
+ */
+export function emailHtmlToText(html: string | null | undefined): string | null {
+  if (!html) return null
+  let s = html
+    .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<div[^>]*class="[^"]*(gmail_quote|gmail_extra)[^"]*"[\s\S]*$/i, '')
+    .replace(/<blockquote[\s\S]*$/i, '')
+    .replace(/<div[^>]*id="(divRplyFwdMsg|appendonsend)"[\s\S]*$/i, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+    .replace(/<\/(td|th|span|a)>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(#?\w+);/g, (m, e: string) => ENTITIES[e.toLowerCase()] ?? (e.startsWith('#') ? String.fromCharCode(Number(e.slice(1).replace(/^x/i, '0x'))) : m))
+  const lines: string[] = []
+  for (const line of s.split('\n')) {
+    if (/^\s*(Le .+a écrit\s*:|On .+wrote:|-{2,}\s*(Original Message|Message d.origine)|De\s*:\s.+|From:\s.+)\s*$/i.test(line)) break
+    if (/^\s*>/.test(line)) continue
+    lines.push(line.replace(/[ \t\u00a0]+/g, ' ').trim())
+  }
+  s = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return s ? s.slice(0, 10000) : null
 }

@@ -115,7 +115,7 @@ export async function syncLemlistAction(_: CrmFormState, form: FormData): Promis
     const result = await syncLemlist(db, { full: form.get('full') === 'on' })
     if ('skipped' in result) throw new CrmError(result.skipped)
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
-    return { message: `${result.imported} événement(s) importé(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })
 }
 
