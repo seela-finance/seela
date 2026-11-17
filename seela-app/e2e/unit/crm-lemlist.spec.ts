@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { companyNameFor, groupLemlistNoise, mapLemlistActivity, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
+import { companyNameFor, mapLemlistActivity, summarizeLemlist, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
 
 const act = (patch: Partial<LemlistActivity>): LemlistActivity => ({
   _id: 'a1', type: 'emailsSent', createdAt: '2026-11-10T10:00:00.000Z', leadEmail: 'Marie@Garage-Martin.fr', leadFirstName: 'Marie',
@@ -45,10 +45,17 @@ test('synchro automatique toutes les 15 minutes au plus', () => {
   expect(syncIsDue('2026-11-17T11:44:00Z', now)).toBe(true)
 })
 
-test('chronologie : envois et ouvertures qui se suivent regroupés, une réponse coupe le groupe', () => {
-  const it = (id: string, event: string | null, source = 'lemlist', summary: string | null = 'Campagne « DAF »') =>
-    ({ id, source, event, label: id, summary, title: 'objet', at: id })
-  const g = groupLemlistNoise([it('9', 'emailsOpened'), it('8', 'emailsSent'), it('7', 'emailsSent'), it('6', 'emailsReplied'), it('5', 'emailsSent'), it('4', null, 'manuel', null)])
-  expect(g.map(x => x.label)).toEqual(['Lemlist · 2 emails envoyés, 1 ouverture', '6', '5', '4'])
-  expect(g[0]).toMatchObject({ title: null, summary: 'Campagne « DAF »' })
+test('bloc Lemlist : compteurs, dernier avis intéressé, absence avec date de retour, campagnes, dernière réponse', () => {
+  const r = (event: string, at: string, patch: Partial<{ body: string; metadata: Record<string, unknown> }> = {}) =>
+    ({ event, occurred_at: at, body: patch.body ?? null, metadata: patch.metadata ?? { campaignName: 'DAF PME' } })
+  const s = summarizeLemlist([
+    r('emailsSent', '2026-11-01'), r('emailsSent', '2026-11-05'), r('emailsOpened', '2026-11-05'), r('emailsOpened', '2026-11-06'),
+    r('emailsClicked', '2026-11-06'), r('emailsNotInterested', '2026-11-07'), r('emailsReplied', '2026-11-08', { body: 'Rappelez-moi' }),
+    r('emailsInterested', '2026-11-09'), r('outOfOffice', '2026-11-02', { metadata: { outOfOfficeEndsAt: '2026-11-04' } }),
+  ])
+  expect(s).toMatchObject({
+    sent: 2, opened: 2, clicked: 1, replied: 1, interested: true, bounced: false, antiSpam: false, outOfOffice: '2026-11-04',
+    campaigns: ['DAF PME'], lastActivityAt: '2026-11-09', lastSentAt: '2026-11-05', lastReply: { at: '2026-11-08', text: 'Rappelez-moi' },
+  })
+  expect(summarizeLemlist([])).toMatchObject({ sent: 0, interested: null, outOfOffice: false, lastActivityAt: null })
 })

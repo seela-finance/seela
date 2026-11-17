@@ -1,5 +1,5 @@
 // CRM — contacts, activités, tâches et chronologie d'une fiche. Fonctions pures, testées.
-import { groupLemlistNoise, lemlistEventLabel } from '@/lib/crm-lemlist'
+import { lemlistEventLabel } from '@/lib/crm-lemlist'
 import { CrmError, SECTORS, isLifecycleStage, normalizeDomain, normalizeSiren, isWebmailDomain, type LifecycleStage } from '@/lib/crm-companies'
 
 export const ACTIVITY_TYPES = ['note', 'call', 'email', 'meeting'] as const
@@ -145,5 +145,5 @@ export function buildTimeline(activities: ActivityRow[], events: AdminEventRow[]
   const e: TimelineItem[] = events.map(r => ({
     id: r.id, kind: 'event', label: r.action, source: 'journal', event: null, title: null, summary: null, outcome: null, body: r.note, at: r.created_at, authorId: r.admin_id, contactId: null, mentions: [],
   }))
-  return groupLemlistNoise([...a, ...e].sort((x, y) => y.at.localeCompare(x.at)))
+  return [...a, ...e].sort((x, y) => y.at.localeCompare(x.at))
 }

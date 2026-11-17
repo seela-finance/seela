@@ -8,6 +8,8 @@ import { contactName } from '@/lib/crm-deals'
 import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { ActivityComposer } from '@/components/admin/crm/FicheForms'
 import { ContactPropertiesForm, type ContactValues } from '@/components/admin/crm/CrmForms'
+import LemlistCard from '@/components/admin/crm/LemlistCard'
+import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 
 type Contact = {
   id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null
@@ -23,11 +25,12 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [contactRes, companiesRes, adminsRes, activitiesRes] = await Promise.all([
+  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes] = await Promise.all([
     db.from('contacts').select('*, companies ( name, lifecycle_stage )').eq('id', id).maybeSingle(),
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).neq('source', 'lemlist').order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
   ])
   const c = contactRes.data as Contact | null
   if (!c) notFound()
@@ -84,6 +87,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
+          <LemlistCard s={summarizeLemlist((lemlistRes.data ?? []) as LemlistRow[])} />
           <section className="ev-card px-5 py-4">
             <h2 className="ev-kicker mb-2">Ajouter une activité</h2>
             {c.company_id

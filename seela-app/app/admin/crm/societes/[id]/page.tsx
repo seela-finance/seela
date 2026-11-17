@@ -10,6 +10,8 @@ import {
 import { isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
+import LemlistCard from '@/components/admin/crm/LemlistCard'
+import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 import {
   ActivityComposer, AddContactForm, AddTaskForm, CompleteTaskButton, PropertiesForm, type CompanyValues,
 } from '@/components/admin/crm/FicheForms'
@@ -48,13 +50,14 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, dealsRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, dealsRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
     db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).neq('source', 'lemlist').order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
   ])
   const c = companyRes.data as Company | null
@@ -132,6 +135,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
+          <LemlistCard s={summarizeLemlist((lemlistRes.data ?? []) as LemlistRow[])} />
+
           <Card title="Ajouter une activité">
             <ActivityComposer
               companyId={c.id}

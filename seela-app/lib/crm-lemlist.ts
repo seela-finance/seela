@@ -94,35 +94,36 @@ export function syncIsDue(lastRunAt: string | null, now: Date): boolean {
   return !lastRunAt || now.getTime() - Date.parse(lastRunAt) >= SYNC_EVERY_MS
 }
 
-// ─── Chronologie : envois et ouvertures regroupés ────────────────────────────
+// ─── Bloc « Prospection Lemlist » d'une fiche ────────────────────────────────
 
-/** Événements nombreux et peu parlants pris un par un : regroupés quand ils se suivent. */
-export const GROUPED_EVENTS = new Set<string>(['emailsSent', 'emailsOpened'])
+export type LemlistRow = { event: string | null; occurred_at: string; body: string | null; metadata: Record<string, unknown> | null }
 
-type Groupable = { id: string; source: string; event?: string | null; label: string; summary: string | null; title: string | null; at: string }
+export type LemlistSummary = {
+  sent: number; opened: number; clicked: number; replied: number
+  interested: boolean | null
+  bounced: boolean; unsubscribed: boolean; antiSpam: boolean; outOfOffice: string | null | false
+  linkedinInvited: boolean; linkedinAccepted: boolean; linkedinMessages: number; linkedinReplies: number
+  campaigns: string[]; lastActivityAt: string | null; lastSentAt: string | null; lastReply: { at: string; text: string | null } | null
+}
 
-/**
- * Dans une chronologie triée du plus récent au plus ancien, les envois et ouvertures Lemlist qui se suivent
- * deviennent une seule ligne : « Lemlist · 3 emails envoyés, 2 ouvertures », campagne(s) en résumé.
- */
-export function groupLemlistNoise<T extends Groupable>(items: T[]): T[] {
-  const out: T[] = []
-  let run: T[] = []
-  const flush = () => {
-    if (run.length === 1) out.push(run[0])
-    else if (run.length > 1) {
-      const sent = run.filter(r => r.event === 'emailsSent').length
-      const opened = run.length - sent
-      const parts = [sent && `${sent} email${sent > 1 ? 's' : ''} envoyé${sent > 1 ? 's' : ''}`, opened && `${opened} ouverture${opened > 1 ? 's' : ''}`].filter(Boolean)
-      const campaigns = [...new Set(run.map(r => r.summary).filter(Boolean))]
-      out.push({ ...run[0], id: `${run[0].id}+${run.length}`, label: `Lemlist · ${parts.join(', ')}`, title: null, summary: campaigns.join(' · ') || null })
-    }
-    run = []
+/** Compteurs et indicateurs d'une fiche à partir de ses événements Lemlist. Intéressé : le dernier avis l'emporte. */
+export function summarizeLemlist(rows: LemlistRow[]): LemlistSummary {
+  const sorted = [...rows].sort((a, b) => a.occurred_at.localeCompare(b.occurred_at))
+  const count = (...events: string[]) => sorted.filter(r => r.event && events.includes(r.event)).length
+  const has = (...events: string[]) => count(...events) > 0
+  const last = (...events: string[]) => [...sorted].reverse().find(r => r.event && events.includes(r.event)) ?? null
+  const verdict = last('emailsInterested', 'emailsNotInterested', 'linkedinInterested', 'linkedinNotInterested')
+  const ooo = last('outOfOffice')
+  const reply = last('emailsReplied', 'linkedinReplied')
+  const campaigns = [...new Set(sorted.map(r => r.metadata?.campaignName).filter((c): c is string => typeof c === 'string' && !!c.trim()).map(c => c.trim()))]
+  return {
+    sent: count('emailsSent'), opened: count('emailsOpened'), clicked: count('emailsClicked'), replied: count('emailsReplied'),
+    interested: verdict ? verdict.event === 'emailsInterested' || verdict.event === 'linkedinInterested' : null,
+    bounced: has('emailsBounced'), unsubscribed: has('emailsUnsubscribed'), antiSpam: has('mailinblackDetected'),
+    outOfOffice: ooo ? (typeof ooo.metadata?.outOfOfficeEndsAt === 'string' ? ooo.metadata.outOfOfficeEndsAt : null) : false,
+    linkedinInvited: has('linkedinInviteDone'), linkedinAccepted: has('linkedinInviteAccepted'),
+    linkedinMessages: count('linkedinSent'), linkedinReplies: count('linkedinReplied'),
+    campaigns, lastActivityAt: sorted.at(-1)?.occurred_at ?? null, lastSentAt: last('emailsSent')?.occurred_at ?? null,
+    lastReply: reply ? { at: reply.occurred_at, text: reply.body } : null,
   }
-  for (const it of items) {
-    if (it.source === 'lemlist' && it.event && GROUPED_EVENTS.has(it.event)) run.push(it)
-    else { flush(); out.push(it) }
-  }
-  flush()
-  return out
 }
