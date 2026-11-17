@@ -1,6 +1,6 @@
 // Pied de page commun (landing, Solutions, Secteurs), structure du canvas v2.
 // Liens internes vers toutes les pages Solutions et Secteurs (silo SEO), rendus
-// côté serveur. Les mentions non connues restent marquées « À COMPLÉTER ».
+// côté serveur.
 import Link from 'next/link'
 import Brand from '@/components/landing/Brand'
 import { SOLUTIONS } from '@/lib/seo/solutions'
@@ -43,7 +43,7 @@ export default function MarketingFooter() {
           <p className="legal" style={{ margin: 0 }}>Les montants affichés sur cette page sont des exemples illustratifs, hors assurance et services. Tout financement est soumis à l&apos;acceptation du dossier par le financeur, qui fixe seul ses conditions.</p>
         </div>
         <div className="foot__bottom legal">
-          <span>© 2026 Everlease SAS · <span className="todo">[À COMPLÉTER : RCS et siège]</span></span>
+          <span>© 2026 Everlease SAS</span>
           <span><Link href="/mentions-legales">Mentions légales</Link> · <Link href="/confidentialite">Confidentialité</Link></span>
         </div>
       </div>
