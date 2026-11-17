@@ -6,11 +6,11 @@ export const ACTIVITY_TYPES = ['note', 'call', 'email', 'meeting'] as const
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]
 export const ACTIVITY_LABEL: Record<ActivityType, string> = { note: 'Note', call: 'Appel', email: 'Email', meeting: 'Réunion' }
 
-export const CALL_OUTCOMES = ['pas_de_reponse', 'messagerie', 'pas_interesse', 'a_rappeler', 'interesse', 'rdv_pris'] as const
+export const CALL_OUTCOMES = ['pas_de_reponse', 'messagerie', 'pas_interesse', 'a_rappeler', 'interesse', 'rdv_pris', 'societe_disqualifiee'] as const
 export type CallOutcome = (typeof CALL_OUTCOMES)[number]
 export const OUTCOME_LABEL: Record<CallOutcome, string> = {
-  pas_de_reponse: 'Pas de réponse', messagerie: 'Messagerie', pas_interesse: 'Pas intéressé',
-  a_rappeler: 'À rappeler', interesse: 'Intéressé', rdv_pris: 'RDV pris',
+  pas_de_reponse: 'Pas de réponse', messagerie: 'Messagerie', pas_interesse: 'Contact pas intéressé',
+  a_rappeler: 'À rappeler', interesse: 'Intéressé', rdv_pris: 'RDV pris', societe_disqualifiee: 'Société disqualifiée',
 }
 
 export const PRIORITIES = ['haute', 'normale', 'basse'] as const
@@ -72,19 +72,22 @@ export function parseContactInput(f: Record<string, unknown>): ContactInput {
 
 // ─── Activité ────────────────────────────────────────────────────────────────
 
-export type ActivityInput = { type: ActivityType; call_outcome: CallOutcome | null; body: string; contact_id: string | null; mentions: string[] }
+export type ActivityInput = { type: ActivityType; call_outcome: CallOutcome | null; body: string; contact_id: string | null; mentions: string[]; exit_reason: string | null }
 
-export function parseActivityInput(f: { type: unknown; call_outcome: unknown; body: unknown; contact_id: unknown; mentions: unknown[] }, teamIds: string[], contactIds: string[]): ActivityInput {
+export function parseActivityInput(f: { type: unknown; call_outcome: unknown; body: unknown; contact_id: unknown; mentions: unknown[]; exit_reason?: unknown }, teamIds: string[], contactIds: string[]): ActivityInput {
   const type = oneOf(ACTIVITY_TYPES, f.type) ?? 'note'
   const call_outcome = type === 'call' ? oneOf(CALL_OUTCOMES, f.call_outcome) : null
   const body = str(f.body)
   if (type === 'call' && !call_outcome) throw new CrmError('Indiquez l’issue de l’appel.')
   if (!body && type !== 'call') throw new CrmError('Écrivez le contenu de l’activité.')
+  const exit_reason = call_outcome === 'societe_disqualifiee' ? str(f.exit_reason) || null : null
+  if (call_outcome === 'societe_disqualifiee' && !exit_reason) throw new CrmError('Indiquez pourquoi la société est disqualifiée.')
   const contact = str(f.contact_id)
   return {
     type, call_outcome, body: body.slice(0, 20000),
     contact_id: contactIds.includes(contact) ? contact : null,
     mentions: [...new Set(f.mentions.map(str).filter(id => teamIds.includes(id)))],
+    exit_reason,
   }
 }
 

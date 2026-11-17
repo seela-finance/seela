@@ -1,5 +1,7 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
+import { lemlistEntry, type LeadEvent } from '@/lib/crm-prepipe'
 import { companyNameFor, emailHtmlToText, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
@@ -7,7 +9,7 @@ const PAGE = 100
 const MAX_PAGES = 100
 const LOCK_MS = 15 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number }
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
@@ -31,6 +33,47 @@ async function fetchInbox(key: string, lemlistContactId: string): Promise<Lemlis
     if (!json.pagination?.nextPage) break
   }
   return out
+}
+
+/** Types des étapes de chaque campagne, dans l'ordre de la séquence (pour l'avancement des leads). */
+async function fetchSequences(key: string, campaignIds: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  for (const id of campaignIds) {
+    const res = await fetch(`https://api.lemlist.com/api/campaigns/${encodeURIComponent(id)}/sequences`, { headers: authHeader(key), cache: 'no-store' })
+    if (!res.ok) continue
+    const json = (await res.json()) as Record<string, { steps?: { type?: string }[] }>
+    out.set(id, Object.values(json).flatMap(s => (s.steps ?? []).map(step => step.type ?? '')))
+  }
+  return out
+}
+
+/** Lemlist donne l'étape tantôt en nombre, tantôt en texte. */
+const stepOf = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+
+/** Sociétés touchées par ce passage : entrée ou avancée dans le pré-pipe outbound selon leurs événements Lemlist. */
+async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: string[], stats: LemlistSyncResult) {
+  if (!companyIds.length) return
+  const settings = await getCrmSettings(db)
+  const rows: { company_id: string; event: string | null; metadata: Record<string, unknown> | null }[] = []
+  for (let i = 0; i < companyIds.length; i += 200) {
+    const { data, error } = await db.from('crm_activities').select('company_id, event, metadata').eq('source', 'lemlist').in('company_id', companyIds.slice(i, i + 200)).limit(20000)
+    if (error) throw error
+    rows.push(...((data ?? []) as typeof rows))
+  }
+  const campaigns = [...new Set(rows.map(r => r.metadata?.campaignId).filter((v): v is string => typeof v === 'string'))]
+  const sequences = await fetchSequences(key, campaigns)
+  const byCompany = new Map<string, LeadEvent[]>()
+  for (const r of rows) {
+    const list = byCompany.get(r.company_id) ?? []
+    list.push({ event: r.event, campaignId: typeof r.metadata?.campaignId === 'string' ? r.metadata.campaignId : null, sequenceStep: stepOf(r.metadata?.sequenceStep) })
+    byCompany.set(r.company_id, list)
+  }
+  for (const [companyId, events] of byCompany) {
+    const entry = lemlistEntry(events, sequences, settings.threshold)
+    if (!entry) continue
+    const strong = entry.signal !== 'sequence'
+    if (await enterPrepipe(db, companyId, { channel: 'outbound', signal: entry.signal, status: entry.status, strong }, settings)) stats.leadsEntered++
+  }
 }
 
 /** Contact du lead (créé s'il manque), rattaché à la société de son domaine ou de son nom (créée s'il le faut). */
@@ -75,7 +118,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
   if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -113,6 +156,9 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
         stats.emailsWithContent += data?.length ?? 0
       }
     }
+
+    const touched = [...new Set(events.map(e => leads.get(e.lead.email)?.company_id).filter((v): v is string => !!v))]
+    await routeToPrepipe(db, key, touched, stats)
 
     const latest = all.reduce<string | null>((m, a) => (!m || a.createdAt > m ? a.createdAt : m), cursor)
     await db.from('crm_sync_state').upsert({

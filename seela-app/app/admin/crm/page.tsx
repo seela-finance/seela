@@ -6,6 +6,10 @@ import { ACTIVITY_LABEL, PRIORITY_LABEL, type ActivityType, type Priority } from
 import { groupTasks, TASK_BUCKET_LABEL, type TaskBucket } from '@/lib/crm-deals'
 import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { CompleteTaskButton } from '@/components/admin/crm/FicheForms'
+import CallButton from '@/components/admin/crm/CallButton'
+import { buildCallList, LEAD_SIGNAL_LABEL, LEAD_STATUS_LABEL, type LeadStatus } from '@/lib/crm-prepipe'
+import { loadPrepipe, primaryContact } from '@/lib/crm-prepipe-load'
+import { contactName } from '@/lib/crm-deals'
 import { LemlistSyncButton, MailboxActions, MailboxConnectForm } from '@/components/admin/crm/CrmForms'
 import { syncMailbox, type Mailbox } from '@/lib/mailbox-sync'
 import { isSecretBoxConfigured } from '@/lib/secret-box'
@@ -24,15 +28,16 @@ export default async function CrmHomePage() {
   const db = configured ? createAdminClient() : null
   const none = { data: null, error: null }
   // Toutes les lectures partent en même temps (chaque aller-retour vers la base coûte)
-  const [syncRes, mailboxRes, tasksRes, mentionsRes, adminsRes] = db
+  const [syncRes, mailboxRes, tasksRes, mentionsRes, adminsRes, prepipe] = db
     ? await Promise.all([
       db.from('crm_sync_state').select('last_run_at, running_since, last_error, last_result').eq('source', 'lemlist').maybeSingle(),
       db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle(),
       db.from('crm_tasks').select('id, title, due_date, priority, company_id, companies ( name )').eq('assignee_id', admin.userId).is('done_at', null).limit(300),
       db.from('crm_mentions').select('crm_activities ( id, type, body, occurred_at, author_id, company_id, companies ( name ) )').eq('user_id', admin.userId).limit(50),
       db.from('admins').select('user_id, name'),
+      loadPrepipe(db),
     ])
-    : [none, none, none, none, none]
+    : [none, none, none, none, none, []]
   const lemlist = syncRes.data as SyncState
   // Verrou de la synchro : 5 min au plus (au-delà, considéré comme interrompu)
   const lemlistRunning = syncIsRunning(lemlist?.running_since ?? null, new Date())
@@ -52,6 +57,8 @@ export default async function CrmHomePage() {
     .map(m => m.crm_activities).filter((a): a is NonNullable<Mention['crm_activities']> => !!a)
     .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at)).slice(0, 15)
   const total = Object.values(buckets).reduce((n, l) => n + l.length, 0)
+  const toCall = buildCallList(prepipe, new Date())
+  const PRIORITY_LABEL_DAY: Record<number, string> = { 1: 'Signal fort', 2: 'Relance du jour', 3: 'Nouveau', 4: '' }
 
   return (
     <div>
@@ -61,7 +68,33 @@ export default async function CrmHomePage() {
       {!configured && <p className="ev-alert ev-alert--danger mx-6 mt-4">{SERVICE_ROLE_MISSING_MESSAGE}</p>}
 
       <div className="px-6 py-5 flex flex-wrap gap-4 items-start">
-        <section className="ev-card px-5 py-4 min-w-0" style={{ flex: '2 1 460px' }}>
+        <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 460px' }}>
+        <section className="ev-card px-5 py-4">
+          <div className="flex items-baseline justify-between gap-2 mb-2">
+            <h2 className="ev-kicker">À appeler aujourd’hui ({toCall.length})</h2>
+            <Link href="/admin/crm/prospection" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pré-pipe</Link>
+          </div>
+          {toCall.length === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Personne à appeler : le pré-pipe est vide ou à jour.</p>}
+          <ul className="divide-y divide-[var(--line)]">
+            {toCall.slice(0, 40).map(c => {
+              const p = primaryContact(c)
+              return (
+                <li key={c.id} className="py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="flex-1 min-w-[180px]">
+                    <Link href={`/admin/crm/societes/${c.id}`} className="font-medium hover:underline" style={{ color: 'var(--ink)' }}>{c.name}</Link>
+                    <span className="block text-xs" style={{ color: 'var(--ink-3)' }}>
+                      {LEAD_STATUS_LABEL[c.lead_status as LeadStatus] ?? c.lead_status}{p ? ` · ${contactName(p)}` : ''} · {c.attempts} appel{c.attempts > 1 ? 's' : ''}{c.lastCallAt ? `, dernier le ${fmtDate(c.lastCallAt)}` : ''}
+                    </span>
+                  </span>
+                  {PRIORITY_LABEL_DAY[c.priority] && <span className={c.priority === 1 ? 'ev-tag ev-tag--accent' : 'ev-tag'}>{c.priority === 1 && c.lead_signal ? LEAD_SIGNAL_LABEL[c.lead_signal] ?? PRIORITY_LABEL_DAY[1] : PRIORITY_LABEL_DAY[c.priority]}</span>}
+                  {p?.phone ? <CallButton phone={p.phone} companyId={c.id} contactId={p.id} contactName={contactName(p)} compact /> : <span className="text-xs" style={{ color: 'var(--ink-3)' }}>Pas de numéro</span>}
+                </li>
+              )
+            })}
+          </ul>
+          {toCall.length > 40 && <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>40 premiers sur {toCall.length}.</p>}
+        </section>
+        <section className="ev-card px-5 py-4">
           <h2 className="ev-kicker mb-2">Mes tâches ({total})</h2>
           {total === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Rien à faire. Les tâches se créent depuis une fiche société.</p>}
           {(Object.keys(buckets) as TaskBucket[]).filter(k => buckets[k].length).map(k => (
@@ -83,6 +116,7 @@ export default async function CrmHomePage() {
             </div>
           ))}
         </section>
+        </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '1 1 300px' }}>
         <section className="ev-card px-5 py-4">

@@ -10,6 +10,7 @@ import { ROLE_LABEL, can, type AdminRole, type Capability } from '@/lib/admin-ro
 // Chaque section n'apparaît qu'aux rôles qui y ont accès (la page renvoie 404 aux autres)
 const NAV: { href: string | null; label: string; capability: Capability }[] = [
   { href: '/admin/crm', label: 'Ma journée', capability: 'crm' },
+  { href: '/admin/crm/prospection', label: 'Prospection', capability: 'crm' },
   { href: '/admin/crm/societes', label: 'Sociétés', capability: 'crm' },
   { href: '/admin/crm/contacts', label: 'Contacts', capability: 'crm' },
   { href: '/admin/crm/deals', label: 'Deals', capability: 'crm' },

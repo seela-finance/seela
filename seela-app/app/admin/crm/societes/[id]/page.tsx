@@ -7,10 +7,12 @@ import { isLifecycleStage, LIFECYCLE_LABEL } from '@/lib/crm-companies'
 import {
   buildTimeline, daysUntil, OUTCOME_LABEL, PRIORITY_LABEL, type ActivityRow, type AdminEventRow, type Priority,
 } from '@/lib/crm-activities'
-import { isDealStage } from '@/lib/crm-deals'
+import { CLOSED_DEAL_STAGES, isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
+import { LeadStatusControl } from '@/components/admin/crm/PrepipeForms'
+import { LEAD_SIGNAL_LABEL } from '@/lib/crm-prepipe'
 import CallButton from '@/components/admin/crm/CallButton'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
@@ -24,6 +26,7 @@ type Company = {
   legal_form: string | null; naf_code: string | null; creation_year: number | null; headcount_bracket: string | null
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
+  lead_status: string | null; lead_channel: string | null; lead_signal: string | null; lead_entered_at: string | null; lead_exit_reason: string | null; lead_next_date: string | null
 }
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
 type Request = { id: string; status: string | null; total_amount: number | null; duration_months: number | null; created_at: string }
@@ -127,6 +130,16 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
               {c.seela_score_grade && <span className="ev-tag">Score {c.seela_score_grade} · {c.seela_score}</span>}
             </div>
           </section>
+          <Card title="Prospection">
+            <LeadStatusControl companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
+            {c.lead_status && (
+              <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+                {[c.lead_signal && `Entrée : ${LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}`, c.lead_entered_at && `le ${fmtDate(c.lead_entered_at)}`,
+                  c.lead_status === 'disqualifie' && c.lead_exit_reason && `Raison : ${c.lead_exit_reason}`,
+                  c.lead_status === 'pas_maintenant' && c.lead_next_date && `Relance le ${fmtDate(c.lead_next_date)}`].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </Card>
           <Card title="À propos de cette société">
             <dl className="divide-y divide-[var(--line)] mb-3">
               {props.map(([k, v]) => (
@@ -224,11 +237,11 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                   {(d.next_action || d.next_action_date) && (
                     <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{d.next_action ?? 'Prochaine action'}{d.next_action_date ? ` · ${fmtDate(d.next_action_date)}` : ''}</span>
                   )}
-                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'a_contacter'} />
+                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'pending_qualification'} />
                 </li>
               ))}
             </ul>
-            {deals.length > 0 && <Link href="/admin/crm/deals" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pipeline · {deals.filter(d => d.stage !== 'signe' && d.stage !== 'perdu').length} en cours</Link>}
+            {deals.length > 0 && <Link href="/admin/crm/deals" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pipeline · {deals.filter(d => !(CLOSED_DEAL_STAGES as string[]).includes(d.stage)).length} en cours</Link>}
           </Card>
           <Card title={`Dossiers (${requests.length})`}>
             {requests.length === 0 && <p className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>Aucun dossier.</p>}
