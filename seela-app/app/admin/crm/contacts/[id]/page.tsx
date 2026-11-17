@@ -16,7 +16,7 @@ import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 
 type Contact = {
   id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null
-  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; user_id: string | null; owner_id: string | null
+  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; headline: string | null; location: string | null; user_id: string | null; owner_id: string | null
   company_id: string | null; created_at: string; companies: { name: string; lifecycle_stage: string } | null
 }
 
@@ -54,6 +54,8 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
     ['Email', c.email],
     ['Téléphone', c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : null],
     ['Poste', c.job_title],
+    ['Accroche LinkedIn', c.headline],
+    ['Localisation', c.location],
     ['Persona', c.persona],
     ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Profil</a> : null],
     ['Propriétaire', nameOf(c.owner_id)],

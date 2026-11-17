@@ -2,14 +2,14 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
 import { lemlistEntry, type LeadEvent } from '@/lib/crm-prepipe'
-import { companyNameFor, emailHtmlToText, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
+import { companyNameFor, emailHtmlToText, fillEmpty, mapLemlistLead, type LemlistLead, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
 const PAGE = 100
 const MAX_PAGES = 100
 const LOCK_MS = 15 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number }
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
@@ -33,6 +33,31 @@ async function fetchInbox(key: string, lemlistContactId: string): Promise<Lemlis
     if (!json.pagination?.nextPage) break
   }
   return out
+}
+
+/**
+ * À l'arrivée d'un lead (ou s'il n'a jamais été complété) : la fiche Lemlist du lead remplit les champs vides du
+ * contact et de sa société. Une saisie de l'équipe n'est jamais écrasée. Marqué complété par l'identifiant Lemlist.
+ */
+async function completeLead(db: SupabaseClient, key: string, email: string, contact: { id: string; company_id: string | null }, stats: LemlistSyncResult) {
+  const { data: current } = await db.from('contacts').select('first_name, last_name, job_title, linkedin_url, headline, location, lemlist_contact_id').eq('id', contact.id).single()
+  if (!current || current.lemlist_contact_id) return
+  const res = await fetch(`https://api.lemlist.com/api/leads/${encodeURIComponent(email)}`, { headers: authHeader(key), cache: 'no-store' })
+  if (!res.ok) return
+  const mapped = mapLemlistLead((await res.json()) as LemlistLead)
+  const contactPatch = fillEmpty(current, mapped.contact)
+  if (!contactPatch.lemlist_contact_id) contactPatch.lemlist_contact_id = mapped.contact.lemlist_contact_id ?? 'inconnu'
+  const { error } = await db.from('contacts').update({ ...contactPatch, updated_at: new Date().toISOString() }).eq('id', contact.id)
+  if (error) throw error
+  if (contact.company_id) {
+    const { data: company } = await db.from('companies').select('lemlist_industry, headcount_bracket, creation_year, location, description, linkedin_url').eq('id', contact.company_id).single()
+    const companyPatch = company ? fillEmpty(company, mapped.company) : {}
+    if (Object.keys(companyPatch).length) {
+      const { error: cErr } = await db.from('companies').update({ ...companyPatch, updated_at: new Date().toISOString() }).eq('id', contact.company_id)
+      if (cErr) throw cErr
+    }
+  }
+  stats.leadsCompleted++
 }
 
 /** Types des étapes de chaque campagne, dans l'ordre de la séquence (pour l'avancement des leads). */
@@ -118,7 +143,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
   if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -130,7 +155,11 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
     const events = newSince(all, cursor)
     const leads = new Map<string, { id: string; company_id: string | null }>()
     for (const e of events) {
-      if (!leads.has(e.lead.email)) leads.set(e.lead.email, await resolveLead(db, e.lead, stats))
+      if (!leads.has(e.lead.email)) {
+        const lead = await resolveLead(db, e.lead, stats)
+        leads.set(e.lead.email, lead)
+        await completeLead(db, key, e.lead.email, lead, stats)
+      }
     }
     const rows = events.map(e => {
       const lead = leads.get(e.lead.email)!

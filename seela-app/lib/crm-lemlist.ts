@@ -168,3 +168,41 @@ export function emailHtmlToText(html: string | null | undefined): string | null 
   s = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
   return s ? s.slice(0, 10000) : null
 }
+
+// ─── Fiche du lead Lemlist (GET /api/leads/{email}) → champs du contact et de la société ─────
+
+export type LemlistLead = {
+  contactId?: string | null; firstName?: string | null; lastName?: string | null; jobTitle?: string | null; linkedinUrl?: string | null
+  tagline?: string | null; location?: string | null; companyName?: string | null; companyDomain?: string | null; companyIndustry?: string | null
+  companySize?: string | null; companyFoundedOn?: string | number | null; companyLocation?: string | null; companyDescription?: string | null
+  companyLinkedinUrl?: string | null
+}
+
+const txt = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null)
+const url = (v: unknown) => { const s = txt(v, 500); return s && /^https?:\/\//i.test(s) ? s : s ? `https://${s.replace(/^\/+/, '')}` : null }
+
+export function mapLemlistLead(l: LemlistLead) {
+  const year = Number(String(l.companyFoundedOn ?? '').match(/\d{4}/)?.[0])
+  return {
+    contact: {
+      first_name: txt(l.firstName, 100), last_name: txt(l.lastName, 100), job_title: txt(l.jobTitle, 200), linkedin_url: url(l.linkedinUrl),
+      headline: txt(l.tagline, 300), location: txt(l.location, 200), lemlist_contact_id: txt(l.contactId, 100),
+    },
+    company: {
+      lemlist_industry: txt(l.companyIndustry, 200), headcount_bracket: txt(l.companySize, 50),
+      creation_year: Number.isInteger(year) && year > 1800 && year <= 2100 ? year : null,
+      location: txt(l.companyLocation, 200), description: txt(l.companyDescription, 3000), linkedin_url: url(l.companyLinkedinUrl),
+    },
+  }
+}
+
+/** Ne garde que ce qui remplit un champ vide : une saisie de l'équipe n'est jamais écrasée. */
+export function fillEmpty<T extends Record<string, unknown>>(existing: Record<string, unknown>, patch: T): Partial<T> {
+  const out: Partial<T> = {}
+  for (const k of Object.keys(patch) as (keyof T & string)[]) {
+    const v = patch[k]
+    const cur = existing[k]
+    if (v !== null && v !== undefined && (cur === null || cur === undefined || cur === '')) out[k] = v
+  }
+  return out
+}
