@@ -7,7 +7,7 @@ description: Démarre ou reprend une session de développement sur l'app everlea
 
 Tu travailles sur **everlease** (ancien nom : Seela), plateforme de financement locatif pour les professionnels. Le code vit dans `seela-app/` (Next.js App Router, Supabase, Tailwind). `seela-bos/` est un workspace business : **n'y touche jamais**.
 
-Plusieurs personnes codent sur ce dépôt, chacune avec Claude : Louis (fondateur, seul à valider la prod) et Lorenzo. Les règles ci-dessous évitent qu'on se marche dessus et protègent la prod.
+Plusieurs personnes codent sur ce dépôt, chacune avec Claude : Louis (fondateur) et Lorenzo. Les deux peuvent mettre en prod ; Louis est prévenu automatiquement de chaque mise en prod. Les règles ci-dessous évitent qu'on se marche dessus et gardent la prod saine.
 
 ## 1. Au démarrage : vérifier l'environnement
 
@@ -33,14 +33,16 @@ Termine par : ce qui est prêt, ce qui manque, les PR ouvertes qui touchent la z
 
 **Circuit**
 - Une branche par sujet, partie de `develop` à jour : `lorenzo/<sujet-court>` (ou `agent/<n°-issue>-<sujet>` pour une issue).
-- PR vers `develop` uniquement. Merge dans `develop` seulement quand la CI est verte.
-- **Jamais de push ni de merge sur `main`**. `main` est la prod : seul Louis la valide, par une PR `develop` → `main`.
+- PR vers `develop`. Merge dans `develop` seulement quand la CI est verte.
+- **Mettre en prod** = une PR `develop` → `main`, jamais un push direct sur `main`. Lorenzo peut la porter lui-même : prépare-la (récapitulatif, ordre des migrations, ce qu'il reste à vérifier à l'œil), puis merge-la **seulement après son accord explicite** dans la conversation et une CI verte. Suis le déploiement Vercel et vérifie everlease.fr après.
+- **Louis est prévenu automatiquement** : chaque arrivée de code sur `main` ouvre une issue « Mise en prod » qui lui est assignée (`.github/workflows/notify-prod.yml`). Écris donc des titres et descriptions de PR qu'il comprend sans contexte.
+- Avant de mettre en prod, vérifie ce que `develop` contient d'autre (`git log origin/main..origin/develop`) : tu mets en prod tout `develop`, y compris le travail des autres. Si une PR d'un autre n'est pas prête, préviens avant de merger.
 - Pas de force push, pas de réécriture d'historique sur une branche partagée.
 
 **Base de données**
-- Ne jamais exécuter de SQL, ni toucher la base de **production**.
-- Toute évolution de schéma = un **nouveau** fichier `seela-app/supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`, rejouable (`IF NOT EXISTS`, blocs `DO $$ … duplicate_object`). Ne jamais modifier une migration existante.
-- Louis l'applique sur le staging, puis en prod. Une PR avec migration attend son application sur le staging avant d'entrer dans `develop`.
+- Toute évolution de schéma = un **nouveau** fichier `seela-app/supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`, rejouable (`IF NOT EXISTS`, blocs `DO $$ … duplicate_object`). Ne jamais modifier une migration existante. Jamais de SQL improvisé hors de ce fichier.
+- Application : d'abord sur le **staging** (avant d'entrer dans `develop`), puis en **prod** dans l'ordre écrit dans la PR de mise en prod. C'est Lorenzo ou Louis qui colle le fichier dans l'éditeur SQL de Supabase ; toi, tu prépares le SQL sans commentaires et tu dis dans quel projet le coller.
+- Tu n'agis jamais directement sur la base de **prod** (ni outil, ni MCP, ni script). Un accès Supabase donné à Claude (MCP) ne doit couvrir que le projet de staging, jamais une organisation qui contient la prod : si l'écran d'autorisation propose une organisation entière avec la prod, refuse et préviens.
 - Le code doit fonctionner **avant comme après** la migration, sinon le dire dans la PR avec l'ordre exact (exemple : `requireAdmin` lit `admins.*` pour survivre à l'ajout de la colonne `role`).
 - Tester la migration en local avant la PR, par exemple avec PGlite sur une copie des tables concernées, y compris avec des données qui ressemblent à la prod.
 
@@ -72,10 +74,11 @@ Termine par : ce qui est prêt, ce qui manque, les PR ouvertes qui touchent la z
    - dans `seela-app/` : `npm run check`, `npm run test:e2e`, puis `npm run test:staging`. Tout doit être vert ; ne jamais affaiblir ni `skip` un test pour passer.
 5. **Relire les captures** de `test-results/screens/` (desktop et mobile).
 6. **PR** vers `develop`, au format de `AGENT.md` §5 : ce qui change, comment c'est testé (résultats réels), ce qui n'est pas couvert, le risque (`risk:high` pour SQL, auth, `app/api`, montants, emails, droits).
-7. **Merge** dans `develop` quand la CI est verte, puis prévenir Louis de ce qui attend sa validation pour la prod.
+7. **Merge** dans `develop` quand la CI est verte. Pour la prod, voir « Mettre en prod » ci-dessus.
 
 ## 4. Pièges connus
 
+- **Pas d'accès aux previews Vercel pour Lorenzo** (décision du 17/11/2026, pas de place dans l'équipe Vercel) : les URL de preview (`develop`, PR) demandent une connexion Vercel. Ne les propose pas pour tester : lance l'app en local (`npm run dev`, `.env.local` sur le staging) et `npm run test:staging`. Si le check Vercel d'une PR ou d'une mise en prod affiche « Authorization required » (commit d'un auteur hors de l'équipe Vercel), le déploiement attend : préviens Louis, qui l'approuve dans Vercel. Ne désactive jamais la protection des previews.
 - `npm run check` échoue au prerender de `/auth` sans variables Supabase publiques : charger `.env.staging.local` (variables publiques seulement) avant le build local.
 - Turbopack : un `.next/dev` corrompu bloque le serveur de test → `rm -rf .next/dev`. Avant `tsc`, `rm -rf .next/types .next/dev/types`.
 - Le serveur de dev peut dépasser 2 min au démarrage (polices Google, `next/font`) : relancer une fois avant de chercher plus loin.

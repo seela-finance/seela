@@ -1,0 +1,80 @@
+name: Mise en prod (notification)
+
+# À chaque arrivée de code sur `main` (= déploiement de la prod par Vercel), une issue est ouverte et
+# assignée à Louis : il reçoit un email avec les PR parties en prod, leurs auteurs et les migrations SQL.
+# Aucun secret : le jeton GitHub du workflow suffit.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  notify:
+    name: Prévenir Louis
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ouvrir l'issue de mise en prod
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          NOTIFY: louisbrtn
+        run: |
+          set -euo pipefail
+          # Premier push d'une branche : pas de « avant », on prend le dernier commit seul
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            RANGE="$AFTER~1..$AFTER"
+          else
+            RANGE="$BEFORE..$AFTER"
+          fi
+
+          body=$(mktemp)
+          {
+            echo "Mise en prod poussée par **$ACTOR** ($(date -u '+%d/%m/%Y %H:%M') UTC). Vercel déploie everlease.fr à partir de \`${AFTER:0:7}\`."
+            echo
+            echo "## PR parties en prod"
+          } > "$body"
+
+          prs=$(git log --format=%s "$RANGE" | grep -oE 'Merge pull request #[0-9]+' | grep -oE '[0-9]+' | sort -un || true)
+          if [ -z "$prs" ]; then
+            echo "- Aucune PR identifiée : commit direct sur \`main\` (à vérifier)." >> "$body"
+            git log --format='  - `%h` %s (%an)' "$RANGE" | head -20 >> "$body"
+          else
+            for n in $prs; do
+              gh pr view "$n" --repo "$REPO" --json number,title,author \
+                --jq '"- #\(.number) \(.title) (\(.author.login))"' >> "$body" || echo "- #$n" >> "$body"
+            done
+          fi
+
+          migrations=$(git diff --name-only "$RANGE" -- seela-app/supabase/migrations || true)
+          {
+            echo
+            echo "## Migrations SQL"
+            if [ -z "$migrations" ]; then
+              echo "Aucune."
+            else
+              echo "À appliquer en prod si ce n'est pas déjà fait (ordre indiqué dans la PR de mise en prod) :"
+              for f in $migrations; do echo "- \`$f\`"; done
+            fi
+            echo
+            echo "Fermer cette issue une fois la mise en prod vérifiée."
+          } >> "$body"
+
+          gh label create mise-en-prod --repo "$REPO" --color 0E7C5B --description "Notification de mise en prod" 2>/dev/null || true
+          gh issue create --repo "$REPO" \
+            --title "Mise en prod du $(date -u '+%d/%m/%Y') par $ACTOR" \
+            --label mise-en-prod \
+            --assignee "$NOTIFY" \
+            --body-file "$body"
