@@ -1,6 +1,7 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { bestPhone, ENRICH_BATCH, FINAL_STATUSES, pickEnrichable, toFullEnrichItem, type EnrichableContact, type FullEnrichResult } from '@/lib/crm-enrich'
+import { fillEmpty } from '@/lib/crm-lemlist'
+import { bestPhone, ENRICH_BATCH, FINAL_STATUSES, mapFullEnrichProfile, pickEnrichable, toFullEnrichItem, type EnrichableContact, type FullEnrichResult } from '@/lib/crm-enrich'
 
 const API = 'https://app.fullenrich.com/api/v2'
 
@@ -78,12 +79,23 @@ export async function checkPhoneEnrichment(db: SupabaseClient, id: string): Prom
   let found = 0
   for (const r of body.data ?? []) {
     const contactId = r.custom?.contact_id
+    if (!contactId || !(row.contact_ids as string[]).includes(contactId)) continue
     const phone = bestPhone(r)
-    if (!contactId || !phone || !(row.contact_ids as string[]).includes(contactId)) continue
-    const { data: updated } = await db.from('contacts').update({ phone, updated_at: new Date().toISOString() }).eq('id', contactId).or('phone.is.null,phone.eq.').select('id, company_id')
-    if (!updated?.length) continue
+    const mapped = mapFullEnrichProfile(r)
+    const { data: current } = await db.from('contacts').select('company_id, phone, job_title, headline, linkedin_url, location, job_started_at').eq('id', contactId).maybeSingle()
+    if (!current) continue
+    // Téléphone et type de ligne seulement si le téléphone est encore vide ; le reste ne remplit que des champs vides
+    const setPhone = !!phone && !current.phone?.trim()
+    const patch = { ...fillEmpty(current, mapped.contact), ...(setPhone ? { phone, ...mapped.line } : {}) }
+    if (Object.keys(patch).length) await db.from('contacts').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', contactId)
+    if (current.company_id) {
+      const { data: company } = await db.from('companies').select('website, description, creation_year, headcount, headcount_bracket, company_type, lemlist_industry, linkedin_url').eq('id', current.company_id).maybeSingle()
+      const cPatch = company ? fillEmpty(company, mapped.company) : {}
+      if (Object.keys(cPatch).length) await db.from('companies').update({ ...cPatch, updated_at: new Date().toISOString() }).eq('id', current.company_id)
+    }
+    if (!setPhone) continue
     found++
-    await db.from('crm_activities').insert({ type: 'note', source: 'fullenrich', contact_id: contactId, company_id: updated[0].company_id, body: `Téléphone trouvé par FullEnrich : ${phone}` })
+    await db.from('crm_activities').insert({ type: 'note', source: 'fullenrich', contact_id: contactId, company_id: current.company_id, body: `Téléphone trouvé par FullEnrich : ${phone}${mapped.line.phone_line_type ? ` (${mapped.line.phone_line_type === 'MOBILE' ? 'mobile' : mapped.line.phone_line_type === 'LANDLINE' ? 'fixe' : mapped.line.phone_line_type.toLowerCase()})` : ''}` })
   }
   const credits = body.cost?.credits ?? null
   await db.from('crm_enrichments').update({ status: body.status, found, credits, finished_at: new Date().toISOString() }).eq('id', id)

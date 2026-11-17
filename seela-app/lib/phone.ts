@@ -16,3 +16,15 @@ export function formatPhone(e164: string): string {
   const fr = /^\+33(\d)(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164)
   return fr ? `+33 ${fr.slice(1).join(' ')}` : e164
 }
+
+export const LINE_TYPE_LABEL: Record<string, string> = { MOBILE: 'Mobile', LANDLINE: 'Fixe', VOIP: 'VoIP' }
+
+/** « depuis 3 mois », « depuis 2 ans » à partir d'une date de prise de poste. */
+export function sinceLabel(date: string | null, now: Date): string | null {
+  if (!date) return null
+  const months = (now.getFullYear() - Number(date.slice(0, 4))) * 12 + (now.getMonth() + 1 - Number(date.slice(5, 7)))
+  if (!Number.isFinite(months) || months < 0) return null
+  if (months < 1) return 'depuis moins d’un mois'
+  if (months < 24) return `depuis ${months} mois`
+  return `depuis ${Math.floor(months / 12)} ans`
+}

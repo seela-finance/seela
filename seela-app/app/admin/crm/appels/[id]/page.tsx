@@ -9,13 +9,14 @@ import { contactReaction, LEAD_CHANNEL_LABEL, LEAD_SIGNAL_LABEL, LEAD_STATUS_LAB
 import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 import { contactName } from '@/lib/crm-deals'
 import { SessionBar, SessionContacts, type SessionContactInfo } from '@/components/admin/crm/CallSession'
+import { LINE_TYPE_LABEL, sinceLabel } from '@/lib/phone'
 
 type Company = {
   id: string; name: string; domain: string | null; website: string | null; sector: string | null; headcount_bracket: string | null
   creation_year: number | null; legal_form: string | null; naf_code: string | null; address: string | null; revenue_declared: number | null
-  result_declared: number | null; signal: string | null; source: string | null; lead_status: string | null; lead_channel: string | null; lead_signal: string | null
+  result_declared: number | null; headcount: number | null; signal: string | null; source: string | null; lead_status: string | null; lead_channel: string | null; lead_signal: string | null
 }
-type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; linkedin_url: string | null }
+type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; linkedin_url: string | null; phone_line_type: string | null; job_started_at: string | null }
 type Activity = { id: string; type: string; call_outcome: string | null; body: string | null; occurred_at: string; contact_id: string | null }
 
 const city = (address: string | null) => address?.match(/\d{5}\s+(.+)$/)?.[1] ?? null
@@ -35,8 +36,8 @@ export default async function CallSessionCompanyPage({ params }: { params: Promi
   if (!isUuid(id)) notFound()
   const db = createAdminClient()
   const [companyRes, contactsRes, activitiesRes, lemlistRes] = await Promise.all([
-    db.from('companies').select('id, name, domain, website, sector, headcount_bracket, creation_year, legal_form, naf_code, address, revenue_declared, result_declared, signal, source, lead_status, lead_channel, lead_signal').eq('id', id).maybeSingle(),
-    db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, linkedin_url').eq('company_id', id).order('created_at'),
+    db.from('companies').select('id, name, domain, website, sector, headcount_bracket, headcount, creation_year, legal_form, naf_code, address, revenue_declared, result_declared, signal, source, lead_status, lead_channel, lead_signal').eq('id', id).maybeSingle(),
+    db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, linkedin_url, phone_line_type, job_started_at').eq('company_id', id).order('created_at'),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, contact_id').eq('company_id', id).in('type', ['call', 'note']).order('occurred_at', { ascending: false }).limit(200),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata, contact_id').eq('company_id', id).eq('source', 'lemlist').limit(5000),
   ])
@@ -54,6 +55,7 @@ export default async function CallSessionCompanyPage({ params }: { params: Promi
     const mine = calls.filter(a => a.contact_id === p.id)
     return {
       id: p.id, name: contactName(p), jobTitle: p.job_title, persona: p.persona, phone: p.phone, email: p.email, linkedin: p.linkedin_url,
+      lineType: p.phone_line_type ? LINE_TYPE_LABEL[p.phone_line_type] ?? null : null, jobSince: sinceLabel(p.job_started_at, new Date()),
       reaction: contactReaction(lemlistRows.filter(r => r.contact_id === p.id).map(r => r.event)),
       lastCall: mine[0] ? callLabel(mine[0]) : null, calls: mine.length,
       lastNote: activities.find(a => a.contact_id === p.id && a.body && a.body.trim())?.body ?? null,
@@ -80,7 +82,7 @@ export default async function CallSessionCompanyPage({ params }: { params: Promi
             <h2 className="ev-kicker mb-1">Pour l’approche</h2>
             <dl className="divide-y divide-[var(--line)]">
               <Row k="Secteur" v={c.sector} />
-              <Row k="Effectif" v={c.headcount_bracket} />
+              <Row k="Effectif" v={[c.headcount && `${c.headcount} salariés`, c.headcount_bracket].filter(Boolean).join(' · ') || null} />
               <Row k="CA déclaré" v={c.revenue_declared != null ? eur(Number(c.revenue_declared)) : null} />
               <Row k="Signal" v={c.signal} />
             </dl>

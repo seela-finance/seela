@@ -187,6 +187,7 @@ export function SessionBar({ companyId }: { companyId: string }) {
 export type SessionContactInfo = {
   id: string; name: string; jobTitle: string | null; persona: string | null; phone: string | null; email: string | null
   linkedin: string | null; reaction: string | null; lastCall: string | null; calls: number; lastNote: string | null
+  lineType: string | null; jobSince: string | null
 }
 
 const KEYS: Record<string, CallOutcome> = Object.fromEntries(CALL_OUTCOMES.map((o, i) => [String(i + 1), o]))
@@ -239,11 +240,11 @@ function ContactRow({ companyId, c, active, onCall, onDone }: { companyId: strin
           <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
             {c.name} {c.reaction && <span className="ev-tag ev-tag--accent ml-1">{c.reaction}</span>}
           </p>
-          <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{[c.jobTitle, c.persona].filter(Boolean).join(' · ') || '—'}</p>
+          <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{[c.jobTitle && (c.jobSince ? `${c.jobTitle} ${c.jobSince}` : c.jobTitle), c.persona].filter(Boolean).join(' · ') || '—'}</p>
           <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{c.lastCall ? `Dernier appel : ${c.lastCall} (${c.calls})` : 'Jamais appelé'}</p>
         </div>
         {e164
-          ? <a id={`call-${c.id}`} href={`tel:${e164}`} onClick={() => { startedAt.current = Date.now(); setSeconds(0); onCall() }} className="ev-btn ev-btn--primary ev-btn--sm">Appeler · {formatPhone(e164)}</a>
+          ? <a id={`call-${c.id}`} href={`tel:${e164}`} onClick={() => { startedAt.current = Date.now(); setSeconds(0); onCall() }} className="ev-btn ev-btn--primary ev-btn--sm">Appeler · {formatPhone(e164)}{c.lineType ? ` · ${c.lineType}` : ''}</a>
           : <span className="text-xs" style={{ color: 'var(--ink-3)' }}>Pas de numéro</span>}
       </div>
 

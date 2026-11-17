@@ -10,13 +10,14 @@ import { ActivityComposer } from '@/components/admin/crm/FicheForms'
 import { ContactPropertiesForm, type ContactValues } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
 import CallButton from '@/components/admin/crm/CallButton'
+import { LINE_TYPE_LABEL, sinceLabel } from '@/lib/phone'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
 import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 
 type Contact = {
   id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null
-  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; headline: string | null; location: string | null; user_id: string | null; owner_id: string | null
+  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; headline: string | null; location: string | null; phone_line_type: string | null; job_started_at: string | null; user_id: string | null; owner_id: string | null
   company_id: string | null; created_at: string; companies: { name: string; lifecycle_stage: string } | null
 }
 
@@ -54,6 +55,8 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
     ['Email', c.email],
     ['Téléphone', c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : null],
     ['Poste', c.job_title],
+    ['Type de ligne', c.phone_line_type ? LINE_TYPE_LABEL[c.phone_line_type] ?? c.phone_line_type : null],
+    ['En poste', c.job_started_at ? `${sinceLabel(c.job_started_at, new Date())} (${fmtDate(c.job_started_at)})` : null],
     ['Accroche LinkedIn', c.headline],
     ['Localisation', c.location],
     ['Persona', c.persona],
