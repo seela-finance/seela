@@ -8,6 +8,7 @@ import { CrmError } from '@/lib/crm-companies'
 import { parseContactInput } from '@/lib/crm-activities'
 import { isDealStage, parseContactPatch, parseDealInput, DEAL_STAGE_LABEL } from '@/lib/crm-deals'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
+import { syncLemlist } from '@/lib/lemlist-sync'
 
 export type CrmFormState = { ok: boolean; message: string; id?: string } | null
 type Db = ReturnType<typeof createAdminClient>
@@ -101,5 +102,16 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
     if (error) throw error
     await logAdminEvent(admin, { action: `CRM : deal « ${data.name} » → ${DEAL_STAGE_LABEL[stage]}`, after: { company_id: data.company_id, deal_id: id, stage } })
     return { message: 'Étape mise à jour.' }
+  })
+}
+
+// ─── Lemlist ─────────────────────────────────────────────────────────────────
+
+export async function syncLemlistAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    const result = await syncLemlist(db, { full: form.get('full') === 'on' })
+    if ('skipped' in result) throw new CrmError(result.skipped)
+    await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
+    return { message: `${result.imported} événement(s) importé(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })
 }

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createContactAction, createDealAction, moveDealAction, updateContactAction, type CrmFormState } from '@/app/admin/crm/crm-actions'
+import { createContactAction, createDealAction, moveDealAction, syncLemlistAction, updateContactAction, type CrmFormState } from '@/app/admin/crm/crm-actions'
 import { PERSONAS } from '@/lib/crm-activities'
 import { DEAL_STAGES, DEAL_STAGE_LABEL, type DealStage } from '@/lib/crm-deals'
 
@@ -226,6 +226,21 @@ export function DealStageSelect({ dealId, stage }: { dealId: string; stage: Deal
         </div>
       )}
       {state && !state.ok && <p className="text-xs" style={{ color: 'var(--danger)' }}>{state.message}</p>}
+    </form>
+  )
+}
+
+// ─── Lemlist ─────────────────────────────────────────────────────────────────
+
+export function LemlistSyncButton({ neverSynced }: { neverSynced: boolean }) {
+  const [state, submit, pending] = useActionState<CrmFormState, FormData>(syncLemlistAction, null)
+  return (
+    <form action={submit} className="flex flex-col gap-2">
+      {neverSynced && <input type="hidden" name="full" value="on" />}
+      <button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm self-start" disabled={pending}>
+        {pending ? 'Synchronisation…' : neverSynced ? 'Importer l’historique Lemlist' : 'Synchroniser maintenant'}
+      </button>
+      <Alert state={state} />
     </form>
   )
 }

@@ -27,7 +27,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
     db.from('contacts').select('*, companies ( name, lifecycle_stage )').eq('id', id).maybeSingle(),
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('contact_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).order('occurred_at', { ascending: false }).limit(100),
   ])
   const c = contactRes.data as Contact | null
   if (!c) notFound()
@@ -100,9 +100,10 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
                     <span className="font-medium" style={{ color: 'var(--ink)' }}>{e.label}</span>
                     {e.outcome && <span className={OUTCOME_TAG[e.outcome] ?? 'ev-tag'}>{OUTCOME_LABEL[e.outcome]}</span>}
                   </div>
-                  {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
+                  {e.title && <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{e.title}</p>}
+                    {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
                   <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                    {nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
+                    {e.summary ?? nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
                     {e.mentions.length > 0 && ` · mentionne ${e.mentions.map(m => nameOf(m)).filter(Boolean).join(', ')}`}
                   </p>
                 </li>

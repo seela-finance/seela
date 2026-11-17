@@ -54,7 +54,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
   ])
   const c = companyRes.data as Company | null
@@ -170,9 +170,10 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                       {e.outcome && <span className={OUTCOME_TAG[e.outcome] ?? 'ev-tag'}>{OUTCOME_LABEL[e.outcome]}</span>}
                       {e.kind === 'event' && <span className="ev-tag">Journal</span>}
                     </div>
+                    {e.title && <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{e.title}</p>}
                     {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
                     <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                      {nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
+                      {e.summary ?? nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
                       {e.mentions.length > 0 && ` · mentionne ${e.mentions.map(m => nameOf(m)).filter(Boolean).join(', ')}`}
                     </p>
                   </li>
