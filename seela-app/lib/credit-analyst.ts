@@ -64,15 +64,67 @@ const sirenOf = (s: string | null | undefined) => {
   return digits.length === 9 || digits.length === 14 ? digits.slice(0, 9) : null
 }
 
+// Sur cette version, le client est un `profiles` (compte + société). Le CRM (sociétés et contacts séparés)
+// arrive avec une mise en prod ultérieure : l'analyste lit déjà le dossier sous la forme société + contact.
+const PROFILE_COLUMNS = `company_name, siren, legal_form, naf_code, date_creation, revenue_bracket, age_bracket, headcount_bracket,
+  revenue_declared, result_declared, kyc_completed, financial_docs_uploaded, seela_score, seela_score_grade, first_name, last_name, email, phone, role`
+
+type ProfileRow = {
+  company_name: string | null
+  siren: string | null
+  legal_form: string | null
+  naf_code: string | null
+  date_creation: number | null
+  revenue_bracket: string | null
+  age_bracket: string | null
+  headcount_bracket: string | null
+  revenue_declared: number | null
+  result_declared: number | null
+  kyc_completed: boolean | null
+  financial_docs_uploaded: boolean | null
+  seela_score: number | null
+  seela_score_grade: string | null
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  phone: string | null
+  role: string | null
+}
+
+function companyOf(p: ProfileRow | null | undefined): CreditDossier['company'] {
+  if (!p) return null
+  return {
+    name: p.company_name,
+    siren: p.siren,
+    legal_form: p.legal_form,
+    naf_code: p.naf_code,
+    creation_year: p.date_creation == null ? null : Number(p.date_creation),
+    address: null,
+    revenue_bracket: p.revenue_bracket,
+    age_bracket: p.age_bracket,
+    headcount_bracket: p.headcount_bracket,
+    revenue_declared: p.revenue_declared == null ? null : Number(p.revenue_declared),
+    result_declared: p.result_declared == null ? null : Number(p.result_declared),
+    kyc_completed: p.kyc_completed,
+    financial_docs_uploaded: p.financial_docs_uploaded,
+    seela_score: p.seela_score == null ? null : Number(p.seela_score),
+    seela_score_grade: p.seela_score_grade,
+    lifecycle_stage: null,
+  }
+}
+
+const contactOf = (p: ProfileRow | null | undefined): CreditDossier['contact'] =>
+  p ? { first_name: p.first_name, last_name: p.last_name, email: p.email, phone: p.phone, job_title: p.role } : null
+
+const companyNameOf = (p: { company_name: string | null } | null | undefined) => p?.company_name?.trim() || 'Société sans nom'
+
 /** Rassemble tout ce que l'analyste doit voir : dossier, société, registre (client et fournisseur), historique, financeurs. */
 export async function loadCreditDossier(db: SupabaseClient, requestId: string): Promise<CreditDossier | null> {
   const { data: request, error } = await db
     .from('financing_requests')
     .select(`id, status, total_amount, duration_months, periodicite, document_type, notes, supplier_name, supplier_siren, supplier_address,
-      document_number, document_date, created_at, company_id,
-      companies(name, siren, legal_form, naf_code, creation_year, address, revenue_bracket, age_bracket, headcount_bracket, revenue_declared,
-        result_declared, kyc_completed, financial_docs_uploaded, seela_score, seela_score_grade, lifecycle_stage),
-      contacts(first_name, last_name, email, phone, job_title),
+      document_number, document_date, created_at, user_id,
+      profiles(${PROFILE_COLUMNS}),
       line_items(description, quantity, unit_price, total_price, category, equipment_family, equipment_type, selected),
       offers(leaser_name, monthly_payment, duration_months, rate, status, selected)`)
     .eq('id', requestId)
@@ -81,18 +133,18 @@ export async function loadCreditDossier(db: SupabaseClient, requestId: string): 
   if (!request) return null
 
   const r = request as unknown as CreditDossier['request'] & {
-    company_id: string | null
-    companies: CreditDossier['company']
-    contacts: CreditDossier['contact']
+    user_id: string | null
+    profiles: ProfileRow | null
     line_items: CreditDossier['lines']
     offers: CreditDossier['offers']
   }
+  const company = companyOf(r.profiles)
 
   const [history, registry, supplierRegistry, leaserVerdicts] = await Promise.all([
-    r.company_id
-      ? db.from('financing_requests').select('id, status, total_amount, created_at').eq('company_id', r.company_id).neq('id', requestId).order('created_at')
+    r.user_id
+      ? db.from('financing_requests').select('id, status, total_amount, created_at').eq('user_id', r.user_id).neq('id', requestId).order('created_at')
       : Promise.resolve({ data: [] as CreditDossier['history'] }),
-    fetchRegistry(r.companies?.siren),
+    fetchRegistry(company?.siren),
     fetchRegistry(sirenOf(r.supplier_siren)),
     // Le diagnostic des financeurs est un confort : sa panne n'empêche pas l'analyse
     diagnoseMatching(db, requestId).catch(err => { console.error('[credit-analyst] diagnostic', err); return [] }),
@@ -100,12 +152,12 @@ export async function loadCreditDossier(db: SupabaseClient, requestId: string): 
 
   return {
     request: r,
-    company: r.companies ?? null,
-    contact: r.contacts ?? null,
+    company,
+    contact: contactOf(r.profiles),
     lines: r.line_items ?? [],
     offers: r.offers ?? [],
     history: (history.data ?? []) as CreditDossier['history'],
-    registry: lookup(r.companies?.siren, registry),
+    registry: lookup(company?.siren, registry),
     supplierRegistry: lookup(sirenOf(r.supplier_siren), supplierRegistry),
     leaserVerdicts,
   }
@@ -208,9 +260,8 @@ export async function notifyTeam(record: CreditAnalysisRecord, companyName: stri
 export async function analyzeSubmission(db: SupabaseClient, requestId: string): Promise<void> {
   try {
     const record = await runCreditAnalysis(db, requestId, 'submission')
-    const { data } = await db.from('financing_requests').select('companies(name)').eq('id', requestId).maybeSingle()
-    const company = (data as unknown as { companies: { name: string | null } | null } | null)?.companies
-    await notifyTeam(record, company?.name?.trim() || 'Société sans nom')
+    const { data } = await db.from('financing_requests').select('profiles(company_name)').eq('id', requestId).maybeSingle()
+    await notifyTeam(record, companyNameOf((data as unknown as { profiles: { company_name: string | null } | null } | null)?.profiles))
   } catch (err) {
     console.error('[credit-analyst] soumission', requestId, err)
   }
@@ -225,7 +276,7 @@ type RecapRow = {
   duration_months: number | null
   document_type: string | null
   created_at: string
-  companies: { name: string | null; siren: string | null } | null
+  profiles: { company_name: string | null; siren: string | null } | null
   offers: { leaser_name: string | null; monthly_payment: number | null; selected: boolean | null }[] | null
   credit_analyses: { avis: string; analysis: CreditAnalysis; indicators: CreditIndicators; created_at: string }[] | null
 }
@@ -237,7 +288,7 @@ type RecapRow = {
 export async function buildRecap(db: SupabaseClient, since: Date, limit: number, now: Date = new Date()): Promise<Recap> {
   const { data, error } = await db
     .from('financing_requests')
-    .select(`id, status, total_amount, duration_months, document_type, created_at, companies(name, siren),
+    .select(`id, status, total_amount, duration_months, document_type, created_at, profiles(company_name, siren),
       offers(leaser_name, monthly_payment, selected), credit_analyses(avis, analysis, indicators, created_at)`)
     .neq('status', RS.draft)
     .gte('created_at', since.toISOString())
@@ -264,8 +315,8 @@ export async function buildRecap(db: SupabaseClient, since: Date, limit: number,
     return {
       id: r.id,
       ref: requestLabel(r),
-      companyName: r.companies?.name?.trim() || 'Société sans nom',
-      siren: r.companies?.siren ?? null,
+      companyName: companyNameOf(r.profiles),
+      siren: r.profiles?.siren ?? null,
       status: r.status,
       amount: r.total_amount == null ? null : Number(r.total_amount),
       duration: r.duration_months,
