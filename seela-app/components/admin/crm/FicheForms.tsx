@@ -139,7 +139,7 @@ export function AddContactForm({ companyId }: { companyId: string }) {
 
 // ─── Activité ────────────────────────────────────────────────────────────────
 
-export function ActivityComposer({ companyId, contacts, team }: { companyId: string; contacts: ContactOption[]; team: Member[] }) {
+export function ActivityComposer({ companyId, contacts, team, defaultContactId = '' }: { companyId: string; contacts: ContactOption[]; team: Member[]; defaultContactId?: string }) {
   const [type, setType] = useState<ActivityType>('note')
   const [state, submit, pending] = useActionState<FicheState, FormData>(addActivityAction, null)
   const ref = useResetOnSuccess(state)
@@ -174,7 +174,7 @@ export function ActivityComposer({ companyId, contacts, team }: { companyId: str
       <textarea name="body" className="ev-input" placeholder={type === 'call' ? 'Compte rendu (facultatif)' : 'Écrivez une note, collez un transcript…'} aria-label="Contenu" />
       <div className="flex flex-wrap gap-3 items-center text-sm">
         {contacts.length > 0 && (
-          <select name="contact_id" aria-label="Contact concerné" className="ev-input" style={{ width: 'auto' }} defaultValue="">
+          <select name="contact_id" aria-label="Contact concerné" className="ev-input" style={{ width: 'auto' }} defaultValue={defaultContactId}>
             <option value="">Contact concerné…</option>
             {contacts.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>

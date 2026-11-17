@@ -7,7 +7,9 @@ import { isLifecycleStage, LIFECYCLE_LABEL } from '@/lib/crm-companies'
 import {
   buildTimeline, daysUntil, OUTCOME_LABEL, PRIORITY_LABEL, type ActivityRow, type AdminEventRow, type Priority,
 } from '@/lib/crm-activities'
+import { isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
+import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import {
   ActivityComposer, AddContactForm, AddTaskForm, CompleteTaskButton, PropertiesForm, type CompanyValues,
 } from '@/components/admin/crm/FicheForms'
@@ -20,6 +22,7 @@ type Company = {
 }
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
 type Request = { id: string; status: string | null; total_amount: number | null; duration_months: number | null; created_at: string }
+type Deal = { id: string; name: string; stage: string; amount: number | null; next_action: string | null; next_action_date: string | null }
 type Task = { id: string; title: string; due_date: string | null; priority: string; assignee_id: string | null }
 
 const STAGE_TAG: Record<string, string> = { prospect: 'ev-tag', client: 'ev-tag ev-tag--ok', partenaire: 'ev-tag ev-tag--accent', exclu: 'ev-tag ev-tag--danger' }
@@ -45,19 +48,21 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, dealsRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
     db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
   ])
   const c = companyRes.data as Company | null
   if (!c) notFound()
   const contacts = (contactsRes.data ?? []) as Contact[]
   const requests = (requestsRes.data ?? []) as Request[]
   const tasks = (tasksRes.data ?? []) as Task[]
+  const deals = (dealsRes.data ?? []) as Deal[]
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
 
@@ -184,7 +189,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
               {contacts.map(p => (
                 <li key={p.id} className="py-2.5 text-sm">
                   <span className="flex justify-between gap-2">
-                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{contactName(p)}</span>
+                    <Link href={`/admin/crm/contacts/${p.id}`} className="font-medium hover:underline" style={{ color: 'var(--ink)' }}>{contactName(p)}</Link>
                     {p.user_id && <span className="ev-tag ev-tag--accent">Accès app</span>}
                   </span>
                   <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.persona].filter(Boolean).join(' · ') || '—'}</span>
@@ -192,6 +197,24 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                 </li>
               ))}
             </ul>
+          </Card>
+          <Card title={`Deals (${deals.length})`} right={<NewDealButton companies={[]} team={team} fixedCompany={{ id: c.id, name: c.name }} small />}>
+            {deals.length === 0 && <p className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>Aucun deal.</p>}
+            <ul className="divide-y divide-[var(--line)]">
+              {deals.map(d => (
+                <li key={d.id} className="py-2.5 text-sm flex flex-col gap-1.5">
+                  <span className="flex justify-between gap-2">
+                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{d.name}</span>
+                    {d.amount != null && <span className="ev-mono" style={{ color: 'var(--ink)' }}>{eur(Number(d.amount))}</span>}
+                  </span>
+                  {(d.next_action || d.next_action_date) && (
+                    <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{d.next_action ?? 'Prochaine action'}{d.next_action_date ? ` · ${fmtDate(d.next_action_date)}` : ''}</span>
+                  )}
+                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'a_contacter'} />
+                </li>
+              ))}
+            </ul>
+            {deals.length > 0 && <Link href="/admin/crm/deals" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pipeline · {deals.filter(d => d.stage !== 'signe' && d.stage !== 'perdu').length} en cours</Link>}
           </Card>
           <Card title={`Dossiers (${requests.length})`}>
             {requests.length === 0 && <p className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>Aucun dossier.</p>}

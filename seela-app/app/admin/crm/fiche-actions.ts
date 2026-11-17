@@ -11,7 +11,7 @@ import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAG
 export type FicheState = { ok: boolean; message: string } | null
 type Db = ReturnType<typeof createAdminClient>
 
-// Droit `crm`, société existante, exécution, message ; la fiche est rafraîchie.
+// Droit `crm`, société existante, exécution, message ; tout le CRM est rafraîchi.
 async function run(form: FormData, action: (ctx: { admin: Admin; db: Db; companyId: string; teamIds: string[] }) => Promise<string>): Promise<FicheState> {
   const admin = await requireAdmin()
   if (!can(admin.role, 'crm')) return { ok: false, message: 'Votre rôle ne donne pas accès au CRM.' }
@@ -32,7 +32,7 @@ async function run(form: FormData, action: (ctx: { admin: Admin; db: Db; company
     console.error('[crm fiche]', err)
     return { ok: false, message: 'Enregistrement impossible, rien n’a été modifié. Réessayez.' }
   } finally {
-    revalidatePath(`/admin/crm/societes/${companyId}`)
+    revalidatePath('/admin/crm', 'layout')
   }
 }
 
