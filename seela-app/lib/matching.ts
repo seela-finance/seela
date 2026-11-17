@@ -41,17 +41,14 @@ export async function loadActiveLeasers(db: SupabaseClient, userId: string | nul
 async function loadMatching(db: SupabaseClient, requestId: string) {
   const { data: request, error } = await db
     .from('financing_requests')
-    .select('id, status, total_amount, duration_months, document_type, periodicite, user_id, line_items(category, equipment_family, equipment_type, total_price, selected), offers(leaser_name, status)')
+    .select('id, status, total_amount, duration_months, document_type, periodicite, user_id, companies(creation_year, age_bracket, seela_score), line_items(category, equipment_family, equipment_type, total_price, selected), offers(leaser_name, status)')
     .eq('id', requestId)
     .maybeSingle()
   if (error) throw new Error(`Matching : lecture du dossier impossible (${error.message})`)
   if (!request) return null
 
-  const { data: profile } = await db
-    .from('profiles')
-    .select('date_creation, age_bracket, seela_score')
-    .eq('id', request.user_id)
-    .single()
+  const company = (request as unknown as { companies: { creation_year: number | null; age_bracket: string | null; seela_score: number | null } | null }).companies
+  const profile = company ? { date_creation: company.creation_year, age_bracket: company.age_bracket, seela_score: company.seela_score } : null
 
   const lines = ((request.line_items ?? []) as (MatchingLine & { selected: boolean })[]).filter(l => l.selected)
   const existing = (request.offers ?? []) as { leaser_name: string | null; status: string | null }[]

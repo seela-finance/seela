@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { authCallbackUrl, authErrorMessage } from '@/lib/auth-redirect'
+import { loadAccount, onboardingDone } from '@/lib/account'
 
 type Mode = 'login' | 'signup'
 
@@ -55,25 +56,13 @@ function AuthForm() {
         const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         if (loginData.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('onboarding_completed')
-            .eq('id', loginData.user.id)
-            .single()
-          router.push(profile?.onboarding_completed ? '/app/dashboard' : '/app/onboarding')
+          router.push(onboardingDone(await loadAccount(supabase, loginData.user.id)) ? '/app/dashboard' : '/app/onboarding')
           router.refresh()
         }
       } else {
         // Le lien de confirmation revient sur ce site (et non sur l'adresse réglée dans Supabase, qui peut être périmée)
         const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: authCallbackUrl(window.location.origin) } })
         if (error) throw error
-
-        if (data.user) {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email: data.user.email ?? null,
-          })
-        }
 
         if (data.session) {
           router.push('/app/onboarding')

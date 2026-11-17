@@ -7,6 +7,7 @@ import { CLIENT_OFFER_COLUMNS, formatRate, leaserInitials, recommendedOffer } fr
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RS, requestDestination, requestStatusInfo } from '@/lib/status'
 import { requestLabel } from '@/lib/request-label'
+import { loadAccount } from '@/lib/account'
 
 
 type OfferRow = {
@@ -78,12 +79,7 @@ export default async function OfferDetailPage({
 
   const leaser = (leaserData?.leasers ?? null) as unknown as LeaserRow | null
 
-  // 3. Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_name, siren')
-    .eq('id', user.id)
-    .single()
+  const company = (await loadAccount(supabase, user.id))?.company ?? null
 
   // Derived display values
   const initials = leaserInitials(offer.leaser_name)
@@ -290,8 +286,8 @@ export default async function OfferDetailPage({
               initialStatus={offer.status}
               canConfirm={request.status === RS.offers_available}
               leaserName={offer.leaser_name}
-              companyName={profile?.company_name ?? ''}
-              siren={profile?.siren ?? ''}
+              companyName={company?.name ?? ''}
+              siren={company?.siren ?? ''}
               userEmail={user.email ?? ''}
             />
           </div>

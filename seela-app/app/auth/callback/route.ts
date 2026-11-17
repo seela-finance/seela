@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { afterConfirmPath } from '@/lib/auth-redirect'
+import { loadAccount, onboardingDone } from '@/lib/account'
 
 // Retour du lien de confirmation d'email : ouvre la session, puis onboarding ou tableau de bord.
 export async function GET(request: Request) {
@@ -26,8 +27,7 @@ export async function GET(request: Request) {
     )
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
-      const { data: profile } = await supabase.from('profiles').select('onboarding_completed').eq('id', data.user.id).maybeSingle()
-      return NextResponse.redirect(`${origin}${afterConfirmPath(profile?.onboarding_completed)}`)
+      return NextResponse.redirect(`${origin}${afterConfirmPath(onboardingDone(await loadAccount(supabase, data.user.id)))}`)
     }
   }
 

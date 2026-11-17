@@ -190,7 +190,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                 <li key={p.id} className="py-2.5 text-sm">
                   <span className="flex justify-between gap-2">
                     <Link href={`/admin/crm/contacts/${p.id}`} className="font-medium hover:underline" style={{ color: 'var(--ink)' }}>{contactName(p)}</Link>
-                    {p.user_id && <span className="ev-tag ev-tag--accent">Accès app</span>}
+                    {p.user_id && <Link href={`/admin/societes/${p.user_id}`} className="ev-tag ev-tag--accent" title="Voir le compte client : documents, registre, score">Accès app</Link>}
                   </span>
                   <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.persona].filter(Boolean).join(' · ') || '—'}</span>
                   {(p.phone || p.email) && <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.phone, p.email].filter(Boolean).join(' · ')}</span>}

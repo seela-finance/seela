@@ -65,7 +65,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
             <h1 className="ev-display text-2xl">{name}</h1>
             {c.job_title && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{c.job_title}</p>}
             <div className="flex flex-wrap gap-1.5">
-              {c.user_id && <span className="ev-tag ev-tag--accent">Accès app</span>}
+              {c.user_id && <Link href={`/admin/societes/${c.user_id}`} className="ev-tag ev-tag--accent">Accès app · voir le compte client</Link>}
               {c.persona && <span className="ev-tag">{c.persona}</span>}
             </div>
           </section>

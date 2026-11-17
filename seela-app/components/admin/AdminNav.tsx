@@ -14,7 +14,6 @@ const NAV: { href: string | null; label: string; capability: Capability }[] = [
   { href: '/admin/crm/contacts', label: 'Contacts', capability: 'crm' },
   { href: '/admin/crm/deals', label: 'Deals', capability: 'crm' },
   { href: '/admin', label: 'Dossiers', capability: 'view' },
-  { href: '/admin/societes', label: 'Comptes clients', capability: 'view' },
   { href: '/admin/leasers', label: 'Leasers', capability: 'manage_leasers' },
   { href: '/admin/equipe', label: 'Équipe', capability: 'manage_team' },
 ]

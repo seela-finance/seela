@@ -23,7 +23,7 @@ function row(id: string, status: string, patch: Partial<AdminRequestRow> = {}): 
     duration_months: 36,
     created_at: daysAgo(10),
     updated_at: null,
-    profiles: { company_name: 'Hôtel du Lac', siren: '123456789' },
+    companies: { name: 'Hôtel du Lac', siren: '123456789' },
     offers: [],
     ...patch,
   }
@@ -65,7 +65,7 @@ test('« Tous » : filtre de statut et plus récents en tête', () => {
 })
 
 test('recherche par SIREN, raison sociale (sans accents) et référence', () => {
-  const r = toAdminRequest(row('2cfabc4e-1234', 'submitted', { profiles: { company_name: 'Hôtel du Lac', siren: '123 456 789' } }))
+  const r = toAdminRequest(row('2cfabc4e-1234', 'submitted', { companies: { name: 'Hôtel du Lac', siren: '123 456 789' } }))
   expect(matchesSearch(r, '123456789')).toBe(true)
   expect(matchesSearch(r, '123 456')).toBe(true)
   expect(matchesSearch(r, 'hotel du')).toBe(true)
