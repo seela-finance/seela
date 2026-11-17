@@ -130,7 +130,8 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
       await expect(admin.getByText('Apporté par')).toBeVisible()
       await admin.getByLabel('Date de démarrage').fill('2026-12-01')
       await admin.getByRole('button', { name: 'Passer en contrat actif' }).click()
-      await expect(admin.getByText('Contrat démarré le 01/12/2026.')).toBeVisible()
+      // Le dossier passe en « actif » : le formulaire disparaît et la fiche affiche la date de début
+      await expect(admin.getByText('Début du contrat')).toBeVisible()
       const { data } = await db.from('financing_requests').select('status, contract_start_date').eq('id', requestId).single()
       expect(data).toMatchObject({ status: RS.active, contract_start_date: '2026-12-01' })
 
