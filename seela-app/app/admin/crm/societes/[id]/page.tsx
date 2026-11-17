@@ -10,6 +10,11 @@ import {
 import { isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
+import LemlistCard from '@/components/admin/crm/LemlistCard'
+import CallButton from '@/components/admin/crm/CallButton'
+import EmailCard from '@/components/admin/crm/EmailCard'
+import { summarizeMail, type MailRow } from '@/lib/crm-mail'
+import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 import {
   ActivityComposer, AddContactForm, AddTaskForm, CompleteTaskButton, PropertiesForm, type CompanyValues,
 } from '@/components/admin/crm/FicheForms'
@@ -48,13 +53,15 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, dealsRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, mailRes, dealsRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
     db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
-    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
+    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
   ])
   const c = companyRes.data as Company | null
@@ -64,6 +71,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   const tasks = (tasksRes.data ?? []) as Task[]
   const deals = (dealsRes.data ?? []) as Deal[]
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
+  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
+  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
 
   // Journal admin lié : dossiers de la société, comptes de ses contacts, actions CRM sur la fiche
@@ -132,6 +141,9 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
+          <LemlistCard s={summarizeLemlist((lemlistRes.data ?? []) as LemlistRow[])} />
+          <EmailCard s={summarizeMail((mailRes.data ?? []) as MailRow[])} names={mailboxNames} />
+
           <Card title="Ajouter une activité">
             <ActivityComposer
               companyId={c.id}
@@ -170,9 +182,10 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                       {e.outcome && <span className={OUTCOME_TAG[e.outcome] ?? 'ev-tag'}>{OUTCOME_LABEL[e.outcome]}</span>}
                       {e.kind === 'event' && <span className="ev-tag">Journal</span>}
                     </div>
+                    {e.title && <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{e.title}</p>}
                     {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
                     <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                      {nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
+                      {e.summary ?? nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
                       {e.mentions.length > 0 && ` · mentionne ${e.mentions.map(m => nameOf(m)).filter(Boolean).join(', ')}`}
                     </p>
                   </li>
@@ -193,7 +206,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                     {p.user_id && <Link href={`/admin/societes/${p.user_id}`} className="ev-tag ev-tag--accent" title="Voir le compte client : documents, registre, score">Accès app</Link>}
                   </span>
                   <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.persona].filter(Boolean).join(' · ') || '—'}</span>
-                  {(p.phone || p.email) && <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.phone, p.email].filter(Boolean).join(' · ')}</span>}
+                  {p.email && <span className="block break-all" style={{ color: 'var(--ink-3)' }}>{p.email}</span>}
+                  {p.phone && <span className="block mt-1"><CallButton phone={p.phone} companyId={c.id} contactId={p.id} contactName={contactName(p)} /></span>}
                 </li>
               ))}
             </ul>

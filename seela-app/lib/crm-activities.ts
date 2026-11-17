@@ -1,4 +1,5 @@
 // CRM — contacts, activités, tâches et chronologie d'une fiche. Fonctions pures, testées.
+import { lemlistEventLabel } from '@/lib/crm-lemlist'
 import { CrmError, SECTORS, isLifecycleStage, normalizeDomain, normalizeSiren, isWebmailDomain, type LifecycleStage } from '@/lib/crm-companies'
 
 export const ACTIVITY_TYPES = ['note', 'call', 'email', 'meeting'] as const
@@ -108,13 +109,20 @@ export function daysUntil(due: string | null, today: string): number | null {
 
 // ─── Chronologie : activités CRM + journal admin ─────────────────────────────
 
-export type ActivityRow = { id: string; type: string; call_outcome: string | null; body: string | null; occurred_at: string; author_id: string | null; contact_id: string | null; crm_mentions: { user_id: string }[] | null }
+export type ActivityRow = {
+  id: string; type: string; call_outcome: string | null; body: string | null; occurred_at: string; author_id: string | null; contact_id: string | null
+  crm_mentions: { user_id: string }[] | null; source?: string | null; event?: string | null; title?: string | null; summary?: string | null
+}
 export type AdminEventRow = { id: string; admin_id: string; action: string; note: string | null; created_at: string }
 
 export type TimelineItem = {
   id: string
   kind: 'activity' | 'event'
   label: string
+  source: string
+  event: string | null
+  title: string | null
+  summary: string | null
   outcome: CallOutcome | null
   body: string | null
   at: string
@@ -126,13 +134,16 @@ export type TimelineItem = {
 export function buildTimeline(activities: ActivityRow[], events: AdminEventRow[]): TimelineItem[] {
   const a: TimelineItem[] = activities.map(r => {
     const type = oneOf(ACTIVITY_TYPES, r.type) ?? 'note'
+    const source = r.source ?? 'manuel'
     return {
-      id: r.id, kind: 'activity', label: ACTIVITY_LABEL[type], outcome: oneOf(CALL_OUTCOMES, r.call_outcome),
+      id: r.id, kind: 'activity', source, event: r.event ?? null, title: r.title ?? null, summary: r.summary ?? null,
+      label: source === 'lemlist' ? `Lemlist · ${lemlistEventLabel(r.event ?? null)}` : r.type === 'linkedin' ? 'LinkedIn' : ACTIVITY_LABEL[type],
+      outcome: oneOf(CALL_OUTCOMES, r.call_outcome),
       body: r.body, at: r.occurred_at, authorId: r.author_id, contactId: r.contact_id, mentions: (r.crm_mentions ?? []).map(m => m.user_id),
     }
   })
   const e: TimelineItem[] = events.map(r => ({
-    id: r.id, kind: 'event', label: r.action, outcome: null, body: r.note, at: r.created_at, authorId: r.admin_id, contactId: null, mentions: [],
+    id: r.id, kind: 'event', label: r.action, source: 'journal', event: null, title: null, summary: null, outcome: null, body: r.note, at: r.created_at, authorId: r.admin_id, contactId: null, mentions: [],
   }))
   return [...a, ...e].sort((x, y) => y.at.localeCompare(x.at))
 }
