@@ -21,17 +21,20 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     if (error || !data.user) throw new Error(`Création du compte ${role} : ${error?.message}`)
     users[role] = { id: data.user.id, email }
 
-    const { error: profileError } = await db.from('profiles').upsert({
-      id: data.user.id,
-      email,
-      company_name: role === 'client' ? companyName : `${companyName} (${role})`,
-      siren: '123456789',
-      first_name: 'Test',
-      last_name: role,
-      date_creation: 2015,
+    // Société propre à chaque compte (SIREN unique par run : un SIREN partagé rattacherait les comptes entre eux)
+    const { data: company, error: companyError } = await db.from('companies').insert({
+      name: role === 'client' ? companyName : `${companyName} (${role})`,
+      siren: `9${randomBytes(4).readUInt32BE(0).toString().padStart(8, '0').slice(-8)}`,
+      creation_year: 2015,
       onboarding_completed: true,
-    })
-    if (profileError) throw new Error(`Profil ${role} : ${profileError.message}`)
+      source: 'E2E',
+    }).select('id').single()
+    if (companyError || !company) throw new Error(`Société ${role} : ${companyError?.message}`)
+    const { error: contactError } = await db.from('contacts').upsert(
+      { user_id: data.user.id, email, first_name: 'Test', last_name: role, company_id: company.id },
+      { onConflict: 'user_id' },
+    )
+    if (contactError) throw new Error(`Contact ${role} : ${contactError.message}`)
   }
 
   const { error: adminError } = await db.from('admins').insert({ user_id: users.admin.id, name: 'Admin E2E' })

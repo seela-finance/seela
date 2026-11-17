@@ -9,6 +9,13 @@ import { OS } from '@/lib/status'
 import { runMatching } from '@/lib/matching'
 import type { OfferContext, RequestContext, WorkflowDeps, WorkflowStore } from '@/lib/admin-workflow'
 
+type AccountJoin = { companies: { name: string; siren: string | null } | null; contacts: { email: string | null } | null }
+
+/** Société du dossier et email du contact qui l'a créé, au format attendu par le workflow. */
+function requestProfile(j: AccountJoin) {
+  return { company_name: j.companies?.name ?? null, siren: j.companies?.siren ?? null, email: j.contacts?.email ?? null }
+}
+
 // Lien vers le document envoyé au leaser
 const LEASER_DOCUMENT_LINK_SECONDS = 7 * 24 * 3600
 
@@ -24,22 +31,20 @@ export function supabaseWorkflowStore(db: SupabaseClient): WorkflowStore {
       if (!offer) return null
       const { data: request } = await db
         .from('financing_requests')
-        .select('id, status, user_id, total_amount, document_url, line_items(description, quantity, selected)')
+        .select('id, status, user_id, total_amount, document_url, line_items(description, quantity, selected), companies(name, siren), contacts(email)')
         .eq('id', offer.request_id)
         .maybeSingle()
       if (!request) return null
-      const [{ data: profile }, { data: leaser }] = await Promise.all([
-        db.from('profiles').select('company_name, siren, email').eq('id', request.user_id).maybeSingle(),
-        db.from('leasers').select('referent_email, referent_name').eq('name', offer.leaser_name).maybeSingle(),
-      ])
-      return { offer, request, profile, leaser } as OfferContext
+      const { data: leaser } = await db.from('leasers').select('referent_email, referent_name').eq('name', offer.leaser_name).maybeSingle()
+      const { companies, contacts, ...req } = request as typeof request & AccountJoin
+      return { offer, request: req, profile: requestProfile({ companies, contacts }), leaser } as OfferContext
     },
 
     async loadRequest(requestId) {
-      const { data: request } = await db.from('financing_requests').select('id, status, user_id').eq('id', requestId).maybeSingle()
+      const { data: request } = await db.from('financing_requests').select('id, status, user_id, companies(name, siren), contacts(email)').eq('id', requestId).maybeSingle()
       if (!request) return null
-      const { data: profile } = await db.from('profiles').select('company_name, email').eq('id', request.user_id).maybeSingle()
-      return { request, profile } as RequestContext
+      const { companies, contacts, ...req } = request as typeof request & AccountJoin
+      return { request: req, profile: requestProfile({ companies, contacts }) } as RequestContext
     },
 
     async countOtherActiveOffers(requestId, offerId) {

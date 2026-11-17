@@ -34,11 +34,11 @@ export function supabaseTeamStore(db: SupabaseClient): TeamStore {
       // Le profil porte l'email du compte (écrit à l'inscription) ; l'authentification dit s'il est confirmé
       // ilike sans jokers : `_` et `%` de l'adresse sont échappés (égalité insensible à la casse)
       const exact = email.replace(/[\\%_]/g, c => `\\${c}`)
-      const { data: profile, error } = await db.from('profiles').select('id').ilike('email', exact).limit(2)
+      const { data: profile, error } = await db.from('contacts').select('user_id').ilike('email', exact).not('user_id', 'is', null).limit(2)
       if (error) throw new Error(`Comptes : lecture impossible (${error.message})`)
       if (!profile?.length) return null
       if (profile.length > 1) throw new Error('Plusieurs comptes pour cet email')
-      const { data } = await db.auth.admin.getUserById(profile[0].id)
+      const { data } = await db.auth.admin.getUserById(profile[0].user_id as string)
       const user = data.user
       if (!user?.email || user.email.toLowerCase() !== email) return null
       return { userId: user.id, email: user.email, confirmed: !!user.email_confirmed_at }

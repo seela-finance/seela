@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { loadAccount } from '@/lib/account'
 
 interface FinancialData {
   chiffre_affaires: number | null
@@ -72,15 +74,11 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
     const financialOverride: FinancialData | undefined = body.financialOverride
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('siren, legal_form, naf_code, date_creation, revenue_declared, result_declared')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
+    const company = (await loadAccount(supabase, user.id))?.company
+    if (!company) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
+    const profile = { siren: company.siren, legal_form: company.legal_form, naf_code: company.naf_code, date_creation: company.creation_year }
 
     let financials: FinancialData = { chiffre_affaires: null, resultat_net: null, effectif: null }
     let score_partial = true
@@ -147,7 +145,8 @@ export async function POST(req: Request) {
       updatePayload.result_declared = financials.resultat_net
     }
 
-    await supabase.from('profiles').update(updatePayload).eq('id', user.id)
+    // Les clients ne modifient pas leur société directement : écriture serveur
+    await createAdminClient().from('companies').update(updatePayload).eq('id', company.id)
 
     return NextResponse.json({ score, grade, details })
   } catch (err: unknown) {

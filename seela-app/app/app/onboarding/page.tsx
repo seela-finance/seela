@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
+import { loadAccount, onboardingDone } from '@/lib/account'
+import { completeOnboarding, markFinancialDocsUploaded, saveOnboardingCompany, saveOnboardingContact } from './actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -669,7 +671,7 @@ function Step4Score({
         }
       }
 
-      await supabase.from('profiles').update({ financial_docs_uploaded: true }).eq('id', user.id)
+      await markFinancialDocsUploaded()
       setBilansUploaded(true)
     } catch (e) {
       console.error('Bilan upload error:', e)
@@ -826,22 +828,16 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
   const [userEmail, setUserEmail] = useState('')
-  const [userId, setUserId] = useState('')
+  const [country, setCountry] = useState('FR')
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/auth'); return }
       setUserEmail(user.email ?? '')
-      setUserId(user.id)
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('onboarding_completed')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.onboarding_completed) {
+      if (onboardingDone(await loadAccount(supabase, user.id))) {
         // Allow revisiting step 4 for bilan upload
         setAlreadyCompleted(true)
         setStep(4)
@@ -855,38 +851,32 @@ export default function OnboardingPage() {
 
   // ── Step handlers ──
 
-  async function handleStep1(country: string) {
-    await supabase.from('profiles').upsert({ id: userId, country })
+  async function handleStep1(value: string) {
+    setCountry(value)
     setStep(2)
   }
 
   async function handleStep2(company: CompanyResult) {
-    await supabase.from('profiles').upsert({
-      id: userId,
-      company_name: company.name,
-      siren: company.siren,
-      legal_form: company.legal_form,
-      naf_code: company.naf_code,
-      date_creation: company.year_created,
-      supplier_address: company.address,
-    })
+    const res = await saveOnboardingCompany({ country, name: company.name, siren: company.siren, legal_form: company.legal_form, naf_code: company.naf_code, year_created: company.year_created, address: company.address })
+    if (!res.ok) { setSaveError(res.message); return }
+    setSaveError(null)
     setStep(3)
   }
 
   async function handleStep3(data: { first_name: string; last_name: string; phone: string; role: string }) {
-    await supabase.from('profiles').upsert({ id: userId, ...data })
+    const res = await saveOnboardingContact(data)
+    if (!res.ok) { setSaveError(res.message); return }
+    setSaveError(null)
     setStep(4)
   }
 
   async function handleComplete() {
-    await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
+    const res = await completeOnboarding()
+    if (!res.ok) { setSaveError(res.message); return }
     router.push('/app/dashboard')
   }
 
-  async function handleSkip() {
-    await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', userId)
-    router.push('/app/dashboard')
-  }
+  const handleSkip = handleComplete
 
   if (!initialized) {
     return (
@@ -929,6 +919,7 @@ export default function OnboardingPage() {
 
           {/* Step indicator */}
           <StepIndicator step={step} />
+          {saveError && <p className="ev-alert ev-alert--danger mb-4" role="alert">{saveError}</p>}
 
           {/* Step content */}
           {step === 1 && <Step1Country onNext={handleStep1} />}

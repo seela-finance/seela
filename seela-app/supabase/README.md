@@ -3,7 +3,8 @@
 - `migrations/` : le schéma, versionné. `20261102000000_baseline.sql` recrée la base de zéro
   (tables, contraintes, fonctions, trigger `auth.users`, RLS, policies, bucket `documents`).
   Toute évolution = **nouveau** fichier `migrations/<AAAAMMJJHHMMSS>_<nom>.sql`, appliqué
-  d'abord sur staging, puis en prod, par Louis (SQL editor). Ne jamais modifier une migration existante.
+  d'abord sur staging (session Claude via le connecteur `supabase-staging` de `.mcp.json`, ou SQL editor),
+  puis en prod par Louis (SQL editor). Ne jamais modifier une migration existante.
 - `seed.sql` : données de référence leasers (staging / dev uniquement).
 - `legacy/` : anciens scripts ad hoc, déjà appliqués en prod et inclus dans la baseline.
 

@@ -1,97 +1,7 @@
-// Fiche société du back-office (/admin/societes) : liste, recherche, documents, comparaison
+// Fiche compte client du back-office (/admin/societes/[id]) : documents, comparaison
 // déclaré / registre et alertes. Fonctions pures : les pages chargent, tout se décide ici.
-import { ADMIN_PAGE_SIZE } from '@/lib/admin-requests'
 import { requestLabel } from '@/lib/request-label'
 import type { RegistryCompany } from '@/lib/company-registry'
-
-// ─── Liste ────────────────────────────────────────────────────────────────────
-
-export type CompanyProfileRow = {
-  id: string
-  company_name: string | null
-  siren: string | null
-  first_name: string | null
-  last_name: string | null
-  email: string | null
-  seela_score: number | null
-  seela_score_grade: string | null
-  onboarding_completed: boolean | null
-  created_at: string
-  financing_requests: { id: string; status: string | null; total_amount: number | null; created_at: string }[] | null
-}
-
-export type AdminCompany = {
-  id: string
-  name: string | null
-  siren: string | null
-  contact: string | null
-  email: string | null
-  grade: string | null
-  score: number | null
-  onboarded: boolean
-  requestCount: number
-  /** Dossiers soumis (hors brouillons) : montant total demandé */
-  requestedAmount: number
-  lastRequestAt: string | null
-  createdAt: string
-}
-
-export function toAdminCompany(row: CompanyProfileRow): AdminCompany {
-  const requests = row.financing_requests ?? []
-  const submitted = requests.filter(r => r.status && r.status !== 'draft')
-  const last = requests.map(r => r.created_at).filter(d => !Number.isNaN(Date.parse(d))).sort().at(-1) ?? null
-  return {
-    id: row.id,
-    name: row.company_name?.trim() || null,
-    siren: row.siren?.trim() || null,
-    contact: [row.first_name, row.last_name].filter(Boolean).join(' ') || null,
-    email: row.email,
-    grade: row.seela_score_grade,
-    score: row.seela_score,
-    onboarded: !!row.onboarding_completed,
-    requestCount: submitted.length,
-    requestedAmount: submitted.reduce((s, r) => s + (r.total_amount ?? 0), 0),
-    lastRequestAt: last,
-    createdAt: row.created_at,
-  }
-}
-
-function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-}
-
-/** Recherche par raison sociale, SIREN, contact ou email. */
-export function matchesCompanySearch(c: AdminCompany, query: string): boolean {
-  const q = normalize(query)
-  if (!q) return true
-  const digits = q.replace(/\D/g, '')
-  return (
-    (!!c.name && normalize(c.name).includes(q)) ||
-    (!!c.contact && normalize(c.contact).includes(q)) ||
-    (!!c.email && c.email.toLowerCase().includes(q)) ||
-    (digits.length >= 3 && !!c.siren && c.siren.replace(/\D/g, '').includes(digits))
-  )
-}
-
-export type CompanyListParams = { query: string; page: number }
-
-export function parseCompanyListParams(sp: Record<string, string | string[] | undefined>): CompanyListParams {
-  const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]?.[0] : sp[k]) ?? ''
-  const page = Number.parseInt(one('page'), 10)
-  return { query: one('q').slice(0, 100), page: Number.isFinite(page) && page > 1 ? page : 1 }
-}
-
-/** Sociétés avec un dossier récent en tête, puis par inscription la plus récente. */
-export function listCompanies(companies: AdminCompany[], params: CompanyListParams) {
-  const sorted = companies
-    .filter(c => matchesCompanySearch(c, params.query))
-    .sort((a, b) =>
-      Date.parse(b.lastRequestAt ?? b.createdAt) - Date.parse(a.lastRequestAt ?? a.createdAt),
-    )
-  const pageCount = Math.max(1, Math.ceil(sorted.length / ADMIN_PAGE_SIZE))
-  const page = Math.min(params.page, pageCount)
-  return { total: sorted.length, page, pageCount, items: sorted.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE) }
-}
 
 // ─── Documents ───────────────────────────────────────────────────────────────
 
@@ -155,6 +65,10 @@ export type DeclaredIdentity = {
 }
 
 export type IdentityRow = { label: string; declared: string | null; registry: string | null; mismatch: boolean }
+
+function normalize(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
 
 const compact = (s: string | null) => (s ? normalize(s).replace(/[^a-z0-9]/g, '') : '')
 

@@ -52,7 +52,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const [{ data: request }, { data: rawEvents }] = await Promise.all([
     db
       .from('financing_requests')
-      .select('*, line_items(*), offers(*), profiles(company_name, siren, first_name, last_name, email, phone)')
+      .select('*, line_items(*), offers(*), companies(name, siren), contacts(first_name, last_name, email, phone)')
       .eq('id', id)
       .maybeSingle(),
     db
@@ -82,7 +82,9 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   )
   const lines = (request.line_items ?? []) as LineItem[]
   const selectedTotal = lines.filter(l => l.selected).reduce((s, l) => s + (l.total_price ?? 0), 0)
-  const profile = request.profiles as { company_name: string | null; siren: string | null; first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
+  const company = request.companies as { name: string | null; siren: string | null } | null
+  const contact = request.contacts as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
+  const profile = { company_name: company?.name ?? null, siren: company?.siren ?? null, ...contact }
   const contactName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || null
 
   // Société cessée au registre : bandeau rouge (même règle que la fiche société)
@@ -129,7 +131,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         status: selected.status ?? '',
       },
       request: { ...request, line_items: lines },
-      profile: profile ? { company_name: profile.company_name, siren: profile.siren, email: profile.email } : null,
+      profile: profile ? { company_name: profile.company_name, siren: profile.siren, email: profile.email ?? null } : null,
       leaser,
     }
     try {
@@ -149,7 +151,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         {/* En-tête */}
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="ev-display text-xl" style={{ color: 'var(--ink)' }}>
-            <Link href={`/admin/societes/${request.user_id}`} className="underline-offset-4 hover:underline">
+            <Link href={request.company_id ? `/admin/crm/societes/${request.company_id}` : '/admin/crm/societes'} className="underline-offset-4 hover:underline">
               {profile?.company_name?.trim() || 'Société sans nom'}
             </Link>
           </h1>

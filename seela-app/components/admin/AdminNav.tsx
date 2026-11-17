@@ -9,8 +9,11 @@ import { ROLE_LABEL, can, type AdminRole, type Capability } from '@/lib/admin-ro
 
 // Chaque section n'apparaît qu'aux rôles qui y ont accès (la page renvoie 404 aux autres)
 const NAV: { href: string | null; label: string; capability: Capability }[] = [
+  { href: '/admin/crm', label: 'Ma journée', capability: 'crm' },
+  { href: '/admin/crm/societes', label: 'Sociétés', capability: 'crm' },
+  { href: '/admin/crm/contacts', label: 'Contacts', capability: 'crm' },
+  { href: '/admin/crm/deals', label: 'Deals', capability: 'crm' },
   { href: '/admin', label: 'Dossiers', capability: 'view' },
-  { href: '/admin/societes', label: 'Sociétés', capability: 'view' },
   { href: '/admin/leasers', label: 'Leasers', capability: 'manage_leasers' },
   { href: '/admin/equipe', label: 'Équipe', capability: 'manage_team' },
 ]
@@ -51,7 +54,7 @@ export default function AdminNav({ name, email, role }: { name: string; email: s
           }
           const active = item.href === '/admin'
             ? pathname === '/admin' || pathname.startsWith('/admin/dossiers')
-            : pathname.startsWith(item.href)
+            : item.href === '/admin/crm' ? pathname === item.href : pathname.startsWith(item.href)
           return (
             <Link
               key={item.label}
