@@ -24,8 +24,8 @@ createServer((req, res) => {
       type: 'message',
       role: 'assistant',
       model: 'fake',
-      content: [{ type: 'text', text: JSON.stringify(ANALYSIS) }],
-      stop_reason: 'end_turn',
+      content: [{ type: 'tool_use', id: 'toolu_e2e', name: 'enregistrer_analyse', input: ANALYSIS }],
+      stop_reason: 'tool_use',
       stop_sequence: null,
       usage: { input_tokens: 1, output_tokens: 1 },
     }))
