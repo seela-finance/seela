@@ -541,13 +541,134 @@
 .lp .sent{text-align:left;padding:8px 0}
 .lp .sent .ok-mark{width:56px;height:56px;border-radius:99px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin-bottom:18px}
 
-/* ----- mobile ----- */
+/* ===================================================================
+   Page /distributeurs (DistributorsView) — préfixe dist-. Réutilise les
+   classes de la landing (hero, prob, doc, fiche, funders, ready).
+   Exception voulue : deux blocs sombres sur cette page (constat + contact).
+   =================================================================== */
+.lp .dist-sec{scroll-margin-top:68px}
+.lp .hero.dist-hero{padding:72px 0 88px}
+.lp .dist-hero .hero__grid{gap:64px}
+.lp .dist-hero .h1{font-size:clamp(38px,4.8vw,68px);margin-top:18px}
+.lp .dist-trust{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13.5px;color:var(--ink-2)}
+.lp .dist-trust li{display:inline-flex;align-items:center;gap:8px}
+.lp .dist-pillars{display:flex;flex-direction:column;border-top:1px solid var(--line-strong)}
+.lp .dist-pillars > a{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}
+.lp .dist-pillars .n{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--accent);padding-top:3px}
+.lp .dist-pillars b{display:block;font-family:var(--font-display);font-weight:600;font-size:20px;letter-spacing:-0.01em;line-height:1.2}
+.lp .dist-pillars > a:hover b{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px}
+.lp .dist-pillars .t{display:block;margin-top:6px;font-size:15px;color:var(--ink-2)}
+
+/* le constat : bloc sombre à plat */
+.lp .dist-constat{background:var(--dark);color:var(--dark-text)}
+.lp .dist-constat .kicker{color:var(--dark-muted)}
+.lp .dist-constat .prob{border-top-color:var(--dark-line)}
+.lp .dist-constat .prob > div{border-color:var(--dark-line)}
+.lp .dist-constat .prob p{color:var(--dark-muted)}
+.lp .dist-constat .prob .n{color:var(--accent-light)}
+
+/* piliers : en-tête + grille 5/7 (ou 7/5) */
+.lp .dist-band{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.lp .dist-head .h2{margin-top:14px;max-width:860px}
+.lp .dist-head .lede{margin-top:20px;max-width:620px}
+.lp .dist-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:64px;align-items:start;margin-top:56px}
+.lp .dist-grid--rev{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+
+/* 01 : comparatif aujourd'hui / avec everlease + devis lu */
+.lp .dist-cmp__head{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding-bottom:12px;border-bottom:1px solid var(--line-strong);font-family:var(--font-mono);font-size:12px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.lp .dist-cmp__row{padding:20px 0;border-bottom:1px solid var(--line)}
+.lp .dist-cmp__row h3{margin:0;font-size:16px;font-weight:600}
+.lp .dist-cmp__cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:8px}
+.lp .dist-cmp__cols p{margin:0;font-size:15px}
+.lp .dist-cmp__cols .was{color:var(--ink-3)}
+.lp .doc.dist-doc{padding-bottom:0}
+.lp .dist-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.lp .dist-doc__foot{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;margin:8px -28px 0;padding:24px 28px;border-top:1px solid var(--line);background:var(--surface)}
+.lp .dist-doc__foot .total__num{font-size:clamp(34px,4vw,48px)}
+.lp .dist-doc__foot .legal{margin:8px 0 0;max-width:300px}
+
+/* 02 : suivi du dossier + mécanismes */
+.lp .fiche.dist-track{padding-bottom:0;overflow:hidden}
+.lp .dist-track .fiche__head{flex-wrap:wrap}
+.lp .dist-step{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px 0;border-bottom:1px solid var(--line)}
+.lp .dist-step.next{border-bottom:0}
+.lp .dist-step .k{font-weight:600;font-size:15px}
+.lp .dist-step .d{font-size:13px;color:var(--ink-3);margin-top:2px}
+.lp .dist-step.next .k{color:var(--ink-2)}
+.lp .dist-mark{width:22px;height:22px;border-radius:99px;display:grid;place-items:center;margin-top:1px;border:1.5px solid var(--line-strong)}
+.lp .dist-mark.done{background:var(--ink);border-color:var(--ink);color:#fff}
+.lp .dist-mark.now{border:2px solid var(--accent)}
+.lp .dist-mark.now i{width:8px;height:8px;border-radius:99px;background:var(--accent);display:block}
+.lp .dist-fins{display:grid;gap:8px;margin-top:10px}
+.lp .dist-fin{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);font-size:14px;font-weight:500}
+.lp .dist-track__foot{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center;margin:0 -28px;padding:20px 28px;border-top:1px solid var(--line);background:var(--paper)}
+.lp .dist-track__foot .gauge{width:92px}
+.lp .dist-pts{border-top:1px solid var(--line-strong)}
+.lp .dist-pts > div{padding:22px 0;border-bottom:1px solid var(--line)}
+.lp .dist-pts h3,.lp .dist-mod h3,.lp .dist-faq__row h3{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:-0.015em;line-height:1.15;margin:0}
+.lp .dist-pts p,.lp .dist-mod p,.lp .dist-faq__row p{margin:8px 0 0;color:var(--ink-2);font-size:15.5px}
+
+/* 03 : modules sur mesure + devis à la marque du distributeur */
+.lp .dist-mods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px;border-top:1px solid var(--line-strong)}
+.lp .dist-mod{display:flex;flex-direction:column;align-items:flex-start;padding:24px 0;border-bottom:1px solid var(--line)}
+.lp .dist-mod svg{color:var(--ink);margin-bottom:14px}
+.lp .dist-mod .tag{margin-top:14px}
+.lp .dist-mods__note{grid-column:1 / -1;margin:0;padding-top:20px;font-size:15px;color:var(--ink-2)}
+.lp .dist-quote{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+.lp .dist-quote__head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;padding:22px 24px;border-bottom:1px solid var(--line)}
+.lp .dist-quote__id{display:flex;align-items:center;gap:12px}
+.lp .dist-logo{width:96px;height:40px;border:1.5px dashed var(--line-strong);border-radius:var(--radius-sm);display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3)}
+.lp .dist-quote__lines{padding:8px 24px}
+.lp .dist-quote__lines > div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.lp .dist-quote__lines > div:last-child{border-bottom:0;font-weight:600;padding:14px 0}
+.lp .dist-quote__lines .amt{font-family:var(--font-mono);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lp .dist-rent{margin:0 16px 16px;padding:18px 20px;background:var(--accent-soft);border-radius:var(--radius);color:var(--accent-ink)}
+.lp .dist-rent .k{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase}
+.lp .dist-rent .v{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:15px}
+.lp .dist-rent .v b{font-family:var(--font-mono);font-weight:600;font-size:30px;letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums}
+.lp .dist-rent .s{margin-top:8px;font-size:13px}
+.lp .dist-quote > .legal{margin:0;padding:0 24px 22px}
+
+/* questions fréquentes */
+.lp .dist-faq{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:64px;align-items:start}
+.lp .dist-faq .h2{font-size:clamp(28px,3.2vw,42px)}
+.lp .dist-faq__rows{border-top:1px solid var(--line-strong)}
+.lp .dist-faq__row{padding:24px 0;border-bottom:1px solid var(--line)}
+
 @media (max-width:900px){
+  .lp .hero.dist-hero{padding:40px 0 56px}
+  .lp .dist-hero .hero__grid{gap:36px}
+  .lp .dist-grid,.lp .dist-grid--rev,.lp .dist-faq{grid-template-columns:minmax(0,1fr);gap:32px}
+  .lp .dist-grid{margin-top:36px}
+  .lp .dist-doc__foot{margin:8px -20px 0;padding:20px}
+  .lp .dist-track__foot{margin:0 -20px;padding:16px 20px}
+}
+@media (max-width:600px){
+  .lp .dist-mods{grid-template-columns:minmax(0,1fr)}
+  .lp .dist-step{grid-template-columns:22px minmax(0,1fr)}
+  .lp .dist-step > .tag{grid-column:2;justify-self:start}
+  .lp .dist-cmp__head,.lp .dist-cmp__cols{gap:16px}
+  .lp .dist-tags{justify-content:flex-start}
+}
+
+/* ----- nav : cinq liens depuis l'ajout de « Distributeurs ». Version
+   resserrée sous 1240px (le bouton mène déjà à /auth, le lien « Se
+   connecter » s'efface), burger sous 1080px. ----- */
+@media (max-width:1240px){
+  .lp .nav__in{gap:20px}
+  .lp .nav__links{gap:18px;margin-left:0}
+  .lp .nav__cta .login{display:none}
+}
+@media (max-width:1080px){
   .lp .nav__links,.lp .nav__cta{display:none}
   .lp .burger{display:inline-flex}
   .lp .mnav{display:flex;flex-direction:column;gap:4px;padding:12px 0 20px;border-top:1px solid var(--line)}
   .lp .mnav a{padding:12px 4px;font-size:17px;border-bottom:1px solid var(--line)}
   .lp .mnav .btn{margin-top:12px;justify-content:center}
+}
+
+/* ----- mobile ----- */
+@media (max-width:900px){
   .lp .hero{padding:32px 0 32px}
   .lp .hero__grid,.lp .demo__grid,.lp .how__grid,.lp .funders__grid,.lp .final__in,.lp .partners__in,.lp .suivi__grid,.lp .cats__head{grid-template-columns:minmax(0,1fr);gap:32px}
   .lp .hero__aside{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
