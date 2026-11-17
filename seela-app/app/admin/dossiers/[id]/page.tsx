@@ -23,6 +23,8 @@ import RequestNote from '@/components/admin/RequestNote'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { fetchRegistry } from '@/lib/company-registry'
 import { companyAlert } from '@/lib/admin-company'
+import CreditAnalysis from '@/components/admin/CreditAnalysis'
+import { CreditAnalysisError, latestCreditAnalysis } from '@/lib/credit-analyst'
 
 type LineItem = {
   id: string
@@ -112,6 +114,14 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
     : { data: [] }
   const leaserNames = (leaserRows ?? []).map(l => l.name as string)
 
+  // Dernière analyse crédit (agent analyste) : une panne de lecture n'empêche pas d'ouvrir la fiche
+  const credit = await latestCreditAnalysis(db, id)
+    .then(record => ({ record, error: null as string | null }))
+    .catch(err => {
+      console.error('[admin] analyse crédit', err)
+      return { record: null, error: err instanceof CreditAnalysisError ? err.message : 'Analyse crédit illisible. Rechargez la page.' }
+    })
+
   // Réponse de chaque leaser avec la grille actuelle : une panne de lecture n'empêche pas d'ouvrir la fiche
   const diagnostic = canRerun ? await diagnoseMatching(db, id).catch(err => { console.error('[admin] diagnostic', err); return null }) : null
 
@@ -175,6 +185,11 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             </div>
           )}
         </Section>
+
+        {/* Analyse crédit : lancée à la soumission, relançable par un membre qui décide des dossiers */}
+        {request.status !== RS.draft && (
+          <CreditAnalysis requestId={request.id} record={credit.record} canRun={decide} error={credit.error} />
+        )}
 
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Document d'origine */}

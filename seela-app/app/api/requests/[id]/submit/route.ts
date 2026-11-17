@@ -1,6 +1,8 @@
+import { after } from 'next/server'
 import { clientRoute } from '@/lib/client-route'
 import { parseSubmitPayload, submitRequest } from '@/lib/client-workflow'
 import { runMatching } from '@/lib/matching'
+import { analyzeSubmission } from '@/lib/credit-analyst'
 
 // Soumission d'un brouillon : lignes, total calculé côté serveur, statut, puis matching.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -10,6 +12,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const payload = parseSubmitPayload(body)
     const result = await submitRequest(store, userId, id, payload)
     if (result === 'already') return { status: result, offers: 0 }
+
+    // L'analyse crédit (agent analyste) part après la réponse au client : elle ne le fait pas attendre,
+    // et son échec ne bloque rien (reprise depuis la fiche admin ou au récapitulatif).
+    after(() => analyzeSubmission(db, id))
 
     // Le dossier est transmis même si le matching échoue : il reste « submitted »,
     // visible dans l'onglet « À traiter » du back-office.

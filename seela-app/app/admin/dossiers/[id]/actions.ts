@@ -1,14 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/admin'
+import { logAdminEvent, requireAdmin } from '@/lib/admin'
 import { can, type Capability } from '@/lib/admin-roles'
 import { workflowDeps } from '@/lib/admin-store'
-import { isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
+import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { addRequestNote, recordLeaserDecision, refuseRequest, rerunMatching, validateAndTransmit, WorkflowError } from '@/lib/admin-workflow'
 import { TransitionError } from '@/lib/transitions'
 import { isUuid } from '@/lib/admin-request-detail'
 import { addManualOffer, parseCounterOffer, parseManualOffer, proposeCounterOffer } from '@/lib/admin-offers'
+import { CreditAnalysisError, runCreditAnalysis } from '@/lib/credit-analyst'
+import { opinionInfo } from '@/lib/credit-analysis'
 
 export type ActionState = { ok: boolean; message: string } | null
 
@@ -28,7 +30,7 @@ async function run(requestId: string, action: () => Promise<void>, success: stri
   try {
     await action()
   } catch (err) {
-    if (err instanceof WorkflowError) return { ok: false, message: err.message }
+    if (err instanceof WorkflowError || err instanceof CreditAnalysisError) return { ok: false, message: err.message }
     if (err instanceof TransitionError) {
       return { ok: false, message: err.status === 409 ? 'Le dossier a changé entre-temps : rechargez la page.' : 'Écriture impossible, réessayez.' }
     }
@@ -97,4 +99,17 @@ export async function counterOfferAction(_: ActionState, form: FormData): Promis
   if (!admin) return DENIED
   return run(field(form, 'requestId'), () => proposeCounterOffer(workflowDeps(admin), field(form, 'offerId'), parseCounterOffer(formRecord(form))),
     'Contre-proposition envoyée : le client est prévenu par email et peut l\'accepter ou la refuser.')
+}
+
+// Analyse crédit (agent analyste) : relance à la demande, journalisée dans l'historique du dossier.
+export async function creditAnalysisAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const admin = await memberWith('decide_requests')
+  if (!admin) return DENIED
+  const requestId = field(form, 'requestId')
+  let avis = ''
+  return run(requestId, async () => {
+    const record = await runCreditAnalysis(createAdminClient(), requestId, 'admin')
+    avis = opinionInfo(record.avis).label
+    await logAdminEvent(admin, { action: 'Analyse crédit relancée', requestId, note: `Avis : ${avis}` })
+  }, () => `Analyse mise à jour : ${avis.toLowerCase()}.`)
 }
