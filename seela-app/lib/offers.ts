@@ -16,6 +16,15 @@ export function recommendedOffer<T extends RankableOffer>(offers: T[]): T | null
   return [...eligible].sort(compare)[0]
 }
 
+/**
+ * Offre mise en avant (carte sombre, bouton principal) : la recommandée, ou l'unique offre éligible.
+ * Seule, elle n'est pas « recommandée » (rien à comparer) mais ne doit pas avoir l'air écartée.
+ */
+export function highlightedOffer<T extends RankableOffer>(offers: T[]): T | null {
+  const eligible = offers.filter(o => o.status !== OS.refused)
+  return eligible.length === 1 ? eligible[0] : recommendedOffer(offers)
+}
+
 /** Recommandée d'abord, puis par loyer croissant ; offres refusées en dernier. */
 export function sortOffers<T extends RankableOffer>(offers: T[]): T[] {
   return [...offers].sort((a, b) => {

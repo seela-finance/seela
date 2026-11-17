@@ -155,7 +155,7 @@ export default async function OfferDetailPage({
             <div className="flex items-center gap-3 mb-1">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
-                style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}
+                style={{ background: 'var(--ink)', color: 'var(--paper)' }}
               >
                 {initials}
               </div>
