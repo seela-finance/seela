@@ -48,10 +48,13 @@ export function equipmentOf(lines: MatchingLine[]): { mainEquipment: string | nu
   }
 }
 
+/** Motif d'un leaser qui a déjà une offre sur le dossier : il n'est pas inéligible, juste déjà servi. */
+export const ALREADY_OFFERED_REASON = 'Offre déjà faite sur ce dossier'
+
 /** Raisons qui écartent ce leaser (liste vide = il propose une offre), et le calcul du loyer. */
 export function matchLeaser(leaser: MatchingLeaser, c: MatchingCriteria): { reasons: string[]; simulation: Simulation } {
   const reasons: string[] = []
-  if (c.alreadyOffered.includes(leaser.name)) reasons.push('Offre déjà faite sur ce dossier')
+  if (c.alreadyOffered.includes(leaser.name)) reasons.push(ALREADY_OFFERED_REASON)
   if (leaser.min_amount == null || leaser.max_amount == null) reasons.push('Montants min. et max. à renseigner sur la fiche')
   if (leaser.anciennete_min_mois == null) reasons.push('Ancienneté minimale à renseigner sur la fiche')
   else if (c.ageMonths < leaser.anciennete_min_mois) reasons.push(`Ancienneté ${c.ageMonths} mois, minimum ${leaser.anciennete_min_mois} mois`)
