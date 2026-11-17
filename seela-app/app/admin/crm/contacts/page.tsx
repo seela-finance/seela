@@ -4,6 +4,7 @@ import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAG
 import { CONTACT_VIEWS, CONTACT_VIEW_LABEL, contactName, listContacts, type ContactRow, type ContactView } from '@/lib/crm-deals'
 import { fmtDate } from '@/components/admin/ui'
 import { NewContactButton } from '@/components/admin/crm/CrmForms'
+import CallButton from '@/components/admin/crm/CallButton'
 
 const HEADERS = ['Contact', 'Société', 'Poste', 'Téléphone', 'Propriétaire', 'Créé le']
 
@@ -85,7 +86,9 @@ export default async function CrmContactsPage({ searchParams }: { searchParams: 
                       : <span style={{ color: 'var(--ink-3)' }}>—</span>}
                   </td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-2)' }}>{[c.job_title, c.persona].filter(Boolean).join(' · ') || '—'}</td>
-                  <td className="ev-mono px-4 py-3 text-sm" style={{ color: 'var(--ink-2)' }}>{c.phone ?? '—'}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-2)' }}>
+                    {c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : '—'}
+                  </td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-2)' }}>{(c.owner_id && owners.get(c.owner_id)) ?? '—'}</td>
                   <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>{fmtDate(c.created_at)}</td>
                 </tr>

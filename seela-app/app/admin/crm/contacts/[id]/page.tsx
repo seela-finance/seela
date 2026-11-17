@@ -9,6 +9,7 @@ import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { ActivityComposer } from '@/components/admin/crm/FicheForms'
 import { ContactPropertiesForm, type ContactValues } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
+import CallButton from '@/components/admin/crm/CallButton'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
 import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
@@ -51,7 +52,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   }
   const props: [string, React.ReactNode][] = [
     ['Email', c.email],
-    ['Téléphone', c.phone ? <span className="ev-mono">{c.phone}</span> : null],
+    ['Téléphone', c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : null],
     ['Poste', c.job_title],
     ['Persona', c.persona],
     ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Profil</a> : null],
@@ -72,6 +73,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
           <section className="ev-card p-5 flex flex-col gap-2">
             <h1 className="ev-display text-2xl">{name}</h1>
             {c.job_title && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{c.job_title}</p>}
+            {c.phone && <div><CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={name} /></div>}
             <div className="flex flex-wrap gap-1.5">
               {c.user_id && <Link href={`/admin/societes/${c.user_id}`} className="ev-tag ev-tag--accent">Accès app · voir le compte client</Link>}
               {c.persona && <span className="ev-tag">{c.persona}</span>}

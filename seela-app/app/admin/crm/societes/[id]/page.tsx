@@ -11,6 +11,7 @@ import { isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
+import CallButton from '@/components/admin/crm/CallButton'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
 import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
@@ -205,7 +206,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                     {p.user_id && <Link href={`/admin/societes/${p.user_id}`} className="ev-tag ev-tag--accent" title="Voir le compte client : documents, registre, score">Accès app</Link>}
                   </span>
                   <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.persona].filter(Boolean).join(' · ') || '—'}</span>
-                  {(p.phone || p.email) && <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.phone, p.email].filter(Boolean).join(' · ')}</span>}
+                  {p.email && <span className="block break-all" style={{ color: 'var(--ink-3)' }}>{p.email}</span>}
+                  {p.phone && <span className="block mt-1"><CallButton phone={p.phone} companyId={c.id} contactId={p.id} contactName={contactName(p)} /></span>}
                 </li>
               ))}
             </ul>
