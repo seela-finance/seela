@@ -61,3 +61,15 @@ export function summarizeMail(rows: MailRow[]): MailSummary {
 }
 
 export const MAIL_SYNC_DAYS = 90
+
+export type FolderState = { uidValidity: string; lastUid: number; contactsAt?: string | null }
+
+/**
+ * Relire les 90 derniers jours d'un dossier : premier passage, dossier recréé par le serveur, ou contact ajouté /
+ * modifié depuis le dernier passage (un email échangé avant la création du contact doit remonter).
+ * Sinon on ne lit que les nouveaux emails. Les doublons sont écartés à l'enregistrement.
+ */
+export function needsRescan(prev: FolderState | undefined, uidValidity: string, latestContactAt: string | null): boolean {
+  if (!prev || prev.uidValidity !== uidValidity) return true
+  return !!latestContactAt && (!prev.contactsAt || latestContactAt > prev.contactsAt)
+}
