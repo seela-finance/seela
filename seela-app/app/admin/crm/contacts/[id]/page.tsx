@@ -33,7 +33,7 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
-    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
     db.from('crm_mailboxes').select('email, user_id'),
   ])

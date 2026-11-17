@@ -6,9 +6,9 @@ const act = (patch: Partial<LemlistActivity>): LemlistActivity => ({
   leadCompanyName: 'Garage Martin', campaignName: 'DAF PME', sendUserName: 'Lorenzo', subject: 'Votre parc IT', messagePreview: 'Bonjour…', ...patch,
 })
 
-test('envoi : rattaché au lead (email en minuscules, domaine de la société), sans le corps du message', () => {
+test('envoi : rattaché au lead (email en minuscules, domaine de la société), avec le début du message', () => {
   expect(mapLemlistActivity(act({}))).toMatchObject({
-    externalId: 'a1', event: 'emailsSent', type: 'email', title: 'Votre parc IT', body: null,
+    externalId: 'a1', event: 'emailsSent', type: 'email', title: 'Votre parc IT', body: 'Bonjour…',
     summary: 'Campagne « DAF PME » par Lorenzo',
     lead: { email: 'marie@garage-martin.fr', firstName: 'Marie', companyName: 'Garage Martin', domain: 'garage-martin.fr' },
   })
@@ -57,5 +57,6 @@ test('bloc Lemlist : compteurs, dernier avis intéressé, absence avec date de r
     sent: 2, opened: 2, clicked: 1, replied: 1, interested: true, bounced: false, antiSpam: false, outOfOffice: '2026-11-04',
     campaigns: ['DAF PME'], lastActivityAt: '2026-11-09', lastSentAt: '2026-11-05', lastReply: { at: '2026-11-08', text: 'Rappelez-moi' },
   })
+  expect(s.emails.map(e => `${e.event} ${e.occurred_at}`)).toEqual(['emailsReplied 2026-11-08', 'emailsSent 2026-11-05', 'emailsSent 2026-11-01'])
   expect(summarizeLemlist([])).toMatchObject({ sent: 0, interested: null, outOfOffice: false, lastActivityAt: null })
 })

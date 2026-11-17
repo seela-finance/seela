@@ -60,7 +60,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
-    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
     db.from('crm_mailboxes').select('email, user_id'),

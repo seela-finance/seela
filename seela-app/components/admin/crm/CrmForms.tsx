@@ -240,9 +240,16 @@ export function LemlistSyncButton({ neverSynced }: { neverSynced: boolean }) {
   return (
     <form action={submit} className="flex flex-col gap-2">
       {neverSynced && <input type="hidden" name="full" value="on" />}
-      <button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm self-start" disabled={pending}>
-        {pending ? 'Synchronisation…' : neverSynced ? 'Importer l’historique Lemlist' : 'Synchroniser maintenant'}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm" disabled={pending}>
+          {pending ? 'Synchronisation…' : neverSynced ? 'Importer l’historique Lemlist' : 'Synchroniser maintenant'}
+        </button>
+        {!neverSynced && (
+          <button type="submit" name="full" value="on" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }} disabled={pending}>
+            Tout réimporter
+          </button>
+        )}
+      </div>
       <Alert state={state} />
     </form>
   )

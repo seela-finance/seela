@@ -1,5 +1,5 @@
 import type { LemlistSummary } from '@/lib/crm-lemlist'
-import { fmtDate } from '@/components/admin/ui'
+import { fmtDate, fmtDateTime } from '@/components/admin/ui'
 
 function YesNo({ value, good }: { value: boolean | null; good?: boolean }) {
   if (value === null) return <span style={{ color: 'var(--ink-3)' }}>—</span>
@@ -41,6 +41,30 @@ export default function LemlistCard({ s }: { s: LemlistSummary }) {
       <p className="mt-3 text-xs" style={{ color: 'var(--ink-3)' }}>
         {s.campaigns.length ? `Campagne${s.campaigns.length > 1 ? 's' : ''} : ${s.campaigns.join(' · ')}` : 'Aucune campagne Lemlist.'}
       </p>
+      {s.emails.length > 0 && (
+        <details className="mt-3">
+          <summary className="text-sm cursor-pointer" style={{ color: 'var(--ink-2)' }}>Emails envoyés et reçus ({s.emails.length})</summary>
+          <ul className="divide-y divide-[var(--line)] mt-1">
+            {s.emails.map((m, i) => {
+              const step = typeof m.metadata?.sequenceStep === 'number' ? m.metadata.sequenceStep + 1 : null
+              const campaign = typeof m.metadata?.campaignName === 'string' ? m.metadata.campaignName : null
+              return (
+                <li key={m.id ?? i} className="py-2.5 text-sm flex flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className={m.event === 'emailsReplied' ? 'ev-tag ev-tag--accent' : 'ev-tag'}>{m.event === 'emailsReplied' ? 'Reçu' : 'Envoyé'}</span>
+                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{m.title ?? '(sans objet)'}</span>
+                  </span>
+                  {m.body && <span style={{ color: 'var(--ink-2)' }}>{m.body}…</span>}
+                  <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                    {fmtDateTime(m.occurred_at)}{step && m.event === 'emailsSent' ? ` · étape ${step}` : ''}{campaign ? ` · ${campaign}` : ''}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>Lemlist ne transmet que le début de chaque email. Les réponses complètes arrivent dans le bloc « Emails » si la boîte de l’expéditeur est connectée.</p>
+        </details>
+      )}
       {s.lastReply?.text && (
         <blockquote className="mt-3 pl-3 text-sm whitespace-pre-line" style={{ borderLeft: '2px solid var(--line-strong)', color: 'var(--ink-2)' }}>
           {s.lastReply.text}

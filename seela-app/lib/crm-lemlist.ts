@@ -50,7 +50,7 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
   const email = clean(a.leadEmail, 320)?.toLowerCase()
   if (!email || !email.includes('@')) return null
   const domain = normalizeDomain(email)
-  const replied = a.type === 'emailsReplied' || a.type === 'linkedinReplied' || a.type === 'outOfOffice'
+  const withText = ['emailsSent', 'emailsReplied', 'linkedinSent', 'linkedinReplied', 'outOfOffice'].includes(a.type)
   return {
     externalId: a._id,
     event: a.type,
@@ -62,7 +62,7 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
     },
     title: clean(a.subject, 300),
     summary: [a.campaignName && `Campagne « ${a.campaignName.trim()} »`, a.sendUserName && `par ${a.sendUserName.trim()}`].filter(Boolean).join(' ') || null,
-    body: replied ? clean(a.messagePreview, 5000) : null,
+    body: withText ? clean(a.messagePreview, 5000) : null,
     metadata: { campaignId: a.campaignId ?? null, campaignName: a.campaignName ?? null, sendUserEmail: a.sendUserEmail ?? null, sequenceStep: a.sequenceStep ?? null, leadId: a.leadId ?? null, outOfOfficeEndsAt: a.outOfOfficeEndsAt ?? null },
   }
 }
@@ -96,7 +96,7 @@ export function syncIsDue(lastRunAt: string | null, now: Date): boolean {
 
 // ─── Bloc « Prospection Lemlist » d'une fiche ────────────────────────────────
 
-export type LemlistRow = { event: string | null; occurred_at: string; body: string | null; metadata: Record<string, unknown> | null }
+export type LemlistRow = { id?: string; event: string | null; occurred_at: string; title?: string | null; body: string | null; metadata: Record<string, unknown> | null }
 
 export type LemlistSummary = {
   sent: number; opened: number; clicked: number; replied: number
@@ -104,6 +104,8 @@ export type LemlistSummary = {
   bounced: boolean; unsubscribed: boolean; antiSpam: boolean; outOfOffice: string | null | false
   linkedinInvited: boolean; linkedinAccepted: boolean; linkedinMessages: number; linkedinReplies: number
   campaigns: string[]; lastActivityAt: string | null; lastSentAt: string | null; lastReply: { at: string; text: string | null } | null
+  /** Emails envoyés et réponses, du plus récent au plus ancien (30 au plus). */
+  emails: LemlistRow[]
 }
 
 /** Compteurs et indicateurs d'une fiche à partir de ses événements Lemlist. Intéressé : le dernier avis l'emporte. */
@@ -125,5 +127,6 @@ export function summarizeLemlist(rows: LemlistRow[]): LemlistSummary {
     linkedinMessages: count('linkedinSent'), linkedinReplies: count('linkedinReplied'),
     campaigns, lastActivityAt: sorted.at(-1)?.occurred_at ?? null, lastSentAt: last('emailsSent')?.occurred_at ?? null,
     lastReply: reply ? { at: reply.occurred_at, text: reply.body } : null,
+    emails: [...sorted].reverse().filter(r => r.event === 'emailsSent' || r.event === 'emailsReplied').slice(0, 30),
   }
 }

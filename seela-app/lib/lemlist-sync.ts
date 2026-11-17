@@ -85,7 +85,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
       }
     })
     for (let i = 0; i < rows.length; i += 500) {
-      const { data, error } = await db.from('crm_activities').upsert(rows.slice(i, i + 500), { onConflict: 'source,external_id', ignoreDuplicates: true }).select('id')
+      const { data, error } = await db.from('crm_activities').upsert(rows.slice(i, i + 500), { onConflict: 'source,external_id' }).select('id')
       if (error) throw error
       stats.imported += data?.length ?? 0
     }
