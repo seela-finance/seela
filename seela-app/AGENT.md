@@ -49,15 +49,16 @@ Circuit validé par Louis le 04/11/2026 :
 
 - **`develop`** : l'agent y merge ses PR quand la CI est verte, sans attendre. Rien n'y atteint la prod.
   Sa preview Vercel est branchée sur le staging.
-- **`main`** : la prod. Une fois par jour, Louis teste `develop`, puis l'agent ouvre **une** PR
-  `develop` → `main` avec le récapitulatif et la liste de ce qu'il reste à juger à l'œil.
-  **Seul l'accord explicite de Louis pour cette PR permet de la merger.**
-- **Migration SQL** : l'agent autonome ne l'exécute jamais. Une PR qui en contient une attend son
-  application sur staging avant d'entrer dans `develop`, et le récapitulatif quotidien rappelle
-  à Louis de l'appliquer en prod avant le merge dans `main`.
-  Une session Claude **pilotée par un humain** peut appliquer la migration sur **staging uniquement**,
-  via le connecteur `supabase-staging` (`.mcp.json`, limité au projet `fmbvvzmoepsyjlhrmbpy`),
-  après l'avoir testée en local (accord de Louis du 16/11/2026). La prod reste appliquée par Louis.
+- **`main`** : la prod. On l'atteint par **une** PR `develop` → `main` avec le récapitulatif, l'ordre des
+  migrations et la liste de ce qu'il reste à juger à l'œil. **Il faut l'accord explicite de la personne qui
+  porte la mise en prod** : Louis, ou Lorenzo pour une mise en prod qu'il porte (décision de Louis du 17/11/2026).
+  Un agent ne merge jamais dans `main` de sa propre initiative.
+- **Louis est prévenu de chaque mise en prod** : le workflow `.github/workflows/notify-prod.yml` ouvre une issue
+  qui lui est assignée (PR parties en prod, auteurs, migrations) à chaque arrivée de code sur `main`.
+- **Migration SQL** : toujours un fichier de migration dans une PR, appliqué d'abord sur le staging (avant
+  l'entrée dans `develop`), puis en prod dans l'ordre écrit dans la PR de mise en prod. Ce sont Louis ou Lorenzo
+  qui l'appliquent dans l'éditeur SQL de Supabase. Un agent prépare le SQL, il ne l'exécute pas en prod ;
+  sur le staging, seulement par un accès limité au projet de staging (voir §3).
 
 Chaque issue porte un label de risque. En l'absence de label → traiter comme `risk:high`.
 
@@ -79,13 +80,15 @@ le signaler en tête de PR) :
 
 ## 3. Interdits
 
-- Pousser sur `main` ou `develop` hors PR, merger dans `main` sans l'accord de Louis, forcer un push, réécrire l'historique.
+- Pousser sur `main` ou `develop` hors PR, merger dans `main` sans l'accord explicite de la personne qui porte
+  la mise en prod (§2), forcer un push, réécrire l'historique.
 - Lancer des tests connectés ailleurs que sur le staging, ou donner le rôle admin à `test@everlease.fr`.
-- Toucher à la base de **production** Supabase, ou exécuter du SQL ailleurs qu'en staging via
-  `supabase-staging` dans une session pilotée par un humain (§2).
+- Toucher à la base de **production** Supabase depuis un agent (outil, MCP, script), ou exécuter du SQL qui
+  n'est pas un fichier de migration de la PR. Un accès Supabase donné à un agent (MCP, jeton) ne couvre que le
+  projet de **staging** : jamais une organisation qui contient la prod.
   Toute évolution de schéma = un **nouveau** fichier `supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`
-  dans la PR (jamais de modification d'une migration existante), appliqué d'abord sur staging,
-  puis en prod par Louis. `supabase/legacy/` contient les anciens scripts, déjà inclus dans la baseline.
+  dans la PR (jamais de modification d'une migration existante), rejouable. Elle est appliquée d'abord sur
+  le staging, puis en prod. `supabase/legacy/` contient les anciens scripts, déjà inclus dans la baseline.
 - Committer un secret, une clé, un `.env*`.
 - Modifier `seela-bos/` (workspace business, hors périmètre de l'agent).
 - Partager le CSS entre la landing (`app/landing.css`, scopé `.lp`) et l'app (`app/globals.css`).
