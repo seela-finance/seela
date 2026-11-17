@@ -6,7 +6,9 @@ import { can, type Capability } from '@/lib/admin-roles'
 import { workflowDeps } from '@/lib/admin-store'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { addRequestNote, recordLeaserDecision, refuseRequest, rerunMatching, validateAndTransmit, WorkflowError } from '@/lib/admin-workflow'
-import { TransitionError } from '@/lib/transitions'
+import { TransitionError, transitionRequest } from '@/lib/transitions'
+import { parseStartDate } from '@/lib/partner-workflow'
+import { RS } from '@/lib/status'
 import { isUuid } from '@/lib/admin-request-detail'
 import { addManualOffer, parseCounterOffer, parseManualOffer, proposeCounterOffer } from '@/lib/admin-offers'
 import { CreditAnalysisError, runCreditAnalysis } from '@/lib/credit-analyst'
@@ -112,4 +114,19 @@ export async function creditAnalysisAction(_: ActionState, form: FormData): Prom
     avis = opinionInfo(record.avis).label
     await logAdminEvent(admin, { action: 'Analyse crédit relancée', requestId, note: `Avis : ${avis}` })
   }, () => `Analyse mise à jour : ${avis.toLowerCase()}.`)
+}
+
+// Démarrage du contrat (leaser_confirmed → active) : la date sert au suivi du partenaire (fin = début + durée).
+export async function startContractAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const admin = await memberWith('decide_requests')
+  if (!admin) return DENIED
+  const requestId = field(form, 'requestId')
+  const start = parseStartDate(field(form, 'startDate'))
+  if (!isUuid(requestId)) return { ok: false, message: 'Dossier introuvable.' }
+  if (!start) return { ok: false, message: 'Date de démarrage invalide.' }
+  return run(requestId, async () => {
+    const db = createAdminClient()
+    await transitionRequest(db, requestId, RS.leaser_confirmed, RS.active, { contract_start_date: start }, 'admin')
+    await logAdminEvent(admin, { action: 'contract_started', requestId, after: { contract_start_date: start } })
+  }, `Contrat démarré le ${start.split('-').reverse().join('/')}.`)
 }

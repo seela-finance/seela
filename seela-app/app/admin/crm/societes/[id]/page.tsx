@@ -11,6 +11,8 @@ import { isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
+import PartnerCard from '@/components/admin/partner/PartnerCard'
+import { can } from '@/lib/admin-roles'
 import CallButton from '@/components/admin/crm/CallButton'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
@@ -24,6 +26,7 @@ type Company = {
   legal_form: string | null; naf_code: string | null; creation_year: number | null; headcount_bracket: string | null
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
+  partner_enabled?: boolean | null
 }
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
 type Request = { id: string; status: string | null; total_amount: number | null; duration_months: number | null; created_at: string }
@@ -138,6 +141,10 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
             </dl>
             <PropertiesForm companyId={c.id} values={values} team={team} />
           </Card>
+          {/* Parcours distributeur : espace partenaire (colonne absente avant la migration : rien ne s'affiche) */}
+          {c.partner_enabled != null && (
+            <PartnerCard companyId={c.id} enabled={!!c.partner_enabled} canEdit={can(admin.role, 'decide_requests')} />
+          )}
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>

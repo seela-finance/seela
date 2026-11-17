@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
-import { authCallbackUrl, authErrorMessage } from '@/lib/auth-redirect'
+import { authCallbackUrlWithNext, authErrorMessage, safeNext } from '@/lib/auth-redirect'
 import { loadAccount, onboardingDone } from '@/lib/account'
 
 type Mode = 'login' | 'signup'
@@ -23,10 +23,13 @@ function AuthForm() {
   const router = useRouter()
   const supabase = useRef(createClient()).current
   // Retour d'un lien de confirmation expiré ou ouvert ailleurs (app/auth/callback)
-  const callbackError = authErrorMessage(useSearchParams().get('error'))
+  const params = useSearchParams()
+  const callbackError = authErrorMessage(params.get('error'))
+  // Lien d'invitation d'un partenaire : retour au lien après connexion, email invité pré-rempli
+  const next = safeNext(params.get('next'))
 
-  const [mode, setMode] = useState<Mode>('login')
-  const [email, setEmail] = useState('')
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'signup' ? 'signup' : 'login')
+  const [email, setEmail] = useState(params.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -56,16 +59,16 @@ function AuthForm() {
         const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         if (loginData.user) {
-          router.push(onboardingDone(await loadAccount(supabase, loginData.user.id)) ? '/app/dashboard' : '/app/onboarding')
+          router.push(next ?? (onboardingDone(await loadAccount(supabase, loginData.user.id)) ? '/app/dashboard' : '/app/onboarding'))
           router.refresh()
         }
       } else {
         // Le lien de confirmation revient sur ce site (et non sur l'adresse réglée dans Supabase, qui peut être périmée)
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: authCallbackUrl(window.location.origin) } })
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: authCallbackUrlWithNext(window.location.origin, next) } })
         if (error) throw error
 
         if (data.session) {
-          router.push('/app/onboarding')
+          router.push(next ?? '/app/onboarding')
           router.refresh()
         } else {
           setMessage('Vérifiez votre email pour confirmer votre compte.')
