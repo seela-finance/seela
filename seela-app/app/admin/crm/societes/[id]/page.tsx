@@ -28,6 +28,7 @@ type Company = {
   legal_form: string | null; naf_code: string | null; creation_year: number | null; headcount_bracket: string | null
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
+  lemlist_industry: string | null; location: string | null; description: string | null; linkedin_url: string | null
   partner_enabled?: boolean | null
   lead_status: string | null; lead_channel: string | null; lead_signal: string | null; lead_entered_at: string | null; lead_exit_reason: string | null; lead_next_date: string | null
 }
@@ -103,6 +104,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['SIREN', c.siren ? <span className="ev-mono">{c.siren}</span> : null],
     ['Domaine', c.domain],
     ['Secteur', c.sector],
+    ['Secteur (Lemlist)', c.lemlist_industry],
+    ['Localisation', c.location],
     ['Forme juridique', c.legal_form],
     ['Code NAF', c.naf_code],
     ['Création', c.creation_year],
@@ -111,6 +114,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['Source', c.source],
     ['Signal', c.signal],
     ['Site web', c.website],
+    ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Page entreprise</a> : null],
     ['Propriétaire', nameOf(c.owner_id)],
     ['Créée le', fmtDate(c.created_at)],
   ]
@@ -128,6 +132,12 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
           <section className="ev-card p-5 flex flex-col gap-3">
             <h1 className="ev-display text-2xl">{c.name}</h1>
             {c.domain && <p className="text-sm -mt-2" style={{ color: 'var(--ink-3)' }}>{c.domain}</p>}
+            {c.description && (
+              <details className="text-sm" style={{ color: 'var(--ink-2)' }}>
+                <summary className="cursor-pointer text-xs" style={{ color: 'var(--ink-3)' }}>Description de l’entreprise</summary>
+                <p className="mt-1 whitespace-pre-line">{c.description}</p>
+              </details>
+            )}
             <div className="flex flex-wrap gap-1.5">
               <span className={STAGE_TAG[stage]}>{LIFECYCLE_LABEL[stage]}</span>
               {c.seela_score_grade && <span className="ev-tag">Score {c.seela_score_grade} · {c.seela_score}</span>}

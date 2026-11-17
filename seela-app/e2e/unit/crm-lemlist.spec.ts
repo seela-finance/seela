@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { companyNameFor, emailHtmlToText, mapLemlistActivity, summarizeLemlist, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
+import { companyNameFor, emailHtmlToText, fillEmpty, mapLemlistLead, mapLemlistActivity, summarizeLemlist, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
 
 const act = (patch: Partial<LemlistActivity>): LemlistActivity => ({
   _id: 'a1', type: 'emailsSent', createdAt: '2026-11-10T10:00:00.000Z', leadEmail: 'Marie@Garage-Martin.fr', leadFirstName: 'Marie',
@@ -70,4 +70,17 @@ test('contenu complet : HTML → texte avec paragraphes, sans l’historique cit
   expect(emailHtmlToText('Merci<br>À bientôt<br><br><br>Le 3 nov. 2026, Paul a écrit :<br>&gt; ancien')).toBe('Merci\nÀ bientôt')
   expect(emailHtmlToText('<div id="divRplyFwdMsg">De : x</div>')).toBeNull()
   expect(emailHtmlToText(null)).toBeNull()
+})
+
+test('fiche du lead : champs du contact et de la société, année et liens nettoyés', () => {
+  const m = mapLemlistLead({ contactId: 'ctc_1', firstName: ' Marie ', jobTitle: 'DAF', linkedinUrl: 'linkedin.com/in/marie', tagline: 'DAF chez Garage', location: 'Rouen',
+    companyIndustry: 'Automotive', companySize: '11-50', companyFoundedOn: '2009-01-01', companyLocation: 'Rouen, Normandie', companyDescription: 'Garage', companyLinkedinUrl: 'https://linkedin.com/company/g' })
+  expect(m.contact).toEqual({ first_name: 'Marie', last_name: null, job_title: 'DAF', linkedin_url: 'https://linkedin.com/in/marie', headline: 'DAF chez Garage', location: 'Rouen', lemlist_contact_id: 'ctc_1' })
+  expect(m.company).toEqual({ lemlist_industry: 'Automotive', headcount_bracket: '11-50', creation_year: 2009, location: 'Rouen, Normandie', description: 'Garage', linkedin_url: 'https://linkedin.com/company/g' })
+  expect(mapLemlistLead({ companyFoundedOn: 'inconnu' }).company.creation_year).toBeNull()
+})
+
+test('champs vides seulement : une saisie de l’équipe n’est jamais écrasée', () => {
+  expect(fillEmpty({ job_title: 'Directeur financier', location: null, headline: '' }, { job_title: 'DAF', location: 'Rouen', headline: 'DAF chez X', linkedin_url: null }))
+    .toEqual({ location: 'Rouen', headline: 'DAF chez X' })
 })
