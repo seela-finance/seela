@@ -91,9 +91,9 @@ export function companyNameFor(lead: MappedActivity['lead']): string | null {
 
 export const SYNC_EVERY_MS = 15 * 60 * 1000
 
-/** Une synchro a démarré il y a moins de 5 min (au-delà, considérée comme interrompue). */
+/** Une synchro a démarré il y a moins de 15 min (au-delà, considérée comme interrompue). */
 export function syncIsRunning(runningSince: string | null, now: Date): boolean {
-  return !!runningSince && now.getTime() - Date.parse(runningSince) < 5 * 60 * 1000
+  return !!runningSince && now.getTime() - Date.parse(runningSince) < 15 * 60 * 1000
 }
 
 export function syncIsDue(lastRunAt: string | null, now: Date): boolean {

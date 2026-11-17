@@ -5,7 +5,7 @@ import { companyNameFor, emailHtmlToText, newSince, pageReachedCursor, type Leml
 const API = 'https://api.lemlist.com/api/activities'
 const PAGE = 100
 const MAX_PAGES = 100
-const LOCK_MS = 5 * 60 * 1000
+const LOCK_MS = 15 * 60 * 1000
 
 export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number }
 
