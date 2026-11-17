@@ -2,14 +2,14 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
-import { classifyMessage, excerpt, MAIL_SYNC_DAYS, normalizeAddress } from '@/lib/crm-mail'
+import { classifyMessage, excerpt, MAIL_SYNC_DAYS, needsRescan, normalizeAddress, type FolderState } from '@/lib/crm-mail'
 import { open } from '@/lib/secret-box'
 
 const LOCK_MS = 10 * 60 * 1000
 
 export type Mailbox = {
   id: string; user_id: string; email: string; imap_host: string; imap_port: number; password_enc: string
-  folders: Record<string, { uidValidity: string; lastUid: number }>; running_since: string | null
+  folders: Record<string, FolderState>; running_since: string | null
 }
 export type MailSyncResult = { imported: number; scanned: number }
 
@@ -44,8 +44,10 @@ export async function syncMailbox(db: SupabaseClient, mailbox: Mailbox): Promise
   const folders = { ...mailbox.folders }
   const client = imapClient(mailbox, open(mailbox.password_enc))
   try {
-    const { data: contactRows } = await db.from('contacts').select('id, email, company_id').not('email', 'is', null).limit(20000)
-    const byEmail = new Map(((contactRows ?? []) as { id: string; email: string; company_id: string | null }[]).map(c => [normalizeAddress(c.email), c]))
+    const { data: contactRows } = await db.from('contacts').select('id, email, company_id, updated_at').not('email', 'is', null).limit(20000)
+    const contactList = (contactRows ?? []) as { id: string; email: string; company_id: string | null; updated_at: string }[]
+    const byEmail = new Map(contactList.map(c => [normalizeAddress(c.email), c]))
+    const latestContactAt = contactList.reduce<string | null>((m, c) => (!m || c.updated_at > m ? c.updated_at : m), null)
     const emails = new Set(byEmail.keys())
 
     await client.connect()
@@ -60,12 +62,13 @@ export async function syncMailbox(db: SupabaseClient, mailbox: Mailbox): Promise
         const box = client.mailbox
         const uidValidity = box ? String(box.uidValidity) : ''
         const prev = folders[path]
-        const fresh = !prev || prev.uidValidity !== uidValidity
-        let lastUid = fresh ? 0 : prev.lastUid
+        const fresh = needsRescan(prev, uidValidity, latestContactAt)
+        let lastUid = prev && prev.uidValidity === uidValidity ? prev.lastUid : 0
+        const from = fresh ? 0 : lastUid
         const uids = fresh
           ? (await client.search({ since: new Date(Date.now() - MAIL_SYNC_DAYS * 86_400_000) }, { uid: true })) || []
           : (await client.search({ uid: `${lastUid + 1}:*` }, { uid: true })) || []
-        const todo = uids.filter(u => u > lastUid)
+        const todo = uids.filter(u => u > from)
         if (todo.length) {
           const matched: { uid: number; messageId: string | null; date: Date; subject: string | null; from: string[]; to: string[]; cc: string[]; direction: 'sent' | 'received'; contact: { id: string; company_id: string | null } }[] = []
           for await (const msg of client.fetch(todo.join(','), { uid: true, envelope: true, internalDate: true }, { uid: true })) {
@@ -93,7 +96,7 @@ export async function syncMailbox(db: SupabaseClient, mailbox: Mailbox): Promise
             })
           }
         }
-        folders[path] = { uidValidity, lastUid }
+        folders[path] = { uidValidity, lastUid, contactsAt: latestContactAt }
       } finally {
         lock.release()
       }
