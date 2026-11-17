@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { recommendedOffer, sortOffers, formatRate, leaserInitials } from '../../lib/offers'
+import { highlightedOffer, recommendedOffer, sortOffers, formatRate, leaserInitials } from '../../lib/offers'
 
 const offer = (id: string, monthly_payment: number, duration_months = 36, status = 'indicative') =>
   ({ id, monthly_payment, duration_months, status })
@@ -20,6 +20,14 @@ test.describe('Recommandation des offres', () => {
   test('pas de recommandation avec moins de 2 offres éligibles', () => {
     expect(recommendedOffer([offer('a', 300)])).toBeNull()
     expect(recommendedOffer([offer('a', 300), offer('b', 200, 36, 'refused')])).toBeNull()
+  })
+
+  test('mise en avant : l’offre seule l’est, sans être recommandée', () => {
+    expect(highlightedOffer([offer('a', 300)])?.id).toBe('a')
+    expect(highlightedOffer([offer('a', 300), offer('b', 200, 36, 'refused')])?.id).toBe('a')
+    expect(highlightedOffer([offer('a', 320), offer('b', 290)])?.id).toBe('b')
+    expect(highlightedOffer([offer('a', 300, 36, 'refused')])).toBeNull()
+    expect(highlightedOffer([])).toBeNull()
   })
 
   test('tri : recommandée en tête, refusées en dernier', () => {
