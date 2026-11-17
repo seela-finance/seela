@@ -78,6 +78,7 @@ Termine par : ce qui est prêt, ce qui manque, les PR ouvertes qui touchent la z
 
 ## 4. Pièges connus
 
+- **Pas d'accès aux previews Vercel pour Lorenzo** (décision du 17/11/2026, pas de place dans l'équipe Vercel) : les URL de preview (`develop`, PR) demandent une connexion Vercel. Ne les propose pas pour tester : lance l'app en local (`npm run dev`, `.env.local` sur le staging) et `npm run test:staging`. Si le check Vercel d'une PR ou d'une mise en prod affiche « Authorization required » (commit d'un auteur hors de l'équipe Vercel), le déploiement attend : préviens Louis, qui l'approuve dans Vercel. Ne désactive jamais la protection des previews.
 - `npm run check` échoue au prerender de `/auth` sans variables Supabase publiques : charger `.env.staging.local` (variables publiques seulement) avant le build local.
 - Turbopack : un `.next/dev` corrompu bloque le serveur de test → `rm -rf .next/dev`. Avant `tsc`, `rm -rf .next/types .next/dev/types`.
 - Le serveur de dev peut dépasser 2 min au démarrage (polices Google, `next/font`) : relancer une fois avant de chercher plus loin.
