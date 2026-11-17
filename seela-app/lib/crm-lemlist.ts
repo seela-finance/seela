@@ -32,7 +32,7 @@ export const lemlistEventLabel = (event: string | null) => (isLemlistEvent(event
 export type LemlistActivity = {
   _id: string; type: string; createdAt: string; leadEmail?: string | null; leadFirstName?: string | null; leadLastName?: string | null
   leadCompanyName?: string | null; campaignId?: string | null; campaignName?: string | null; subject?: string | null
-  messagePreview?: string | null; outOfOfficeEndsAt?: string | null; sendUserName?: string | null; sendUserEmail?: string | null; sequenceStep?: number | null; leadId?: string | null
+  messagePreview?: string | null; outOfOfficeEndsAt?: string | null; messageId?: string | null; contactId?: string | null; sendUserName?: string | null; sendUserEmail?: string | null; sequenceStep?: number | null; leadId?: string | null
 }
 
 export type MappedActivity = {
@@ -50,7 +50,8 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
   const email = clean(a.leadEmail, 320)?.toLowerCase()
   if (!email || !email.includes('@')) return null
   const domain = normalizeDomain(email)
-  const replied = a.type === 'emailsReplied' || a.type === 'linkedinReplied' || a.type === 'outOfOffice'
+  // L'aperçu Lemlist ne fait que quelques mots : le contenu des emails vient de la boîte Lemlist (fetchInbox)
+  const withText = ['linkedinSent', 'linkedinReplied', 'outOfOffice'].includes(a.type)
   return {
     externalId: a._id,
     event: a.type,
@@ -62,8 +63,8 @@ export function mapLemlistActivity(a: LemlistActivity): MappedActivity | null {
     },
     title: clean(a.subject, 300),
     summary: [a.campaignName && `Campagne « ${a.campaignName.trim()} »`, a.sendUserName && `par ${a.sendUserName.trim()}`].filter(Boolean).join(' ') || null,
-    body: replied ? clean(a.messagePreview, 5000) : null,
-    metadata: { campaignId: a.campaignId ?? null, campaignName: a.campaignName ?? null, sendUserEmail: a.sendUserEmail ?? null, sequenceStep: a.sequenceStep ?? null, leadId: a.leadId ?? null, outOfOfficeEndsAt: a.outOfOfficeEndsAt ?? null },
+    body: withText ? clean(a.messagePreview, 5000) : null,
+    metadata: { campaignId: a.campaignId ?? null, campaignName: a.campaignName ?? null, sendUserEmail: a.sendUserEmail ?? null, sequenceStep: a.sequenceStep ?? null, leadId: a.leadId ?? null, outOfOfficeEndsAt: a.outOfOfficeEndsAt ?? null, messageId: a.messageId ?? null, lemlistContactId: a.contactId ?? null },
   }
 }
 
@@ -90,13 +91,18 @@ export function companyNameFor(lead: MappedActivity['lead']): string | null {
 
 export const SYNC_EVERY_MS = 15 * 60 * 1000
 
+/** Une synchro a démarré il y a moins de 15 min (au-delà, considérée comme interrompue). */
+export function syncIsRunning(runningSince: string | null, now: Date): boolean {
+  return !!runningSince && now.getTime() - Date.parse(runningSince) < 15 * 60 * 1000
+}
+
 export function syncIsDue(lastRunAt: string | null, now: Date): boolean {
   return !lastRunAt || now.getTime() - Date.parse(lastRunAt) >= SYNC_EVERY_MS
 }
 
 // ─── Bloc « Prospection Lemlist » d'une fiche ────────────────────────────────
 
-export type LemlistRow = { event: string | null; occurred_at: string; body: string | null; metadata: Record<string, unknown> | null }
+export type LemlistRow = { id?: string; event: string | null; occurred_at: string; title?: string | null; body: string | null; metadata: Record<string, unknown> | null }
 
 export type LemlistSummary = {
   sent: number; opened: number; clicked: number; replied: number
@@ -104,6 +110,8 @@ export type LemlistSummary = {
   bounced: boolean; unsubscribed: boolean; antiSpam: boolean; outOfOffice: string | null | false
   linkedinInvited: boolean; linkedinAccepted: boolean; linkedinMessages: number; linkedinReplies: number
   campaigns: string[]; lastActivityAt: string | null; lastSentAt: string | null; lastReply: { at: string; text: string | null } | null
+  /** Emails envoyés et réponses, du plus récent au plus ancien (30 au plus). */
+  emails: LemlistRow[]
 }
 
 /** Compteurs et indicateurs d'une fiche à partir de ses événements Lemlist. Intéressé : le dernier avis l'emporte. */
@@ -125,5 +133,38 @@ export function summarizeLemlist(rows: LemlistRow[]): LemlistSummary {
     linkedinMessages: count('linkedinSent'), linkedinReplies: count('linkedinReplied'),
     campaigns, lastActivityAt: sorted.at(-1)?.occurred_at ?? null, lastSentAt: last('emailsSent')?.occurred_at ?? null,
     lastReply: reply ? { at: reply.occurred_at, text: reply.body } : null,
+    emails: [...sorted].reverse().filter(r => r.event === 'emailsSent' || r.event === 'emailsReplied').slice(0, 30),
   }
+}
+
+// ─── Contenu complet des emails (boîte Lemlist d'un contact : GET /api/inbox/{contactId}) ──────
+
+export type LemlistInboxMessage = { messageId?: string | null; type?: string | null; message?: string | null; subject?: string | null; createdAt?: string | null }
+
+const ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", '#39': "'" }
+
+/**
+ * HTML d'un email → texte lisible, sans l'historique cité (bloc de citation Gmail / Outlook / Apple, « Le … a écrit : »).
+ * Paragraphes conservés, 10 000 caractères au plus.
+ */
+export function emailHtmlToText(html: string | null | undefined): string | null {
+  if (!html) return null
+  let s = html
+    .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<div[^>]*class="[^"]*(gmail_quote|gmail_extra)[^"]*"[\s\S]*$/i, '')
+    .replace(/<blockquote[\s\S]*$/i, '')
+    .replace(/<div[^>]*id="(divRplyFwdMsg|appendonsend)"[\s\S]*$/i, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+    .replace(/<\/(td|th|span|a)>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(#?\w+);/g, (m, e: string) => ENTITIES[e.toLowerCase()] ?? (e.startsWith('#') ? String.fromCharCode(Number(e.slice(1).replace(/^x/i, '0x'))) : m))
+  const lines: string[] = []
+  for (const line of s.split('\n')) {
+    if (/^\s*(Le .+a écrit\s*:|On .+wrote:|-{2,}\s*(Original Message|Message d.origine)|De\s*:\s.+|From:\s.+)\s*$/i.test(line)) break
+    if (/^\s*>/.test(line)) continue
+    lines.push(line.replace(/[ \t\u00a0]+/g, ' ').trim())
+  }
+  s = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return s ? s.slice(0, 10000) : null
 }

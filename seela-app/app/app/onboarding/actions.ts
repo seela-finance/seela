@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decideCompany } from '@/lib/account'
 import { isSiren } from '@/lib/company-registry'
+import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
 
 type Result = { ok: true } | { ok: false; message: string }
 const FAIL: Result = { ok: false, message: 'Enregistrement impossible. Réessayez dans un instant.' }
@@ -66,6 +67,12 @@ export async function saveOnboardingCompany(input: {
     if (cErr) throw cErr
     // Dossiers créés avant que la société soit connue
     await db.from('financing_requests').update({ company_id: companyId, created_by: contact.id }).eq('user_id', user.id).is('company_id', null)
+    // Pré-pipe inbound : la demande entrante est à qualifier (sans bloquer l'inscription si ça échoue)
+    try {
+      await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'inscription', status: 'qualification', strong: true }, await getCrmSettings(db))
+    } catch (err) {
+      console.error('[onboarding pré-pipe]', err)
+    }
     return { ok: true }
   } catch (err) {
     console.error('[onboarding société]', err)

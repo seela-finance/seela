@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
+import { recordInboundLead } from '@/lib/crm-inbound'
+import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
 
 // Où arrivent les demandes "Parler à un expert".
 // Liste d'emails séparés par des virgules, surchargeable via env LEADS_EMAIL.
@@ -87,6 +89,11 @@ export async function POST(req: Request) {
     ],
   }
 
+  // Le lead entre aussi dans le CRM (pré-pipe inbound). Un échec ici ne bloque ni l'email ni Slack.
+  const crm = isServiceRoleConfigured()
+    ? recordInboundLead(createAdminClient(), { entreprise: String(entreprise), prenom: String(prenom), nom: String(nom), role: String(role), email: String(email), telephone: String(telephone), devis: devisLabel, origine }).catch(err => console.error('[contact-expert] CRM', err))
+    : Promise.resolve()
+
   // On tente les deux canaux indépendamment ; un lead n'est perdu que si les deux échouent.
   const [emailRes, slackRes] = await Promise.allSettled([
     sendEmail({ to: LEADS_EMAILS, subject, html, alwaysSend: true }),
@@ -99,6 +106,7 @@ export async function POST(req: Request) {
       : Promise.resolve(null),
   ])
 
+  await crm
   const emailOk = emailRes.status === 'fulfilled' && emailRes.value?.success !== false
   const slackOk = !slackUrl || (slackRes.status === 'fulfilled' && (slackRes.value === null || (slackRes.value as Response).ok))
 

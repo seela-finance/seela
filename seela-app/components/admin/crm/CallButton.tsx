@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from 'react'
 import { addActivityAction, type FicheState } from '@/app/admin/crm/fiche-actions'
 import { CALL_OUTCOMES, OUTCOME_LABEL } from '@/lib/crm-activities'
 import { formatPhone, toE164 } from '@/lib/phone'
+import { ExitReasonField } from '@/components/admin/crm/PrepipeForms'
 
 /**
  * Lien d'appel (tel:) : le Mac ouvre l'app d'appel par défaut (iPhone via FaceTime, ou le logiciel de téléphonie).
@@ -14,6 +15,7 @@ export default function CallButton({ phone, companyId, contactId, contactName, c
 }) {
   const e164 = toE164(phone)
   const [open, setOpen] = useState(false)
+  const [outcome, setOutcome] = useState('')
   const startedAt = useRef<number>(0)
   const [state, submit, pending] = useActionState<FicheState, FormData>(async (prev, form) => {
     const next = await addActivityAction(prev, form)
@@ -47,7 +49,7 @@ export default function CallButton({ phone, companyId, contactId, contactName, c
             <input type="hidden" name="companyId" value={companyId} />
             <input type="hidden" name="type" value="call" />
             <input type="hidden" name="contact_id" value={contactId} />
-            <fieldset className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <fieldset className="flex flex-wrap gap-x-4 gap-y-2 text-sm" onChange={e => setOutcome((e.target as unknown as HTMLInputElement).value)}>
               <legend className="ev-label mb-1">Issue de l’appel</legend>
               {CALL_OUTCOMES.map(o => (
                 <label key={o} className="flex items-center gap-1.5">
@@ -55,6 +57,7 @@ export default function CallButton({ phone, companyId, contactId, contactName, c
                 </label>
               ))}
             </fieldset>
+            {outcome === 'societe_disqualifiee' && <ExitReasonField />}
             <textarea name="notes" className="ev-input" placeholder="Compte rendu (facultatif)" aria-label="Compte rendu" />
             <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--ink-2)' }}>
               <input type="checkbox" name="duration" defaultChecked style={{ accentColor: 'var(--accent)' }} /> Noter la durée (depuis le clic sur Appeler)

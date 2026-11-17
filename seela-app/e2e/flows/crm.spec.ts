@@ -39,6 +39,7 @@ test('CRM : société, doublon SIREN, contact, appel, tâche et deal jusqu’au 
   const name = `CRM E2E ${run.runId}`
   const siren = `8${String(parseInt(run.runId, 16) % 1e8).padStart(8, '0')}`
   const admin = await pageAs(browser, 'admin')
+  let companyId = ''
 
   try {
     await test.step('créer une société, puis refuser le même SIREN', async () => {
@@ -50,6 +51,7 @@ test('CRM : société, doublon SIREN, contact, appel, tâche et deal jusqu’au 
       await admin.getByRole('button', { name: 'Créer' }).click()
       await expect(admin.getByRole('heading', { name })).toBeVisible({ timeout: 30_000 })
       const ficheUrl = admin.url()
+      companyId = ficheUrl.split('/').pop() ?? ''
 
       await admin.goto('/admin/crm/societes')
       await admin.getByRole('button', { name: 'Nouvelle société' }).click()
@@ -72,6 +74,8 @@ test('CRM : société, doublon SIREN, contact, appel, tâche et deal jusqu’au 
       await admin.getByLabel('Contenu').fill(`Premier appel ${run.runId}`)
       await admin.getByRole('button', { name: 'Enregistrer' }).click()
       await expect(admin.getByText(`Premier appel ${run.runId}`)).toBeVisible()
+      await expect(admin.getByText('Deal créé en « Pending qualification »')).toBeVisible()
+      await expect(admin.getByLabel('Lead status')).toHaveValue('rdv_pris')
 
       await admin.getByLabel('Intitulé de la tâche').fill(`Envoyer la proposition ${run.runId}`)
       await admin.getByRole('button', { name: 'Ajouter', exact: true }).click()
@@ -96,10 +100,31 @@ test('CRM : société, doublon SIREN, contact, appel, tâche et deal jusqu’au 
       await admin.locator('#nd-amount').fill('12000')
       await admin.getByRole('button', { name: 'Créer' }).click()
       const card = admin.getByRole('article').filter({ hasText: `Parc IT ${run.runId}` })
-      await expect(admin.getByRole('region', { name: 'À contacter' }).getByText(`Parc IT ${run.runId}`)).toBeVisible()
-      await card.getByLabel('Étape du deal').selectOption('proposition')
-      await expect(admin.getByRole('region', { name: 'Proposition' }).getByText(`Parc IT ${run.runId}`)).toBeVisible()
+      await expect(admin.getByRole('region', { name: 'Pending qualification' }).getByText(`Parc IT ${run.runId}`)).toBeVisible()
+      await card.getByLabel('Étape du deal').selectOption('evaluating')
+      await expect(admin.getByRole('region', { name: 'Evaluating' }).getByText(`Parc IT ${run.runId}`)).toBeVisible()
       await shot(admin, '22-crm-deals')
+    })
+
+    await test.step('l’écran de session d’appels réunit la société, Lemlist, le dernier appel et les contacts', async () => {
+      await admin.goto(`/admin/crm/appels/${companyId}`)
+      await expect(admin.getByRole('link', { name, exact: true })).toBeVisible()
+      await expect(admin.getByText('Pour l’approche')).toBeVisible()
+      await expect(admin.getByText('Contacts à appeler (1)')).toBeVisible()
+      await expect(admin.getByText('Hors session d’appels')).toBeVisible()
+      await shot(admin, '25-crm-session-appels')
+    })
+
+    await test.step('le pré-pipe range la société en RDV pris ; une sortie manuelle demande la raison', async () => {
+      await admin.goto('/admin/crm/prospection')
+      const column = admin.getByRole('region', { name: 'RDV pris' })
+      await expect(column.getByRole('link', { name })).toBeVisible()
+      await shot(admin, '24-crm-prospection')
+      const card = column.getByRole('article').filter({ hasText: name })
+      await card.getByLabel('Lead status').selectOption('disqualifie')
+      await card.getByLabel('Raison').selectOption('Pas de besoin')
+      await card.getByRole('button', { name: 'OK' }).click()
+      await expect(admin.getByRole('region', { name: 'Disqualifié' }).getByRole('link', { name })).toBeVisible()
     })
 
     await test.step('le contact se retrouve par la recherche', async () => {

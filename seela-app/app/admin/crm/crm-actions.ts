@@ -100,7 +100,7 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
     if (!isUuid(id) || !isDealStage(stage)) throw new CrmError('Deal introuvable.')
     const lost = String(form.get('lost_reason') ?? '').trim()
     const { data, error } = await db.from('crm_deals')
-      .update({ stage, lost_reason: stage === 'perdu' ? lost || null : null, updated_at: new Date().toISOString() })
+      .update({ stage, lost_reason: stage === 'lost' ? lost || null : null, updated_at: new Date().toISOString() })
       .eq('id', id).select('company_id, name').single()
     if (error) throw error
     await logAdminEvent(admin, { action: `CRM : deal « ${data.name} » → ${DEAL_STAGE_LABEL[stage]}`, after: { company_id: data.company_id, deal_id: id, stage } })
@@ -113,9 +113,12 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
 export async function syncLemlistAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
   return guard(async ({ admin, db }) => {
     const result = await syncLemlist(db, { full: form.get('full') === 'on' })
-    if ('skipped' in result) throw new CrmError(result.skipped)
+    if ('skipped' in result) {
+      if (result.skipped.includes('en cours')) return { message: 'Un import est déjà en cours : rafraîchissez la page dans une minute.' }
+      throw new CrmError(result.skipped)
+    }
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
-    return { message: `${result.imported} événement(s) importé(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })
 }
 
@@ -158,5 +161,24 @@ export async function disconnectMailboxAction(): Promise<CrmFormState> {
     if (error) throw error
     await logAdminEvent(admin, { action: 'CRM : boîte mail déconnectée' })
     return { message: 'Boîte déconnectée, mot de passe effacé. Les emails déjà enregistrés restent sur les fiches.' }
+  })
+}
+
+// ─── Réglages du pré-pipe ────────────────────────────────────────────────────
+
+export async function saveCrmSettingsAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
+  return guard(async ({ admin, db, teamIds }) => {
+    const owner = String(form.get('prepipe_owner') ?? '')
+    const threshold = Number(form.get('sequence_threshold'))
+    if (owner && !teamIds.includes(owner)) throw new CrmError('Propriétaire inconnu.')
+    if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) throw new CrmError('Seuil invalide.')
+    const now = new Date().toISOString()
+    const { error } = await db.from('crm_settings').upsert([
+      { key: 'prepipe_owner', value: owner || null, updated_at: now },
+      { key: 'sequence_threshold', value: threshold, updated_at: now },
+    ])
+    if (error) throw error
+    await logAdminEvent(admin, { action: 'CRM : réglages du pré-pipe', after: { prepipe_owner: owner || null, sequence_threshold: threshold } })
+    return { message: 'Réglages enregistrés. Ils s’appliquent aux prochains leads.' }
   })
 }

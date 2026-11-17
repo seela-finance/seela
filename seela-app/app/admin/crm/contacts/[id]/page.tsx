@@ -28,19 +28,19 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes, mailRes] = await Promise.all([
+  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes, mailRes, boxesRes] = await Promise.all([
     db.from('contacts').select('*, companies ( name, lifecycle_stage )').eq('id', id).maybeSingle(),
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
-    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
+    db.from('crm_mailboxes').select('email, user_id'),
   ])
   const c = contactRes.data as Contact | null
   if (!c) notFound()
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
-  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
-  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
+  const mailboxNames = new Map(((boxesRes.data ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
   const timeline = buildTimeline((activitiesRes.data ?? []) as ActivityRow[], [])
   const name = contactName(c)

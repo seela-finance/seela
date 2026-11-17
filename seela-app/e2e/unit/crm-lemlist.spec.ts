@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { companyNameFor, mapLemlistActivity, summarizeLemlist, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
+import { companyNameFor, emailHtmlToText, mapLemlistActivity, summarizeLemlist, newSince, pageReachedCursor, syncIsDue, type LemlistActivity } from '../../lib/crm-lemlist'
 
 const act = (patch: Partial<LemlistActivity>): LemlistActivity => ({
   _id: 'a1', type: 'emailsSent', createdAt: '2026-11-10T10:00:00.000Z', leadEmail: 'Marie@Garage-Martin.fr', leadFirstName: 'Marie',
   leadCompanyName: 'Garage Martin', campaignName: 'DAF PME', sendUserName: 'Lorenzo', subject: 'Votre parc IT', messagePreview: 'Bonjour…', ...patch,
 })
 
-test('envoi : rattaché au lead (email en minuscules, domaine de la société), sans le corps du message', () => {
+test('envoi : rattaché au lead (email en minuscules, domaine de la société), contenu récupéré à part', () => {
   expect(mapLemlistActivity(act({}))).toMatchObject({
     externalId: 'a1', event: 'emailsSent', type: 'email', title: 'Votre parc IT', body: null,
     summary: 'Campagne « DAF PME » par Lorenzo',
@@ -14,8 +14,9 @@ test('envoi : rattaché au lead (email en minuscules, domaine de la société), 
   })
 })
 
-test('réponse : le texte de la réponse est gardé ; LinkedIn a son propre type', () => {
-  expect(mapLemlistActivity(act({ type: 'emailsReplied', messagePreview: 'Oui, appelons-nous' }))?.body).toBe('Oui, appelons-nous')
+test('réponse LinkedIn : texte gardé, type LinkedIn ; email : identifiants pour récupérer le contenu', () => {
+  expect(mapLemlistActivity(act({ type: 'linkedinReplied', messagePreview: 'Oui, appelons-nous' }))?.body).toBe('Oui, appelons-nous')
+  expect(mapLemlistActivity(act({ type: 'emailsReplied', messageId: '<m1>', contactId: 'ctc_1' }))?.metadata).toMatchObject({ messageId: '<m1>', lemlistContactId: 'ctc_1' })
   expect(mapLemlistActivity(act({ type: 'linkedinInviteAccepted' }))?.type).toBe('linkedin')
 })
 
@@ -57,5 +58,16 @@ test('bloc Lemlist : compteurs, dernier avis intéressé, absence avec date de r
     sent: 2, opened: 2, clicked: 1, replied: 1, interested: true, bounced: false, antiSpam: false, outOfOffice: '2026-11-04',
     campaigns: ['DAF PME'], lastActivityAt: '2026-11-09', lastSentAt: '2026-11-05', lastReply: { at: '2026-11-08', text: 'Rappelez-moi' },
   })
+  expect(s.emails.map(e => `${e.event} ${e.occurred_at}`)).toEqual(['emailsReplied 2026-11-08', 'emailsSent 2026-11-05', 'emailsSent 2026-11-01'])
   expect(summarizeLemlist([])).toMatchObject({ sent: 0, interested: null, outOfOffice: false, lastActivityAt: null })
+})
+
+test('contenu complet : HTML → texte avec paragraphes, sans l’historique cité ni la mise en forme', () => {
+  const reply = '<html><head><style>p{}</style></head><body><p>Bonjour&nbsp;Louis,</p><p>Oui pour jeudi &amp; merci.</p>'
+    + '<table><tr><td><span>Cindy</span><span>Assistante</span></td></tr></table>'
+    + '<div class="gmail_quote">Le 12 nov., Louis a écrit :<blockquote>Êtes-vous dispo ?</blockquote></div></body></html>'
+  expect(emailHtmlToText(reply)).toBe('Bonjour Louis,\nOui pour jeudi & merci.\nCindy Assistante')
+  expect(emailHtmlToText('Merci<br>À bientôt<br><br><br>Le 3 nov. 2026, Paul a écrit :<br>&gt; ancien')).toBe('Merci\nÀ bientôt')
+  expect(emailHtmlToText('<div id="divRplyFwdMsg">De : x</div>')).toBeNull()
+  expect(emailHtmlToText(null)).toBeNull()
 })

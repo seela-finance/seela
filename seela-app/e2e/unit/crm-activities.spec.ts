@@ -21,7 +21,9 @@ test('activité : un appel exige une issue, les mentions et contacts sont filtr�
   expect(() => parseActivityInput({ type: 'call', call_outcome: '', body: '', contact_id: '', mentions: [] }, team, [])).toThrow('issue')
   expect(() => parseActivityInput({ type: 'note', call_outcome: '', body: ' ', contact_id: '', mentions: [] }, team, [])).toThrow(CrmError)
   const a = parseActivityInput({ type: 'call', call_outcome: 'rdv_pris', body: '', contact_id: 'p-x', mentions: ['u-louis', 'u-louis', 'u-intrus'] }, team, ['p-1'])
-  expect(a).toEqual({ type: 'call', call_outcome: 'rdv_pris', body: '', contact_id: null, mentions: ['u-louis'] })
+  expect(a).toEqual({ type: 'call', call_outcome: 'rdv_pris', body: '', contact_id: null, mentions: ['u-louis'], exit_reason: null })
+  expect(() => parseActivityInput({ type: 'call', call_outcome: 'societe_disqualifiee', body: '', contact_id: '', mentions: [] }, team, [])).toThrow('disqualifiée')
+  expect(parseActivityInput({ type: 'call', call_outcome: 'societe_disqualifiee', body: '', contact_id: '', mentions: [], exit_reason: 'Pas de besoin' }, team, []).exit_reason).toBe('Pas de besoin')
   expect(parseActivityInput({ type: 'note', call_outcome: 'rdv_pris', body: 'ok', contact_id: 'p-1', mentions: [] }, team, ['p-1']).call_outcome).toBeNull()
 })
 

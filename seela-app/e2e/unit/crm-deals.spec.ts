@@ -6,7 +6,7 @@ const team = ['u-louis', 'u-lorenzo']
 
 test('deal : nom et société requis, montant en euros, étape par défaut', () => {
   expect(parseDealInput({ name: 'Parc IT', company_id: 'c1', amount: '12 500,50', owner_id: 'u-intrus' }, team, ['c1']))
-    .toEqual({ name: 'Parc IT', company_id: 'c1', stage: 'a_contacter', amount: 12500.5, next_action: null, next_action_date: null, owner_id: null })
+    .toEqual({ name: 'Parc IT', company_id: 'c1', stage: 'pending_qualification', amount: 12500.5, next_action: null, next_action_date: null, owner_id: null })
   expect(() => parseDealInput({ name: '', company_id: 'c1' }, team, ['c1'])).toThrow(CrmError)
   expect(() => parseDealInput({ name: 'x', company_id: 'c2' }, team, ['c1'])).toThrow('société')
   expect(() => parseDealInput({ name: 'x', company_id: 'c1', amount: '-3' }, team, ['c1'])).toThrow('montant')
@@ -15,11 +15,11 @@ test('deal : nom et société requis, montant en euros, étape par défaut', () 
 test('pipeline : une colonne par étape, totaux, filtre « mes deals »', () => {
   const d = (id: string, stage: string, amount: number | null, owner: string, at: string): DealRow =>
     ({ id, name: id, stage, amount, next_action: null, next_action_date: null, owner_id: owner, company_id: 'c', updated_at: at, companies: null })
-  const deals = [d('a', 'rdv_pris', 1000, 'u-louis', '2026-11-01'), d('b', 'rdv_pris', 500, 'u-lorenzo', '2026-11-10'), d('c', 'bizarre', null, 'u-louis', '2026-11-02')]
+  const deals = [d('a', 'evaluating', 1000, 'u-louis', '2026-11-01'), d('b', 'evaluating', 500, 'u-lorenzo', '2026-11-10'), d('c', 'bizarre', null, 'u-louis', '2026-11-02')]
   const cols = buildPipeline(deals, { mine: false, me: 'u-lorenzo' })
-  expect(cols).toHaveLength(7)
-  expect(cols.find(c => c.stage === 'rdv_pris')).toMatchObject({ total: 1500 })
-  expect(cols.find(c => c.stage === 'rdv_pris')!.deals.map(x => x.id)).toEqual(['b', 'a'])
+  expect(cols).toHaveLength(8)
+  expect(cols.find(c => c.stage === 'evaluating')).toMatchObject({ total: 1500 })
+  expect(cols.find(c => c.stage === 'evaluating')!.deals.map(x => x.id)).toEqual(['b', 'a'])
   expect(cols[0].deals.map(x => x.id)).toEqual(['c'])
   expect(buildPipeline(deals, { mine: true, me: 'u-lorenzo' }).flatMap(c => c.deals).map(x => x.id)).toEqual(['b'])
 })
