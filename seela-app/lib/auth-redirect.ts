@@ -24,3 +24,20 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
 export function authErrorMessage(code: string | null | undefined): string | null {
   return code ? AUTH_ERROR_MESSAGES[code] ?? null : null
 }
+
+/**
+ * Retour après connexion (lien d'invitation d'un partenaire) : seulement un chemin interne connu,
+ * jamais une adresse externe (`//site`, `/\site`, `https://…`) qui ferait de /auth une redirection ouverte.
+ */
+export function safeNext(next: string | null | undefined): string | null {
+  if (!next || next.length > 300) return null
+  if (!/^\/(invitation|app)\/[A-Za-z0-9_\-/]+$/.test(next) || next.includes('//')) return null
+  return next
+}
+
+/** Lien de confirmation d'email qui ramène ensuite à `next` (sinon : onboarding ou tableau de bord). */
+export function authCallbackUrlWithNext(origin: string, next: string | null): string {
+  const base = authCallbackUrl(origin)
+  const safe = safeNext(next)
+  return safe ? `${base}?next=${encodeURIComponent(safe)}` : base
+}

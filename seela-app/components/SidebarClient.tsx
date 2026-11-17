@@ -11,6 +11,22 @@ interface Props {
   companyName: string
   offresCount: number
   contratsCount: number
+  /** Distributeur partenaire : ajoute « Mes clients » */
+  partner?: boolean
+}
+
+const NAV_PARTNER = {
+  href: '/app/partenaire',
+  activeOn: '/app/partenaire',
+  label: 'Mes clients',
+  badge: false,
+  plus: false,
+  icon: (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1.5 14c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5M11 3a2.5 2.5 0 010 5M12.5 10c1.3.6 2 2 2 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  ),
 }
 
 const NAV_MAIN = [
@@ -65,7 +81,7 @@ const NAV_MAIN = [
   },
 ]
 
-export default function SidebarClient({ email, companyName, offresCount, contratsCount }: Props) {
+export default function SidebarClient({ email, companyName, offresCount, contratsCount, partner = false }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -95,7 +111,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 flex flex-col overflow-y-auto">
-        {NAV_MAIN.map((item) => {
+        {(partner ? [...NAV_MAIN.slice(0, 2), NAV_PARTNER, ...NAV_MAIN.slice(2)] : NAV_MAIN).map((item) => {
           const active = pathname.startsWith(item.activeOn)
           return (
             <Link
