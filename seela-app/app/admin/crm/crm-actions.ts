@@ -113,7 +113,10 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
 export async function syncLemlistAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
   return guard(async ({ admin, db }) => {
     const result = await syncLemlist(db, { full: form.get('full') === 'on' })
-    if ('skipped' in result) throw new CrmError(result.skipped)
+    if ('skipped' in result) {
+      if (result.skipped.includes('en cours')) return { message: 'Un import est déjà en cours : rafraîchissez la page dans une minute.' }
+      throw new CrmError(result.skipped)
+    }
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
     return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })

@@ -10,9 +10,9 @@ import { LemlistSyncButton, MailboxActions, MailboxConnectForm } from '@/compone
 import { syncMailbox, type Mailbox } from '@/lib/mailbox-sync'
 import { isSecretBoxConfigured } from '@/lib/secret-box'
 import { isLemlistConfigured, syncLemlist } from '@/lib/lemlist-sync'
-import { syncIsDue } from '@/lib/crm-lemlist'
+import { syncIsDue, syncIsRunning } from '@/lib/crm-lemlist'
 
-type SyncState = { last_run_at: string | null; last_error: string | null; last_result: { imported: number } | null } | null
+type SyncState = { last_run_at: string | null; running_since: string | null; last_error: string | null; last_result: { imported: number } | null } | null
 type Task = { id: string; title: string; due_date: string | null; priority: string; company_id: string | null; companies: { name: string } | null }
 type Mention = { crm_activities: { id: string; type: string; body: string | null; occurred_at: string; author_id: string | null; company_id: string | null; companies: { name: string } | null } | null }
 
@@ -26,7 +26,7 @@ export default async function CrmHomePage() {
   // Toutes les lectures partent en même temps (chaque aller-retour vers la base coûte)
   const [syncRes, mailboxRes, tasksRes, mentionsRes, adminsRes] = db
     ? await Promise.all([
-      db.from('crm_sync_state').select('last_run_at, last_error, last_result').eq('source', 'lemlist').maybeSingle(),
+      db.from('crm_sync_state').select('last_run_at, running_since, last_error, last_result').eq('source', 'lemlist').maybeSingle(),
       db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle(),
       db.from('crm_tasks').select('id, title, due_date, priority, company_id, companies ( name )').eq('assignee_id', admin.userId).is('done_at', null).limit(300),
       db.from('crm_mentions').select('crm_activities ( id, type, body, occurred_at, author_id, company_id, companies ( name ) )').eq('user_id', admin.userId).limit(50),
@@ -34,6 +34,8 @@ export default async function CrmHomePage() {
     ])
     : [none, none, none, none, none]
   const lemlist = syncRes.data as SyncState
+  // Verrou de la synchro : 5 min au plus (au-delà, considéré comme interrompu)
+  const lemlistRunning = syncIsRunning(lemlist?.running_since ?? null, new Date())
   // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
   if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
     after(() => syncLemlist(db).catch(err => console.error('[lemlist auto]', err)))
@@ -94,8 +96,12 @@ export default async function CrmHomePage() {
                     ? <>Dernière synchronisation {fmtDateTime(lemlist.last_run_at)}{lemlist.last_result ? ` · ${lemlist.last_result.imported} importé(s)` : ''}. Automatique toutes les 15 min quand le CRM est ouvert.</>
                     : 'Jamais synchronisé. Importez l’historique de vos campagnes : envois, réponses, leads intéressés et LinkedIn arrivent sur les fiches.'}
                 </p>
-                {lemlist?.last_error && <p className="ev-alert ev-alert--danger">Dernière erreur : {lemlist.last_error}</p>}
-                <LemlistSyncButton neverSynced={!lemlist?.last_run_at} />
+                {lemlistRunning
+                  ? <p className="ev-alert">Import en cours depuis {fmtDateTime(lemlist!.running_since!)} : rafraîchissez la page dans une minute.</p>
+                  : <>
+                    {lemlist?.last_error && <p className="ev-alert ev-alert--danger">Dernière erreur : {lemlist.last_error}</p>}
+                    <LemlistSyncButton neverSynced={!lemlist?.last_run_at} />
+                  </>}
               </div>
             )}
         </section>
