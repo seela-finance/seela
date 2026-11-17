@@ -33,6 +33,7 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
         <span className="flex flex-wrap gap-1">
           {c.lead_channel && <span className="ev-tag">{LEAD_CHANNEL_LABEL[c.lead_channel as LeadChannel] ?? c.lead_channel}</span>}
           {c.lead_signal && <span className={HOT.has(c.lead_signal) ? 'ev-tag ev-tag--accent' : 'ev-tag'}>{LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}</span>}
+          {c.dossiers.count > 0 && <span className="ev-tag ev-tag--ok">Dossier déposé · {fmtDate(c.dossiers.lastAt)}{c.dossiers.count > 1 ? ` (${c.dossiers.count})` : ''}</span>}
         </span>
         {p && <span className="text-xs" style={{ color: 'var(--ink-2)' }}>{contactName(p)}</span>}
         {p?.phone && <CallButton phone={p.phone} companyId={c.id} contactId={p.id} contactName={contactName(p)} compact />}

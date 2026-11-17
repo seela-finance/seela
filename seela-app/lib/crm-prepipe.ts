@@ -19,7 +19,7 @@ export const EXIT_REASONS = ['Pas la cible', 'Pas de besoin', 'Déjà équipé o
 
 export const LEAD_SIGNAL_LABEL: Record<string, string> = {
   interested: 'Intéressé (Lemlist)', replied: 'A répondu (Lemlist)', clicked: 'A cliqué (Lemlist)', sequence: 'Séquence à 60 %',
-  inscription: 'Inscrit sur l’app', expert: 'Formulaire expert', manuel: 'Ajout manuel', appel: 'Appel',
+  inscription: 'Inscrit sur l’app', inscription_partielle: 'Inscrit, entreprise non indiquée', expert: 'Formulaire expert', manuel: 'Ajout manuel', appel: 'Appel',
 }
 
 export function isLeadStatus(v: unknown): v is LeadStatus {

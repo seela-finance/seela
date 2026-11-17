@@ -10,6 +10,7 @@ import { parseContactInput } from '@/lib/crm-activities'
 import { isDealStage, parseContactPatch, parseDealInput, DEAL_STAGE_LABEL } from '@/lib/crm-deals'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { syncLemlist } from '@/lib/lemlist-sync'
+import { checkPhoneEnrichment, isFullEnrichConfigured, startPhoneEnrichment } from '@/lib/fullenrich'
 import { syncMailbox, testImapLogin, type Mailbox } from '@/lib/mailbox-sync'
 import { isSecretBoxConfigured, seal } from '@/lib/secret-box'
 
@@ -181,4 +182,44 @@ export async function saveCrmSettingsAction(_: CrmFormState, form: FormData): Pr
     await logAdminEvent(admin, { action: 'CRM : réglages du pré-pipe', after: { prepipe_owner: owner || null, sequence_threshold: threshold } })
     return { message: 'Réglages enregistrés. Ils s’appliquent aux prochains leads.' }
   })
+}
+
+// ─── Enrichissement des téléphones (FullEnrich), lancé à la main avant une session ───
+
+export type EnrichState = { ok: boolean; message: string; enrichmentIds?: string[] } | null
+
+export async function startEnrichmentAction(companyIds: string[]): Promise<EnrichState> {
+  const admin = await requireAdmin()
+  if (!can(admin.role, 'crm')) return { ok: false, message: 'Votre rôle ne donne pas accès au CRM.' }
+  if (!isFullEnrichConfigured()) return { ok: false, message: 'Clé FullEnrich absente sur le serveur (FULLENRICH_API_KEY).' }
+  const ids = companyIds.filter(isUuid).slice(0, 500)
+  if (!ids.length) return { ok: false, message: 'Aucune société choisie.' }
+  try {
+    const db = createAdminClient()
+    const r = await startPhoneEnrichment(db, ids, admin.userId)
+    if (!r.sent) return { ok: false, message: r.unidentifiable ? `Aucun contact enrichissable : ${r.unidentifiable} sans nom complet ni LinkedIn.` : 'Tous les contacts ont déjà un téléphone.' }
+    await logAdminEvent(admin, { action: 'CRM : enrichissement des téléphones lancé', after: { companies: ids.length, contacts: r.sent } })
+    return { ok: true, enrichmentIds: r.enrichmentIds, message: `${r.sent} contact(s) envoyé(s) à FullEnrich${r.unidentifiable ? `, ${r.unidentifiable} non identifiable(s)` : ''}. Résultat dans 1 à 3 minutes.` }
+  } catch (err) {
+    console.error('[fullenrich]', err)
+    return { ok: false, message: err instanceof Error ? err.message : 'Enrichissement impossible.' }
+  }
+}
+
+export async function checkEnrichmentAction(enrichmentIds: string[]): Promise<{ done: boolean; found: number; sent: number; credits: number; message: string }> {
+  const admin = await requireAdmin()
+  if (!can(admin.role, 'crm')) return { done: true, found: 0, sent: 0, credits: 0, message: 'Accès refusé.' }
+  const db = createAdminClient()
+  const results = await Promise.all(enrichmentIds.filter(isUuid).map(id => checkPhoneEnrichment(db, id)))
+  const done = results.every(r => ['FINISHED', 'CANCELED', 'CREDITS_INSUFFICIENT', 'UNKNOWN'].includes(r.status))
+  const found = results.reduce((n, r) => n + r.found, 0)
+  const sent = results.reduce((n, r) => n + r.sent, 0)
+  const credits = results.reduce((n, r) => n + (r.credits ?? 0), 0)
+  const short = results.some(r => r.status === 'CREDITS_INSUFFICIENT')
+  if (done) revalidatePath('/admin/crm', 'layout')
+  return {
+    done, found, sent, credits,
+    message: !done ? 'Enrichissement en cours…'
+      : `${found} téléphone(s) trouvé(s) sur ${sent} contact(s) · ${credits} crédit(s) utilisé(s).${short ? ' Crédits FullEnrich insuffisants : une partie n’a pas été enrichie.' : ''}`,
+  }
 }

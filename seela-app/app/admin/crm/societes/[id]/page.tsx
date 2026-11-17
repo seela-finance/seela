@@ -29,6 +29,7 @@ type Company = {
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
   lemlist_industry: string | null; location: string | null; description: string | null; linkedin_url: string | null
+  headcount: number | null; company_type: string | null
   partner_enabled?: boolean | null
   lead_status: string | null; lead_channel: string | null; lead_signal: string | null; lead_entered_at: string | null; lead_exit_reason: string | null; lead_next_date: string | null
 }
@@ -104,12 +105,13 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['SIREN', c.siren ? <span className="ev-mono">{c.siren}</span> : null],
     ['Domaine', c.domain],
     ['Secteur', c.sector],
-    ['Secteur (Lemlist)', c.lemlist_industry],
+    ['Secteur (LinkedIn)', c.lemlist_industry],
     ['Localisation', c.location],
     ['Forme juridique', c.legal_form],
     ['Code NAF', c.naf_code],
     ['Création', c.creation_year],
-    ['Effectif', c.headcount_bracket],
+    ['Effectif', [c.headcount && `${c.headcount} salariés`, c.headcount_bracket].filter(Boolean).join(' · ') || null],
+    ['Type', c.company_type],
     ['CA déclaré', c.revenue_declared != null ? eur(Number(c.revenue_declared)) : null],
     ['Source', c.source],
     ['Signal', c.signal],
@@ -145,6 +147,17 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
           </section>
           <Card title="Prospection">
             <LeadStatusControl key={`${c.lead_status}-${c.lead_channel}`} companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
+            {(() => {
+              const files = requests.filter(r => r.status && r.status !== 'draft')
+              return (
+                <p className="text-sm mt-2 flex justify-between gap-2">
+                  <span style={{ color: 'var(--ink-3)' }}>Dossier déposé</span>
+                  {files.length
+                    ? <span className="ev-tag ev-tag--ok">Oui · {fmtDate(files[0].created_at)}{files.length > 1 ? ` (${files.length})` : ''}</span>
+                    : <span style={{ color: 'var(--ink-3)' }}>Non</span>}
+                </p>
+              )
+            })()}
             {c.lead_status && (
               <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
                 {[c.lead_signal && `Entrée : ${LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}`, c.lead_entered_at && `le ${fmtDate(c.lead_entered_at)}`,

@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
   CrmError, findDuplicate, listCrmCompanies, matchesQuery, normalizeDomain, parseCompanyInput, parseCompanyListParams,
-  toCrmCompany, type CrmCompany,
-} from '../../lib/crm-companies'
+  toCrmCompany, type CrmCompany, nameFromDomain } from '../../lib/crm-companies'
 
 const company = (patch: Partial<CrmCompany> = {}): CrmCompany => ({
   id: 'c1', name: 'Boulangerie Dupont', siren: '123456789', domain: 'boulangerie-dupont.fr', stage: 'prospect',
@@ -52,4 +51,9 @@ test('toCrmCompany ne compte pas les brouillons et corrige un statut inconnu', (
     contacts: [{ id: 'p1' }], financing_requests: [{ id: 'r1', status: 'draft' }, { id: 'r2', status: 'submitted' }],
   })
   expect(c).toMatchObject({ stage: 'prospect', contactCount: 1, requestCount: 1 })
+})
+
+test('nom provisoire depuis le domaine de l’email', () => {
+  expect(nameFromDomain('garage-martin.fr')).toBe('Garage Martin')
+  expect(nameFromDomain('lmofrance.com')).toBe('Lmofrance')
 })
