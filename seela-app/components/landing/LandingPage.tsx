@@ -262,7 +262,7 @@ function CompareRows() {
 }
 
 /* ---------------- FOURNISSEURS ET DISTRIBUTEURS ---------------- */
-function Partners({ onOpen }: { onOpen: () => void }) {
+function Partners() {
   return (
     <section id="partners" className="partners" data-reveal>
       <div className="wrap">
@@ -272,7 +272,7 @@ function Partners({ onOpen }: { onOpen: () => void }) {
             <h2 className="display h3 fade d1" style={{ marginTop: 12, fontSize: 'clamp(24px, 2.6vw, 34px)' }}>Vous vendez des équipements&nbsp;? Proposez une mensualité à vos clients.</h2>
             <p className="lede fade d2" style={{ fontSize: 16, marginTop: 10, maxWidth: 640 }}>Votre client garde son devis, vous gardez votre vente&nbsp;: everlease prépare le dossier de financement et le présente aux financeurs adaptés.</p>
           </div>
-          <button className="btn btn--ink fade d2" type="button" onClick={onOpen}>Nous contacter</button>
+          <Link className="btn btn--ink fade d2" href="/distributeurs">Découvrir l&apos;offre distributeurs</Link>
         </div>
       </div>
     </section>
@@ -336,7 +336,6 @@ export default function LandingPage() {
   const rootRef = React.useRef<HTMLDivElement>(null)
   const [modal, setModal] = React.useState<ModalKind | null>(null)
   const openExpert = React.useCallback(() => setModal('expert'), [])
-  const openPartner = React.useCallback(() => setModal('partner'), [])
   const openFunder = React.useCallback(() => setModal('funder'), [])
   const closeModal = React.useCallback(() => setModal(null), [])
 
@@ -389,7 +388,7 @@ export default function LandingPage() {
       <Suivi />
       <AssetLedger />
       <CompareRows />
-      <Partners onOpen={openPartner} />
+      <Partners />
       <FundersBand onOpen={openFunder} />
       <FinalCta onOpenExpert={openExpert} />
       <MarketingFooter />
