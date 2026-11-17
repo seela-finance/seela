@@ -4,7 +4,13 @@ import { requireCapability } from '@/lib/admin'
 import { isUuid } from '@/lib/admin-request-detail'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isLifecycleStage, LIFECYCLE_LABEL } from '@/lib/crm-companies'
-import { eur, fmtDate } from '@/components/admin/ui'
+import {
+  buildTimeline, daysUntil, OUTCOME_LABEL, PRIORITY_LABEL, type ActivityRow, type AdminEventRow, type Priority,
+} from '@/lib/crm-activities'
+import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
+import {
+  ActivityComposer, AddContactForm, AddTaskForm, CompleteTaskButton, PropertiesForm, type CompanyValues,
+} from '@/components/admin/crm/FicheForms'
 
 type Company = {
   id: string; name: string; siren: string | null; domain: string | null; lifecycle_stage: string; sector: string | null
@@ -12,16 +18,18 @@ type Company = {
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
 }
-type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; user_id: string | null }
+type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
 type Request = { id: string; status: string | null; total_amount: number | null; duration_months: number | null; created_at: string }
+type Task = { id: string; title: string; due_date: string | null; priority: string; assignee_id: string | null }
 
 const STAGE_TAG: Record<string, string> = { prospect: 'ev-tag', client: 'ev-tag ev-tag--ok', partenaire: 'ev-tag ev-tag--accent', exclu: 'ev-tag ev-tag--danger' }
+const OUTCOME_TAG: Record<string, string> = { rdv_pris: 'ev-tag ev-tag--ok', interesse: 'ev-tag ev-tag--ok', pas_interesse: 'ev-tag ev-tag--danger', a_rappeler: 'ev-tag ev-tag--warning' }
 
 function Card({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <section className="ev-card px-5 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="ev-kicker">{title}</h2>
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <h2 className="ev-kicker pt-1">{title}</h2>
         {right}
       </div>
       {children}
@@ -29,25 +37,48 @@ function Card({ title, children, right }: { title: string; children: React.React
   )
 }
 
+const contactName = (p: Contact) => [p.first_name, p.last_name].filter(Boolean).join(' ') || p.email || 'Sans nom'
+
 export default async function CrmCompanyPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireCapability('crm')
+  const admin = await requireCapability('crm')
   const { id } = await params
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
-    db.from('contacts').select('id, first_name, last_name, email, phone, job_title, user_id').eq('company_id', id).order('created_at'),
+    db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
-    db.from('admins').select('user_id, name'),
+    db.from('admins').select('user_id, name').order('name'),
+    db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
+    db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, crm_mentions ( user_id )').eq('company_id', id).order('occurred_at', { ascending: false }).limit(100),
   ])
   const c = companyRes.data as Company | null
   if (!c) notFound()
   const contacts = (contactsRes.data ?? []) as Contact[]
   const requests = (requestsRes.data ?? []) as Request[]
-  const owner = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).find(a => a.user_id === c.owner_id)?.name
-  const stage = isLifecycleStage(c.lifecycle_stage) ? c.lifecycle_stage : 'prospect'
+  const tasks = (tasksRes.data ?? []) as Task[]
+  const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
+  const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
 
+  // Journal admin lié : dossiers de la société, comptes de ses contacts, actions CRM sur la fiche
+  const userIds = contacts.map(p => p.user_id).filter((v): v is string => !!v)
+  const orFilters = [
+    `after->>company_id.eq.${id}`,
+    requests.length && `request_id.in.(${requests.map(r => r.id).join(',')})`,
+    userIds.length && `profile_id.in.(${userIds.join(',')})`,
+  ].filter(Boolean).join(',')
+  const { data: events } = await db.from('admin_events').select('id, admin_id, action, note, created_at').or(orFilters).order('created_at', { ascending: false }).limit(100)
+  const timeline = buildTimeline((activitiesRes.data ?? []) as ActivityRow[], (events ?? []) as AdminEventRow[])
+
+  const stage = isLifecycleStage(c.lifecycle_stage) ? c.lifecycle_stage : 'prospect'
+  const today = new Date().toISOString().slice(0, 10)
+  const s = (v: string | number | null) => (v == null ? '' : String(v))
+  const values: CompanyValues = {
+    name: c.name, siren: s(c.siren), domain: s(c.domain), sector: s(c.sector), lifecycle_stage: stage, legal_form: s(c.legal_form),
+    naf_code: s(c.naf_code), creation_year: s(c.creation_year), headcount_bracket: s(c.headcount_bracket), source: s(c.source),
+    signal: s(c.signal), website: s(c.website), owner_id: s(c.owner_id),
+  }
   const props: [string, React.ReactNode][] = [
     ['SIREN', c.siren ? <span className="ev-mono">{c.siren}</span> : null],
     ['Domaine', c.domain],
@@ -59,7 +90,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['CA déclaré', c.revenue_declared != null ? eur(Number(c.revenue_declared)) : null],
     ['Source', c.source],
     ['Signal', c.signal],
-    ['Propriétaire', owner],
+    ['Site web', c.website],
+    ['Propriétaire', nameOf(c.owner_id)],
     ['Créée le', fmtDate(c.created_at)],
   ]
 
@@ -82,34 +114,81 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
             </div>
           </section>
           <Card title="À propos de cette société">
-            <dl className="divide-y divide-[var(--line)]">
+            <dl className="divide-y divide-[var(--line)] mb-3">
               {props.map(([k, v]) => (
                 <div key={k} className="py-2 flex justify-between gap-3 text-sm">
                   <dt style={{ color: 'var(--ink-3)' }}>{k}</dt>
-                  <dd className="text-right" style={{ color: v ? 'var(--ink)' : 'var(--ink-3)' }}>{v ?? '—'}</dd>
+                  <dd className="text-right break-all" style={{ color: v ? 'var(--ink)' : 'var(--ink-3)' }}>{v ?? '—'}</dd>
                 </div>
               ))}
             </dl>
+            <PropertiesForm companyId={c.id} values={values} team={team} />
           </Card>
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
+          <Card title="Ajouter une activité">
+            <ActivityComposer
+              companyId={c.id}
+              contacts={contacts.map(p => ({ id: p.id, label: contactName(p) }))}
+              team={team.filter(m => m.id !== admin.userId)}
+            />
+          </Card>
+
+          <Card title={`Tâches à faire (${tasks.length})`}>
+            <ul className="divide-y divide-[var(--line)]">
+              {tasks.map(t => {
+                const d = daysUntil(t.due_date, today)
+                const tag = d == null ? 'ev-tag' : d < 0 ? 'ev-tag ev-tag--danger' : d === 0 ? 'ev-tag ev-tag--warning' : 'ev-tag'
+                return (
+                  <li key={t.id} className="py-2.5 flex items-center gap-3 text-sm">
+                    <span className="flex-1 min-w-0" style={{ color: 'var(--ink)' }}>{t.title}</span>
+                    <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{nameOf(t.assignee_id) ?? ''} · {PRIORITY_LABEL[t.priority as Priority] ?? t.priority}</span>
+                    {t.due_date && <span className={tag}>{d != null && d < 0 ? 'En retard · ' : ''}{fmtDate(t.due_date)}</span>}
+                    <CompleteTaskButton companyId={c.id} taskId={t.id} />
+                  </li>
+                )
+              })}
+            </ul>
+            <AddTaskForm companyId={c.id} team={team} today={today} />
+          </Card>
+
           <Card title="Chronologie">
-            <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Les appels, notes et tâches arrivent à la prochaine étape.</p>
+            {timeline.length === 0 && <p className="py-6 text-sm text-center" style={{ color: 'var(--ink-3)' }}>Aucune activité pour l’instant.</p>}
+            <ul className="divide-y divide-[var(--line)]">
+              {timeline.map(e => {
+                const contact = contacts.find(p => p.id === e.contactId)
+                return (
+                  <li key={`${e.kind}-${e.id}`} className="py-3 flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium" style={{ color: 'var(--ink)' }}>{e.label}{contact ? ` · ${contactName(contact)}` : ''}</span>
+                      {e.outcome && <span className={OUTCOME_TAG[e.outcome] ?? 'ev-tag'}>{OUTCOME_LABEL[e.outcome]}</span>}
+                      {e.kind === 'event' && <span className="ev-tag">Journal</span>}
+                    </div>
+                    {e.body && <p className="text-sm whitespace-pre-line" style={{ color: 'var(--ink-2)' }}>{e.body}</p>}
+                    <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                      {nameOf(e.authorId) ?? 'Système'} · {fmtDateTime(e.at)}
+                      {e.mentions.length > 0 && ` · mentionne ${e.mentions.map(m => nameOf(m)).filter(Boolean).join(', ')}`}
+                    </p>
+                  </li>
+                )
+              })}
+            </ul>
           </Card>
         </div>
 
         <div className="flex flex-col gap-4" style={{ flex: '1 1 280px', maxWidth: 340 }}>
-          <Card title={`Contacts (${contacts.length})`}>
+          <Card title={`Contacts (${contacts.length})`} right={<AddContactForm companyId={c.id} />}>
             {contacts.length === 0 && <p className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>Aucun contact.</p>}
             <ul className="divide-y divide-[var(--line)]">
               {contacts.map(p => (
                 <li key={p.id} className="py-2.5 text-sm">
                   <span className="flex justify-between gap-2">
-                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{[p.first_name, p.last_name].filter(Boolean).join(' ') || p.email || 'Sans nom'}</span>
+                    <span className="font-medium" style={{ color: 'var(--ink)' }}>{contactName(p)}</span>
                     {p.user_id && <span className="ev-tag ev-tag--accent">Accès app</span>}
                   </span>
-                  <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.phone ?? p.email].filter(Boolean).join(' · ') || '—'}</span>
+                  <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.job_title, p.persona].filter(Boolean).join(' · ') || '—'}</span>
+                  {(p.phone || p.email) && <span className="block" style={{ color: 'var(--ink-3)' }}>{[p.phone, p.email].filter(Boolean).join(' · ')}</span>}
                 </li>
               ))}
             </ul>
