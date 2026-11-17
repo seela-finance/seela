@@ -345,3 +345,36 @@ export function emailClientCounterOffer({
   </div>${FOOTER(requestRef)}`,
   }
 }
+
+/**
+ * Invitation du client par un distributeur partenaire : le dossier est prêt, le client le rejoint et
+ * choisit son offre. Financeur jamais nommé ; montants indicatifs avec les mentions.
+ */
+export function emailClientPartnerInvitation({
+  clientEmail, partnerName, clientCompanyName, totalAmount, monthlyFrom, durationMonths, link, requestRef,
+}: {
+  clientEmail: string; partnerName: string; clientCompanyName: string; totalAmount: number
+  monthlyFrom: number | null; durationMonths: number; link: string; requestRef: string
+}) {
+  return {
+    to: clientEmail,
+    subject: `[Everlease] ${oneLine(partnerName)} vous propose de financer votre équipement en loyers`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Votre dossier de financement est prêt</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(clientCompanyName)} · préparé par ${esc(partnerName)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0 0 12px">
+      ${esc(partnerName)} a préparé avec Everlease le financement locatif de votre devis de <strong>${EUR(totalAmount)} HT</strong>.
+    </p>
+    ${monthlyFrom != null ? `<p style="font-size:13px;margin:0">Exemple illustratif : à partir de <strong>${EUR(monthlyFrom)} HT / mois sur ${durationMonths} mois</strong>.</p>${MENTIONS}` : `<p style="font-size:13px;margin:0">Un conseiller Everlease étudie votre dossier et vous rappelle sous 24 h ouvrées.</p>`}
+  </div>
+  <p style="margin-bottom:24px"><a href="${esc(link)}" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Voir mon dossier et choisir mon offre</a><br><span style="font-size:12px;color:#6B6F76">Lien personnel, valable 30 jours, réservé à ${esc(clientEmail)}. Aucune carte ni RIB demandé.</span></p>
+  <p style="font-size:13px;color:#6B6F76">Une question ? Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>. Réf. ${esc(requestRef)}.</p>
+  <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
+  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+</div>`,
+  }
+}
