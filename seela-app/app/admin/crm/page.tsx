@@ -22,24 +22,26 @@ export default async function CrmHomePage() {
   const admin = await requireCapability('crm')
   const configured = isServiceRoleConfigured()
   const db = configured ? createAdminClient() : null
-  const { data: syncState } = db ? await db.from('crm_sync_state').select('last_run_at, last_error, last_result').eq('source', 'lemlist').maybeSingle() : { data: null }
-  const lemlist = syncState as SyncState
-  // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
-  if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
-    after(() => syncLemlist(db).catch(err => console.error('[lemlist auto]', err)))
-  }
-  const { data: mailboxRow } = db ? await db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle() : { data: null }
-  const mailbox = mailboxRow as (Mailbox & { last_sync_at: string | null; last_error: string | null; last_result: { imported: number } | null }) | null
-  if (db && mailbox && syncIsDue(mailbox.last_sync_at, new Date())) {
-    after(() => syncMailbox(db, mailbox).catch(err => console.error('[mailbox auto]', err)))
-  }
-  const [tasksRes, mentionsRes, adminsRes] = db
+  const none = { data: null, error: null }
+  // Toutes les lectures partent en même temps (chaque aller-retour vers la base coûte)
+  const [syncRes, mailboxRes, tasksRes, mentionsRes, adminsRes] = db
     ? await Promise.all([
+      db.from('crm_sync_state').select('last_run_at, last_error, last_result').eq('source', 'lemlist').maybeSingle(),
+      db.from('crm_mailboxes').select('*').eq('user_id', admin.userId).maybeSingle(),
       db.from('crm_tasks').select('id, title, due_date, priority, company_id, companies ( name )').eq('assignee_id', admin.userId).is('done_at', null).limit(300),
       db.from('crm_mentions').select('crm_activities ( id, type, body, occurred_at, author_id, company_id, companies ( name ) )').eq('user_id', admin.userId).limit(50),
       db.from('admins').select('user_id, name'),
     ])
-    : [{ data: null, error: null }, { data: null, error: null }, { data: null, error: null }]
+    : [none, none, none, none, none]
+  const lemlist = syncRes.data as SyncState
+  // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
+  if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
+    after(() => syncLemlist(db).catch(err => console.error('[lemlist auto]', err)))
+  }
+  const mailbox = mailboxRes.data as (Mailbox & { last_sync_at: string | null; last_error: string | null; last_result: { imported: number } | null }) | null
+  if (db && mailbox && syncIsDue(mailbox.last_sync_at, new Date())) {
+    after(() => syncMailbox(db, mailbox).catch(err => console.error('[mailbox auto]', err)))
+  }
 
   const today = new Date().toISOString().slice(0, 10)
   const buckets = groupTasks((tasksRes.data ?? []) as unknown as Task[], today)

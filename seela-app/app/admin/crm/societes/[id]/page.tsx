@@ -53,7 +53,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, mailRes, dealsRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, mailRes, dealsRes, boxesRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
     db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
@@ -63,6 +63,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     db.from('crm_activities').select('event, occurred_at, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
+    db.from('crm_mailboxes').select('email, user_id'),
   ])
   const c = companyRes.data as Company | null
   if (!c) notFound()
@@ -71,8 +72,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   const tasks = (tasksRes.data ?? []) as Task[]
   const deals = (dealsRes.data ?? []) as Deal[]
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
-  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
-  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
+  const mailboxNames = new Map(((boxesRes.data ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
 
   // Journal admin lié : dossiers de la société, comptes de ses contacts, actions CRM sur la fiche
