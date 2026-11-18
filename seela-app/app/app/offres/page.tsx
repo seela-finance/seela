@@ -29,8 +29,6 @@ function fmtDate(s: string) {
 
 // v2 : plus de couleur par catégorie, un seul tag neutre (`ev-tag`)
 
-const TABLE_HEADERS = ['Référence', 'Fournisseur', 'N° Document', 'Équipement', 'Catégorie', 'Montant HT', 'Durée', 'Date', '']
-
 function EquipName({ line_items }: { line_items: LineItem[] }) {
   const selectedLines = line_items.filter(l => l.selected)
   const firstLine = selectedLines[0]
@@ -66,62 +64,55 @@ function RequestTable({
   href: (r: RequestRow) => string
 }) {
   if (requests.length === 0) return null
+  // Rangées à filets, chacune est le lien : rien à chercher à droite d'un tableau trop large.
+  // Les colonnes secondaires (fournisseur, n° de document, catégorie, date) s'effacent quand la place manque.
   return (
     <div className="ev-card overflow-hidden">
-      <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px]">
-        <thead>
-          <tr style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
-            {TABLE_HEADERS.map((h, i) => (
-              <th key={i} className="ev-kicker px-4 py-3 text-left">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {requests.map(r => {
-            const ref = `C-${r.id.slice(0, 4).toUpperCase()}-${r.id.slice(4, 8).toUpperCase()}`
-            return (
-              <tr
-                key={r.id}
-                className="transition-colors hover:bg-[var(--paper)]"
-                style={{ borderBottom: '1px solid var(--line)' }}
+      <div className="hidden lg:grid grid-cols-[7rem_9rem_minmax(0,1fr)_8rem_6rem_7rem_8rem] gap-x-4 px-5 py-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
+        {['Référence', 'Fournisseur', 'Équipement', 'Montant HT', 'Durée', 'Date', ''].map((h, i) => (
+          <span key={i} className="ev-kicker">{h}</span>
+        ))}
+      </div>
+      <ul className="divide-y divide-[var(--line)]">
+        {requests.map(r => {
+          const ref = `C-${r.id.slice(0, 4).toUpperCase()}-${r.id.slice(4, 8).toUpperCase()}`
+          return (
+            <li key={r.id}>
+              <Link
+                href={href(r)}
+                aria-label={`${ctaLabel} · ${ref}`}
+                className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[7rem_9rem_minmax(0,1fr)_8rem_6rem_7rem_8rem] gap-x-4 gap-y-1 items-center px-5 py-4 transition-colors hover:bg-[var(--paper)]"
               >
-                <td className="ev-mono px-4 py-3.5 text-sm font-medium" style={{ color: 'var(--ink)' }}>{ref}</td>
-                <td className="px-4 py-3.5 text-sm max-w-[120px]" style={{ color: 'var(--ink-3)' }}>
-                  <span className="truncate block">{r.supplier_name ?? '—'}</span>
-                </td>
-                <td className="px-4 py-3.5 text-sm" style={{ color: 'var(--ink-3)' }}>
-                  {r.document_number ?? '—'}
-                </td>
-                <td className="px-4 py-3.5 max-w-xs">
-                  <EquipName line_items={r.line_items} />
-                </td>
-                <td className="px-4 py-3.5">
-                  <CategoryBadge line_items={r.line_items} />
-                </td>
-                <td className="ev-mono px-4 py-3.5 text-sm font-medium" style={{ color: 'var(--ink)' }}>{fmt(r.total_amount)}</td>
-                <td className="ev-mono px-4 py-3.5 text-sm" style={{ color: 'var(--ink-3)' }}>{r.duration_months ? `${r.duration_months} mois` : '—'}</td>
-                <td className="px-4 py-3.5 text-sm" style={{ color: 'var(--ink-3)' }}>{fmtDate(r.created_at)}</td>
-                <td className="px-4 py-3.5 text-right">
-                  <Link
-                    href={href(r)}
-                    className="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70"
-                    style={{ color: 'var(--accent)' }}
-                  >
+                <div className="lg:contents">
+                  <p className="ev-mono text-sm font-medium" style={{ color: 'var(--ink)' }}>{ref}</p>
+                  <p className="text-sm truncate lg:block hidden" style={{ color: 'var(--ink-3)' }} title={r.supplier_name ?? undefined}>
+                    {r.supplier_name ?? '—'}
+                    {r.document_number && <span className="block text-xs truncate">{r.document_number}</span>}
+                  </p>
+                  <div className="min-w-0 lg:min-w-0">
+                    <EquipName line_items={r.line_items} />
+                    <span className="lg:hidden text-xs" style={{ color: 'var(--ink-3)' }}>
+                      {[r.supplier_name, fmtDate(r.created_at)].filter(Boolean).join(' · ')}
+                    </span>
+                    <span className="hidden lg:inline-block mt-1"><CategoryBadge line_items={r.line_items} /></span>
+                  </div>
+                </div>
+                <div className="text-right lg:text-left lg:contents">
+                  <p className="ev-mono text-sm font-medium" style={{ color: 'var(--ink)' }}>{fmt(r.total_amount)}</p>
+                  <p className="ev-mono text-xs lg:text-sm" style={{ color: 'var(--ink-3)' }}>{r.duration_months ? `${r.duration_months} mois` : '—'}</p>
+                  <p className="hidden lg:block text-sm" style={{ color: 'var(--ink-3)' }}>{fmtDate(r.created_at)}</p>
+                  <span className="hidden lg:inline-flex items-center gap-1 text-sm font-medium justify-self-end" style={{ color: 'var(--accent)' }}>
                     {ctaLabel}
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
                       <path d="M3 6.5h7M7 3.5l3 3-3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                  </Link>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      </div>
+                  </span>
+                </div>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
@@ -159,7 +150,7 @@ function MiniProgress({ status }: { status: string }) {
 
   const label = status === RS.seela_validated
     ? 'Décision du financeur en cours'
-    : 'Validation Everlease en cours'
+    : 'Validation everlease en cours'
 
   return (
     <div className="flex flex-col gap-2">
@@ -247,10 +238,12 @@ export default async function OffresPage() {
     .select('id, total_amount, duration_months, created_at, status, supplier_name, document_number, line_items(description, category, selected, quantity), offers(id, leaser_name:public_name, monthly_payment, selected, status)')
     .eq('user_id', user.id)
     .in('status', requestStatusesIn('offres'))
+    // Dossier monté par un partenaire : il vit dans « Mes clients » tant que le client ne l'a pas rejoint
+    .or('partner_company_id.is.null,client_joined_at.not.is.null')
     .order('created_at', { ascending: false })
 
   const all: RequestRow[] = (data ?? []) as RequestRow[]
-  // Action attendue du client / traitement Everlease ou leaser / en attente d'offres
+  // Action attendue du client / traitement everlease ou leaser / en attente d'offres
   const available   = all.filter(r => r.status === RS.offers_available || r.status === RS.counter_offer)
   const processing  = all.filter(r => r.status === RS.offer_selected || r.status === RS.seela_validated)
   const submitted   = all.filter(r => r.status === RS.submitted || r.status === RS.no_match)

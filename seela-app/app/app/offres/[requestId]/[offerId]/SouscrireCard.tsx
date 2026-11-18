@@ -188,7 +188,7 @@ export default function SouscrireCard({
         {/* Step 1 */}
         <div className={`flex items-start gap-3 ${s1 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s1} n={1} />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Vérification</p>
             <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Informations du dossier</p>
             {s1 === 'active' && (
@@ -199,7 +199,7 @@ export default function SouscrireCard({
                 {siren && (
                   <p className="text-xs mb-0.5" style={{ color: 'var(--ink-3)' }}>SIREN <span className="ev-mono">{siren}</span></p>
                 )}
-                <p className="text-xs" style={{ color: 'var(--ink-3)' }}>{userEmail}</p>
+                <p className="text-xs break-all" style={{ color: 'var(--ink-3)' }}>{userEmail}</p>
               </div>
             )}
           </div>
@@ -209,7 +209,7 @@ export default function SouscrireCard({
         <div className={`flex items-start gap-3 ${s2 === 'pending' ? 'opacity-40' : ''}`}>
           <StepIcon state={s2} n={2} />
           <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Validation Everlease</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Validation everlease</p>
             <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Examen par un conseiller</p>
             {s2 === 'loading' && (
               <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>Votre sélection est enregistrée. Notre équipe examine votre dossier.</p>
@@ -264,8 +264,8 @@ export default function SouscrireCard({
           {error && (
             <p className="ev-alert ev-alert--danger mt-3">{error}</p>
           )}
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <div className="flex items-start gap-1.5 mt-3">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="shrink-0 mt-0.5" aria-hidden="true">
               <rect x="2" y="5" width="8" height="6" rx="1" stroke="var(--ink-3)" strokeWidth="1.2" />
               <path d="M4 5V3.5a2 2 0 114 0V5" stroke="var(--ink-3)" strokeWidth="1.2" />
             </svg>

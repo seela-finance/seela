@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { loadAccount, onboardingDone } from '@/lib/account'
-import { completeOnboarding, markFinancialDocsUploaded, registerSignupLead, saveOnboardingCompany, saveOnboardingContact } from './actions'
+import { adoptInvitedCompany, completeOnboarding, invitedCompany, markFinancialDocsUploaded, registerSignupLead, saveOnboardingCompany, saveOnboardingContact, type InvitedCompany } from './actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
         Où est établie votre entreprise ?
       </h1>
       <p className="text-sm mb-8" style={{ color: 'var(--ink-3)' }}>
-        Everlease opère actuellement en France.
+        everlease opère actuellement en France.
       </p>
 
       <label className="ev-label">
@@ -190,6 +190,48 @@ function Step1Country({ onNext }: { onNext: (country: string) => void }) {
 
 function Step2Company({
   onBack,
+  onNext,
+  locked,
+}: {
+  onBack: () => void
+  onNext: (company: CompanyResult) => void
+  /** Client invité par un distributeur : la société du dossier, non modifiable */
+  locked?: InvitedCompany | null
+}) {
+  if (locked) return <Step2Locked company={locked} onNext={onNext} />
+  return <Step2Search onBack={onBack} onNext={onNext} />
+}
+
+function Step2Locked({ company, onNext }: { company: InvitedCompany; onNext: (company: CompanyResult) => void }) {
+  const siren = company.siren ?? ''
+  const result: CompanyResult = {
+    name: company.name, siren, siren_formatted: siren ? `${siren.slice(0, 3)} ${siren.slice(3, 6)} ${siren.slice(6)}` : '',
+    legal_form: company.legal_form, naf_code: null, year_created: company.creation_year, address: company.address ?? '',
+  }
+  return (
+    <div>
+      <h1 className="ev-display mb-2" style={{ fontSize: 28, color: 'var(--ink)' }}>Votre entreprise</h1>
+      <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
+        Votre fournisseur a préparé ce dossier pour cette société. Si ce n’est pas la bonne, écrivez-nous à contact@everlease.fr.
+      </p>
+      <div className="ev-card p-5 mb-6">
+        <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{company.name}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
+          {[result.siren_formatted && `SIREN ${result.siren_formatted}`, company.legal_form, company.creation_year && `Créée en ${company.creation_year}`].filter(Boolean).join(' · ')}
+        </p>
+        {company.address && <p className="text-sm mt-3" style={{ color: 'var(--ink-3)' }}>{company.address}</p>}
+      </div>
+      <button onClick={() => onNext(result)} className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full">
+        Continuer
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+function Step2Search({
   onNext,
 }: {
   onBack: () => void
@@ -502,7 +544,7 @@ function Step3Contact({
   )
 }
 
-// ─── Step 4: Score Everlease ──────────────────────────────────────────────────────
+// ─── Step 4: Score everlease ──────────────────────────────────────────────────────
 
 const GRADE_COLORS: Record<string, string> = {
   A: 'var(--ok)',
@@ -533,7 +575,7 @@ function ScoreCircle({ grade, score }: { grade: string; score: number }) {
         </span>
       </div>
       <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-        Profil Everlease · établi à partir de vos données légales, indicatif
+        Profil everlease · établi à partir de vos données légales, indicatif
       </p>
     </div>
   )
@@ -688,7 +730,7 @@ function Step4Score({
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-10 h-10 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
-        <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Calcul de votre score Everlease…</p>
+        <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Calcul de votre score everlease…</p>
       </div>
     )
   }
@@ -710,7 +752,7 @@ function Step4Score({
         className="ev-display mb-1"
         style={{ fontSize: 26, color: 'var(--ink)' }}
       >
-        Votre profil Everlease
+        Votre profil everlease
       </h1>
       <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
         Basé sur les données officielles de votre entreprise.
@@ -799,7 +841,7 @@ function Step4Score({
         onClick={onNext}
         className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full mb-3"
       >
-        {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à Everlease'}
+        {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à everlease'}
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -830,6 +872,8 @@ export default function OnboardingPage() {
   const [userEmail, setUserEmail] = useState('')
   const [country, setCountry] = useState('FR')
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Client invité par un distributeur : la société est celle du dossier, verrouillée à l'étape 2
+  const [locked, setLocked] = useState<InvitedCompany | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -838,6 +882,7 @@ export default function OnboardingPage() {
       setUserEmail(user.email ?? '')
 
       void registerSignupLead()
+      setLocked(await invitedCompany())
       if (onboardingDone(await loadAccount(supabase, user.id))) {
         // Allow revisiting step 4 for bilan upload
         setAlreadyCompleted(true)
@@ -858,7 +903,7 @@ export default function OnboardingPage() {
   }
 
   async function handleStep2(company: CompanyResult) {
-    const res = await saveOnboardingCompany({ country, name: company.name, siren: company.siren, legal_form: company.legal_form, naf_code: company.naf_code, year_created: company.year_created, address: company.address })
+    const res = locked ? await adoptInvitedCompany() : await saveOnboardingCompany({ country, name: company.name, siren: company.siren, legal_form: company.legal_form, naf_code: company.naf_code, year_created: company.year_created, address: company.address })
     if (!res.ok) { setSaveError(res.message); return }
     setSaveError(null)
     setStep(3)
@@ -924,7 +969,7 @@ export default function OnboardingPage() {
 
           {/* Step content */}
           {step === 1 && <Step1Country onNext={handleStep1} />}
-          {step === 2 && <Step2Company onBack={() => setStep(1)} onNext={handleStep2} />}
+          {step === 2 && <Step2Company onBack={() => setStep(1)} onNext={handleStep2} locked={locked} />}
           {step === 3 && <Step3Contact userEmail={userEmail} onBack={() => setStep(2)} onNext={handleStep3} />}
           {step === 4 && (
             <Step4Score

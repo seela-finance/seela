@@ -10,6 +10,8 @@ import { MAX_DOCUMENT_BYTES, MAX_IMAGE_BYTES } from '@/lib/documents'
 import { RS, requestDestination } from '@/lib/status'
 import { equipmentOf } from '@/lib/matching-rules'
 import { FALLBACK_DURATIONS, type EstimateOption } from '@/lib/estimates'
+import ClientCompanyPicker, { type PickedCompany } from '@/components/ClientCompanyPicker'
+import type { DetectedClient } from '@/lib/draft-workflow'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -245,14 +247,14 @@ function Step1Upload({
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="var(--ink-3)" />
         </svg>
-        <span className="ev-kicker">Assistant Everlease</span>
+        <span className="ev-kicker">Assistant everlease</span>
       </div>
 
       <h2 className="ev-display" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 10 }}>
         Démarrez un nouveau financement.
       </h2>
       <p style={{ fontSize: 15, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 28 }}>
-        Déposez un devis ou une facture. Everlease en extrait les lignes financables,
+        Déposez un devis ou une facture. everlease en extrait les lignes financables,
         vous pose quelques questions, puis présente votre dossier à des financeurs adaptés.
       </p>
 
@@ -391,11 +393,11 @@ function Step2Lines({
 }: {
   requestId: string
   /** Lignes déjà chargées (retour depuis une autre étape) : ni lecture ni analyse. */
-  initial: { items: LineItem[]; selected: string[]; meta: DocumentMeta } | null
+  initial: { items: LineItem[]; selected: string[]; meta: DocumentMeta; client: DetectedClient | null } | null
   documentType: DocumentType
   onDocumentTypeChange: (t: DocumentType) => void
-  onBack: (items: LineItem[], selected: string[], meta: DocumentMeta) => void
-  onNext: (items: LineItem[], selected: string[], meta: DocumentMeta) => void
+  onBack: (items: LineItem[], selected: string[], meta: DocumentMeta, client: DetectedClient | null) => void
+  onNext: (items: LineItem[], selected: string[], meta: DocumentMeta, client: DetectedClient | null) => void
 }) {
   const supabase = useMemo(() => createClient(), [])
   const [analyzing, setAnalyzing] = useState(!initial)
@@ -407,6 +409,8 @@ function Step2Lines({
   const analyzed = useRef(!!initial)
 
   const [meta, setMeta] = useState<DocumentMeta>(initial?.meta ?? EMPTY_META)
+  // Client final lu sur le devis (parcours distributeur), pour pré-remplir l'étape « Votre client »
+  const [detectedClient, setDetectedClient] = useState<DetectedClient | null>(initial?.client ?? null)
 
   const analyze = useCallback(async () => {
     if (analyzed.current) return
@@ -422,6 +426,9 @@ function Step2Lines({
         setItems(existing as LineItem[])
         setSelected(new Set((existing as LineItem[]).filter(i => i.selected).map(i => i.id)))
         if (request) setMeta(request as DocumentMeta)
+        // Client lu sur le devis (colonne à part, migration 20261118170000) : facultatif pour reprendre
+        const { data: detected } = await supabase.from('financing_requests').select('detected_client').eq('id', requestId).maybeSingle()
+        setDetectedClient(((detected as { detected_client?: DetectedClient | null } | null)?.detected_client) ?? null)
         return
       }
 
@@ -434,6 +441,7 @@ function Step2Lines({
       if (!res.ok) throw new Error(data.error || 'Analyse échouée')
 
       setMeta(data.meta ?? EMPTY_META)
+      setDetectedClient(data.client ?? null)
       if (data.document_kind === 'devis' || data.document_kind === 'facture') setDetectedType(data.document_kind)
 
       const lines: LineItem[] = data.items ?? []
@@ -613,8 +621,8 @@ function Step2Lines({
       )}
 
       <NavButtons
-        onBack={() => onBack(items, Array.from(selected), meta)}
-        onNext={() => onNext(items, Array.from(selected), meta)}
+        onBack={() => onBack(items, Array.from(selected), meta, detectedClient)}
+        onNext={() => onNext(items, Array.from(selected), meta, detectedClient)}
         disabled={selected.size === 0 || analyzing}
       />
     </div>
@@ -746,7 +754,7 @@ function Step3Config({
           <p className="text-sm" style={{ color: 'var(--ink-2)' }}>
             {options === null
               ? 'Calcul en cours…'
-              : 'Pas d’estimation automatique pour ce dossier : un conseiller Everlease l’étudie après la transmission.'}
+              : 'Pas d’estimation automatique pour ce dossier : un conseiller everlease l’étudie après la transmission.'}
           </p>
         ) : (
           <>
@@ -776,7 +784,7 @@ function Step3Config({
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="Informations complémentaires pour votre conseiller Everlease…"
+          placeholder="Informations complémentaires pour votre conseiller everlease…"
           rows={3}
           className="ev-input"
         />
@@ -803,6 +811,8 @@ function Step4Confirmation({
   periodicite,
   meta,
   partner,
+  partnerSiren,
+  detectedClient,
 }: {
   requestId: string
   documentType: 'devis' | 'facture'
@@ -814,10 +824,14 @@ function Step4Confirmation({
   meta: DocumentMeta
   /** Compte d'un distributeur partenaire : il saisit son client, qui reçoit le dossier par email */
   partner: boolean
+  /** SIREN du partenaire : jamais proposé comme client */
+  partnerSiren: string | null
+  /** Client lu sur le devis par l'IA, pour pré-remplir */
+  detectedClient: DetectedClient | null
 }) {
   const router = useRouter()
-  const [client, setClient] = useState({ siren: '', email: '' })
-  const [clientName, setClientName] = useState<string | null>(null)
+  const [clientCompany, setClientCompany] = useState<PickedCompany | null>(null)
+  const [clientEmail, setClientEmail] = useState(detectedClient?.email ?? '')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -850,7 +864,7 @@ function Step4Confirmation({
           documentType,
           notes,
           meta,
-          ...(partner ? { client } : {}),
+          ...(partner && clientCompany ? { client: { siren: clientCompany.siren, email: clientEmail } } : {}),
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -907,7 +921,7 @@ function Step4Confirmation({
           Votre demande est transmise
         </h2>
         <p className="text-sm mb-2 max-w-sm mx-auto" style={{ color: 'var(--ink-3)', lineHeight: 1.7 }}>
-          Aucune offre automatique ne correspond encore à votre {documentType} : un conseiller Everlease étudie votre dossier
+          Aucune offre automatique ne correspond encore à votre {documentType} : un conseiller everlease étudie votre dossier
           et vous rappelle sous 24 h ouvrées.
         </p>
         <p className="text-xs mb-8" style={{ color: 'var(--ink-3)' }}>Vous retrouverez son avancement dans « Offres ».</p>
@@ -925,22 +939,7 @@ function Step4Confirmation({
   }
 
   const eur = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
-  const sirenDigits = client.siren.replace(/\s+/g, '')
-  const clientReady = !partner || (/^\d{9}$/.test(sirenDigits) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client.email.trim()))
-
-  // Nom de la société du client, pour que le partenaire vérifie le SIREN saisi
-  async function lookupClient() {
-    setClientName(null)
-    if (!/^\d{9}$/.test(sirenDigits)) return
-    try {
-      const res = await fetch(`/api/search-company?q=${sirenDigits}`)
-      const data = await res.json()
-      const found = (data.results ?? []).find((r: { siren: string }) => r.siren === sirenDigits)
-      setClientName(found?.name ?? null)
-    } catch {
-      setClientName(null)
-    }
-  }
+  const clientReady = !partner || (!!clientCompany && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim()))
 
   return (
     <div className="max-w-md mx-auto py-8">
@@ -950,34 +949,33 @@ function Step4Confirmation({
       <p className="text-sm mb-6 text-center" style={{ color: 'var(--ink-3)' }}>
         {partner
           ? 'Votre client reçoit un lien par email : il consulte ses offres et choisit la sienne. Vous suivez le dossier dans « Mes clients ».'
-          : 'Vérifiez le récapitulatif : Everlease présente ensuite votre dossier à des financeurs adaptés.'}
+          : 'Vérifiez le récapitulatif : everlease présente ensuite votre dossier à des financeurs adaptés.'}
       </p>
       {partner && (
         <div className="ev-card p-4 mb-4 flex flex-col gap-3">
           <p className="ev-kicker">Votre client</p>
           <div>
-            <label className="ev-label" htmlFor="client-siren">SIREN de la société cliente</label>
-            <input
-              id="client-siren"
-              inputMode="numeric"
-              value={client.siren}
-              onChange={e => { setClient(c => ({ ...c, siren: e.target.value })); setClientName(null) }}
-              onBlur={lookupClient}
-              placeholder="123 456 789"
-              className="ev-input ev-mono"
+            <label className="ev-label" htmlFor="client-company">Société cliente</label>
+            <ClientCompanyPicker
+              value={clientCompany}
+              onChange={setClientCompany}
+              suggestion={detectedClient}
+              excludeSiren={partnerSiren}
             />
-            {clientName && <p className="text-xs mt-1.5" style={{ color: 'var(--ok)' }}>{clientName}</p>}
           </div>
           <div>
             <label className="ev-label" htmlFor="client-email">Email de votre interlocuteur</label>
             <input
               id="client-email"
               type="email"
-              value={client.email}
-              onChange={e => setClient(c => ({ ...c, email: e.target.value }))}
+              value={clientEmail}
+              onChange={e => setClientEmail(e.target.value)}
               placeholder="dirigeant@client.fr"
               className="ev-input"
             />
+            {detectedClient?.email && clientEmail === detectedClient.email && (
+              <p className="text-xs mt-1.5" style={{ color: 'var(--ink-3)' }}>Adresse lue sur le devis, à vérifier.</p>
+            )}
           </div>
         </div>
       )}
@@ -1027,19 +1025,22 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
   const [requestId, setRequestId] = useState('')
 
   // Step 2 data (null tant que les lignes du document ne sont pas chargées)
-  const [lines, setLines] = useState<{ items: LineItem[]; selected: string[]; meta: DocumentMeta } | null>(null)
+  const [lines, setLines] = useState<{ items: LineItem[]; selected: string[]; meta: DocumentMeta; client: DetectedClient | null } | null>(null)
 
   // Compte d'un distributeur partenaire (société activée par l'équipe) : étape 4 « Votre client »
   const [partner, setPartner] = useState(false)
+  const [partnerSiren, setPartnerSiren] = useState<string | null>(null)
   useEffect(() => {
     let cancelled = false
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user || cancelled) return
-      supabase.from('contacts').select('companies ( partner_enabled )').eq('user_id', user.id).maybeSingle()
+      supabase.from('contacts').select('companies ( partner_enabled, siren )').eq('user_id', user.id).maybeSingle()
         .then(({ data }) => {
-          const company = (data as unknown as { companies: { partner_enabled: boolean | null } | null } | null)?.companies
-          if (!cancelled) setPartner(!!company?.partner_enabled)
+          const company = (data as unknown as { companies: { partner_enabled: boolean | null; siren: string | null } | null } | null)?.companies
+          if (cancelled) return
+          setPartner(!!company?.partner_enabled)
+          setPartnerSiren(company?.siren ?? null)
         })
     })
     return () => { cancelled = true }
@@ -1093,8 +1094,8 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
     setStep(2)
   }
 
-  function keepLines(items: LineItem[], selected: string[], meta: DocumentMeta) {
-    setLines({ items, selected, meta })
+  function keepLines(items: LineItem[], selected: string[], meta: DocumentMeta, client: DetectedClient | null) {
+    setLines({ items, selected, meta, client })
     if (items.length === 0) return
     // Pour la reprise plus tard : la soumission renvoie de toute façon les lignes choisies
     fetch(`/api/requests/${requestId}/draft`, {
@@ -1107,11 +1108,11 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
   return (
     <div className="flex flex-col flex-1">
       <div className="border-b h-12 flex items-center px-6 shrink-0" style={{ borderColor: 'var(--line)', background: '#fff' }}>
-        <Link href="/app/dashboard" className="text-sm transition-colors" style={{ color: 'var(--ink-3)' }}>Tableau de bord</Link>
+        <Link href={partner ? '/app/partenaire' : '/app/dashboard'} className="text-sm transition-colors" style={{ color: 'var(--ink-3)' }}>{partner ? 'Mes clients' : 'Tableau de bord'}</Link>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="mx-1.5">
           <path d="M4 2l4 4-4 4" stroke="var(--line-strong)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Nouveau financement</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{partner ? 'Nouveau dossier client' : 'Nouveau financement'}</span>
         <TopActions />
       </div>
 
@@ -1129,8 +1130,8 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
                 initial={lines}
                 documentType={documentType}
                 onDocumentTypeChange={setDocumentType}
-                onBack={(items, selected, meta) => { keepLines(items, selected, meta); setStep(1) }}
-                onNext={(items, selected, meta) => { keepLines(items, selected, meta); setStep(3) }}
+                onBack={(items, selected, meta, client) => { keepLines(items, selected, meta, client); setStep(1) }}
+                onNext={(items, selected, meta, client) => { keepLines(items, selected, meta, client); setStep(3) }}
               />
             )}
             {step === 3 && (
@@ -1154,6 +1155,8 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
                 periodicite={config.periodicite}
                 meta={lines.meta}
                 partner={partner}
+                partnerSiren={partnerSiren}
+                detectedClient={lines.client}
               />
             )}
           </>

@@ -4,7 +4,6 @@ import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAG
 import { ClientActionError } from '@/lib/client-workflow'
 import { supabasePartnerStore } from '@/lib/partner-store'
 import { acceptInvitation } from '@/lib/partner-workflow'
-import { loadAccount, onboardingDone } from '@/lib/account'
 
 // Le client rejoint le dossier préparé par son distributeur : session ouverte avec l'email invité.
 export async function POST(req: Request) {
@@ -20,9 +19,8 @@ export async function POST(req: Request) {
   const db = createAdminClient()
   try {
     const requestId = await acceptInvitation(supabasePartnerStore(db), user.id, user.email ?? null, token)
-    // Compte tout neuf : l'onboarding d'abord (société déjà rattachée), le dossier apparaît ensuite au tableau de bord
-    const next = onboardingDone(await loadAccount(db, user.id)) ? `/app/offres/${requestId}` : '/app/onboarding'
-    return NextResponse.json({ requestId, next })
+    // Directement sur ses offres : l'onboarding viendra après, avec la société du dossier déjà fixée
+    return NextResponse.json({ requestId, next: `/app/offres/${requestId}` })
   } catch (err) {
     if (err instanceof ClientActionError) return NextResponse.json({ error: err.message }, { status: err.status })
     console.error('[invitation] accept', err)

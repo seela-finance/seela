@@ -51,6 +51,6 @@ test('une réponse sans analyse échoue', () => {
 })
 
 test('le schéma de l’outil exige les champs lus par parseAnalysis', () => {
-  expect(ANALYSIS_TOOL.input_schema.required).toEqual(['document_kind', 'supplier', 'document_number', 'document_date', 'items'])
+  expect(ANALYSIS_TOOL.input_schema.required).toEqual(['document_kind', 'supplier', 'document_number', 'document_date', 'client', 'items'])
   expect(ANALYSIS_TOOL.input_schema.properties.items.items.required).toContain('total_price')
 })

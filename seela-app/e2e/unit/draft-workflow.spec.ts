@@ -132,3 +132,12 @@ test('supprimer retire le dossier puis le fichier ; un fichier récalcitrant ne 
   expect(calls).toEqual(['delete', `remove:${USER}/a.pdf`])
   await removeDraft({ ...store, removeFile: async () => { throw new Error('storage') } }, USER, 'r1')
 })
+
+test('parseDetectedClient : SIRET réduit au SIREN, email normalisé, rien si vide ; parseAnalysis le remonte', async () => {
+  const { parseDetectedClient } = await import('../../lib/draft-workflow')
+  expect(parseDetectedClient({ name: ' Atelier Lumière ', siren: '356 000 000 00048', email: 'DG@Client.FR' })).toEqual({ name: 'Atelier Lumière', siren: '356000000', email: 'dg@client.fr' })
+  expect(parseDetectedClient({ name: null, siren: '12345', email: 'pas-un-email' })).toBeNull()
+  expect(parseDetectedClient(null)).toBeNull()
+  expect(parseAnalysis({ items: [], client: { siren: '356000000' } }).client).toEqual({ name: null, siren: '356000000', email: null })
+  expect(parseAnalysis({ items: [] }).client).toBeNull()
+})
