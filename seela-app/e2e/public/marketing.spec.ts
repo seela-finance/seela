@@ -1,14 +1,19 @@
 import { test, expect } from '@playwright/test'
 import { SECTORS } from '../../lib/seo/sectors'
 import { SOLUTIONS } from '../../lib/seo/solutions'
+import { publishedArticles } from '../../lib/seo/blog'
 
 // Chaque page SEO doit répondre, avoir un h1 et un canonical.
 const pages = [
   '/solutions',
   '/secteurs',
   '/distributeurs',
+  '/blog',
+  '/mentions-legales',
+  '/confidentialite',
   ...SOLUTIONS.map(s => `/solutions/${s.slug}`),
   ...SECTORS.map(s => `/secteurs/${s.slug}`),
+  ...publishedArticles().map(a => `/blog/${a.slug}`),
 ]
 
 for (const path of pages) {
@@ -60,6 +65,35 @@ test.describe('Page distributeurs', () => {
     await page.goto('/')
     await page.getByRole('link', { name: "Découvrir l'offre distributeurs" }).click()
     await expect(page).toHaveURL(/\/distributeurs$/)
+  })
+})
+
+test.describe('Blog', () => {
+  test('respecte les règles de vérité', async ({ page }) => {
+    await page.goto(`/blog/${publishedArticles()[0].slug}`)
+    const text = (await page.locator('main').innerText()).toLowerCase()
+    expect(text).toContain('exemple illustratif')
+    expect(text).toContain('hors assurance et services')
+    expect(text).toContain("sous réserve d'acceptation du dossier par le financeur")
+    // Financeurs anonymes, aucune promesse de conditions.
+    for (const forbidden of ['grenke', 'bnp', 'leasecom', 'meilleures conditions']) {
+      expect(text).not.toContain(forbidden)
+    }
+  })
+
+  test('un brouillon (published:false) est inaccessible', async ({ page }) => {
+    // Le gate de relecture : rien de non publié n'est servi, même avec le slug.
+    const res = await page.goto('/blog/leasing-ou-credit-professionnel')
+    expect(res?.status()).toBe(404)
+  })
+
+  test('le lien Blog de la navigation mène au hub', async ({ page }) => {
+    await page.goto('/')
+    // Sous 900px la nav est repliée dans le menu burger.
+    const burger = page.getByRole('button', { name: /menu/i })
+    if (await burger.isVisible()) await burger.click()
+    await page.getByRole('navigation').getByRole('link', { name: 'Blog', exact: true }).first().click()
+    await expect(page).toHaveURL(/\/blog$/)
   })
 })
 
