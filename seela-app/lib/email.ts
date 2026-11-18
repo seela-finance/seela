@@ -31,7 +31,7 @@ export async function sendEmail({ to, subject, html, cc, alwaysSend = false }: S
 
   try {
     const result = await resend.emails.send({
-      from: 'Everlease <noreply@everlease.fr>',
+      from: 'everlease <noreply@everlease.fr>',
       to: recipient,
       ...(live && cc ? { cc } : {}),
       subject,
@@ -91,7 +91,7 @@ export function emailLeaserValidation({
   equipmentList: string
   documentUrl: string
   requestRef: string
-  // Mot de l'équipe Everlease ajouté à l'email (facultatif)
+  // Mot de l'équipe everlease ajouté à l'email (facultatif)
   note?: string
 }) {
   const fmt = (n: number) =>
@@ -99,14 +99,14 @@ export function emailLeaserValidation({
 
   return {
     to: leaserEmail,
-    subject: `[Everlease] Nouveau dossier de financement — ${oneLine(requestRef)} — ${oneLine(companyName)}`,
+    subject: `[everlease] Nouveau dossier de financement — ${oneLine(requestRef)} — ${oneLine(companyName)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
     <p style="font-size:20px;font-weight:600;margin:0">Nouveau dossier à étudier</p>
-    <p style="color:#6B6F76;margin:4px 0 0">Réf. ${esc(requestRef)} — transmis par Everlease</p>
+    <p style="color:#6B6F76;margin:4px 0 0">Réf. ${esc(requestRef)} — transmis par everlease</p>
   </div>
-  ${note.trim() ? `<div style="border-left:3px solid #141517;padding:4px 0 4px 16px;margin-bottom:24px"><p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6B6F76;margin:0 0 6px">Mot de l'équipe Everlease</p><p style="font-size:13px;white-space:pre-line;margin:0">${esc(note.trim())}</p></div>` : ''}
+  ${note.trim() ? `<div style="border-left:3px solid #141517;padding:4px 0 4px 16px;margin-bottom:24px"><p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6B6F76;margin:0 0 6px">Mot de l'équipe everlease</p><p style="font-size:13px;white-space:pre-line;margin:0">${esc(note.trim())}</p></div>` : ''}
   <div style="background:#F2F3F4;border:1px solid #DCDEE1;border-radius:16px;padding:24px;margin-bottom:24px">
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6B6F76;margin:0 0 12px">Entreprise</p>
     <p style="font-size:16px;font-weight:600;margin:0 0 4px">${esc(companyName)}</p>
@@ -125,9 +125,9 @@ export function emailLeaserValidation({
     <p style="font-size:13px;white-space:pre-line;margin:0">${esc(equipmentList)}</p>
   </div>
   ${documentUrl ? `<p style="margin-bottom:24px"><a href="${esc(documentUrl)}" style="display:inline-block;padding:10px 20px;background:#141517;color:#fff;border-radius:999px;text-decoration:none;font-size:13px;font-weight:500">Télécharger le document original</a><br><span style="font-size:12px;color:#6B6F76">Lien valable 7 jours.</span></p>` : ''}
-  <p style="font-size:13px;color:#6B6F76">Pour confirmer ou refuser ce dossier, contactez votre référent Everlease. Réf. ${esc(requestRef)}.</p>
+  <p style="font-size:13px;color:#6B6F76">Pour confirmer ou refuser ce dossier, contactez votre référent everlease. Réf. ${esc(requestRef)}.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
 </div>`,
   }
 }
@@ -152,7 +152,7 @@ export function emailClientEverleaseValidated({
 
   return {
     to: userEmail,
-    subject: `[Everlease] Votre dossier ${oneLine(requestRef)} est en cours d'examen chez ${oneLine(leaserName)}`,
+    subject: `[everlease] Votre dossier ${oneLine(requestRef)} est en cours d'examen chez ${oneLine(leaserName)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -161,15 +161,15 @@ export function emailClientEverleaseValidated({
   </div>
   <div style="background:#E9ECFF;border:1px solid #E9ECFF;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;color:#1226B0;margin:0">
-      Votre dossier a été validé par Everlease et transmis à <strong>${esc(leaserName)}</strong>.
+      Votre dossier a été validé par everlease et transmis à <strong>${esc(leaserName)}</strong>.
       Il étudie votre offre indicative de <strong>${fmt(monthlyPayment)}/mois sur ${durationMonths} mois</strong>, hors assurance et services.
       Sous réserve d'acceptation du dossier par le financeur.
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
-  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous contacte dès que le financeur répond. En cas de question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <p style="font-size:13px;color:#6B6F76">Un conseiller everlease vous contacte dès que le financeur répond. En cas de question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -194,7 +194,7 @@ export function emailClientLeaserConfirmed({
 
   return {
     to: userEmail,
-    subject: `[Everlease] Financement confirmé — ${oneLine(requestRef)}`,
+    subject: `[everlease] Financement confirmé — ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -209,9 +209,9 @@ export function emailClientLeaserConfirmed({
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
-  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous rappelle sous 24 h ouvrées pour la signature du contrat. Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <p style="font-size:13px;color:#6B6F76">Un conseiller everlease vous rappelle sous 24 h ouvrées pour la signature du contrat. Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -229,7 +229,7 @@ export function emailClientLeaserRefused({
 }) {
   return {
     to: userEmail,
-    subject: `[Everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
+    subject: `[everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -243,9 +243,9 @@ export function emailClientLeaserRefused({
     </p>
   </div>
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
-  <p style="font-size:13px;color:#6B6F76">Un conseiller Everlease vous contacte pour étudier les alternatives. Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <p style="font-size:13px;color:#6B6F76">Un conseiller everlease vous contacte pour étudier les alternatives. Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -264,7 +264,7 @@ export function emailClientRequestRefused({
 }) {
   return {
     to: userEmail,
-    subject: `[Everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
+    subject: `[everlease] Mise à jour de votre dossier ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -277,7 +277,7 @@ export function emailClientRequestRefused({
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
   <p style="font-size:13px;color:#6B6F76">Pour toute question, écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif</p>
 </div>`,
   }
 }
@@ -290,7 +290,7 @@ const FOOTER = (requestRef: string) => `
   <p style="font-size:13px;color:#6B6F76">Réf. dossier : ${esc(requestRef)}</p>
   <p style="font-size:13px;color:#6B6F76">Retrouvez le détail dans votre espace, rubrique « Offres ». Pour toute question : <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a></p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif</p>
 </div>`
 
 /** Offre ajoutée par l'équipe (#34). */
@@ -299,7 +299,7 @@ export function emailClientNewOffer({
 }: { userEmail: string; companyName: string; leaserName: string; monthlyPayment: number; durationMonths: number; requestRef: string }) {
   return {
     to: userEmail,
-    subject: `[Everlease] Nouvelle offre disponible — ${oneLine(requestRef)}`,
+    subject: `[everlease] Nouvelle offre disponible — ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -308,7 +308,7 @@ export function emailClientNewOffer({
   </div>
   <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;margin:0">
-      Votre conseiller Everlease a obtenu une offre de <strong>${esc(leaserName)}</strong> :
+      Votre conseiller everlease a obtenu une offre de <strong>${esc(leaserName)}</strong> :
       <strong>${EUR(monthlyPayment)} HT / mois sur ${durationMonths} mois</strong>.
     </p>
     ${MENTIONS}
@@ -327,7 +327,7 @@ export function emailClientCounterOffer({
     ? `<span style="color:#6B6F76;text-decoration:line-through">${EUR(previousMonthly)}</span> → ` : ''
   return {
     to: userEmail,
-    subject: `[Everlease] Contre-proposition à examiner — ${oneLine(requestRef)}`,
+    subject: `[everlease] Contre-proposition à examiner — ${oneLine(requestRef)}`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -358,7 +358,7 @@ export function emailClientPartnerInvitation({
 }) {
   return {
     to: clientEmail,
-    subject: `[Everlease] ${oneLine(partnerName)} vous propose de financer votre équipement en loyers`,
+    subject: `[everlease] ${oneLine(partnerName)} vous propose de financer votre équipement en loyers`,
     html: `
 <div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
   <div style="padding:32px 0 16px">
@@ -367,14 +367,14 @@ export function emailClientPartnerInvitation({
   </div>
   <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
     <p style="font-size:13px;margin:0 0 12px">
-      ${esc(partnerName)} a préparé avec Everlease le financement locatif de votre devis de <strong>${EUR(totalAmount)} HT</strong>.
+      ${esc(partnerName)} a préparé avec everlease le financement locatif de votre devis de <strong>${EUR(totalAmount)} HT</strong>.
     </p>
-    ${monthlyFrom != null ? `<p style="font-size:13px;margin:0">Exemple illustratif : à partir de <strong>${EUR(monthlyFrom)} HT / mois sur ${durationMonths} mois</strong>.</p>${MENTIONS}` : `<p style="font-size:13px;margin:0">Un conseiller Everlease étudie votre dossier et vous rappelle sous 24 h ouvrées.</p>`}
+    ${monthlyFrom != null ? `<p style="font-size:13px;margin:0">Exemple illustratif : à partir de <strong>${EUR(monthlyFrom)} HT / mois sur ${durationMonths} mois</strong>.</p>${MENTIONS}` : `<p style="font-size:13px;margin:0">Un conseiller everlease étudie votre dossier et vous rappelle sous 24 h ouvrées.</p>`}
   </div>
   <p style="margin-bottom:24px"><a href="${esc(link)}" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Voir mon dossier et choisir mon offre</a><br><span style="font-size:12px;color:#6B6F76">Lien personnel, valable 30 jours, réservé à ${esc(clientEmail)}. Aucune carte ni RIB demandé.</span></p>
   <p style="font-size:13px;color:#6B6F76">Une question ? Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>. Réf. ${esc(requestRef)}.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
-  <p style="font-size:11px;color:#6B6F76">Everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
 </div>`,
   }
 }

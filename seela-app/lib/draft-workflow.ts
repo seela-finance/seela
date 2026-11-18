@@ -9,6 +9,9 @@ const MAX_LINES = 200
 
 export type DraftMeta = SubmitPayload['meta']
 
+/** Client final lu sur le devis par l'IA (parcours distributeur) : pré-remplit l'étape « Votre client ». */
+export type DetectedClient = { name: string | null; siren: string | null; email: string | null }
+
 export type DraftLine = {
   description: string | null
   quantity: number | null
@@ -26,8 +29,8 @@ export type Draft = { id: string; status: string; user_id: string; document_url:
 
 export interface DraftStore {
   loadDraft(requestId: string): Promise<Draft | null>
-  loadContent(requestId: string): Promise<{ lines: SavedLine[]; meta: DraftMeta }>
-  saveAnalysis(requestId: string, lines: DraftLine[], meta: DraftMeta): Promise<SavedLine[]>
+  loadContent(requestId: string): Promise<{ lines: SavedLine[]; meta: DraftMeta; client?: DetectedClient | null }>
+  saveAnalysis(requestId: string, lines: DraftLine[], meta: DraftMeta, client?: DetectedClient | null): Promise<SavedLine[]>
   setSelection(requestId: string, selectedIds: string[]): Promise<void>
   /** Remplace le document d'un brouillon et efface ce qui en avait été extrait ; false si ce n'est plus un brouillon. */
   swapDocument(requestId: string, documentUrl: string, documentType: string): Promise<boolean>
@@ -39,8 +42,21 @@ export interface DraftStore {
 const text = (v: unknown, max = 500) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null)
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Client lu par l'IA : SIREN (ou les 9 premiers chiffres d'un SIRET), email valide, nom court. null si rien d'exploitable. */
+export function parseDetectedClient(raw: unknown): DetectedClient | null {
+  const c = (raw ?? null) as Record<string, unknown> | null
+  if (!c || typeof c !== 'object') return null
+  const digits = typeof c.siren === 'string' ? c.siren.replace(/\D/g, '') : ''
+  const siren = digits.length === 9 || digits.length === 14 ? digits.slice(0, 9) : null
+  const email = typeof c.email === 'string' && EMAIL.test(c.email.trim()) ? c.email.trim().toLowerCase().slice(0, 200) : null
+  const name = text(c.name, 150)
+  return name || siren || email ? { name, siren, email } : null
+}
+
 /** Réponse de l'IA → lignes et métadonnées à enregistrer. Rien n'est repris sans contrôle de type. */
-export function parseAnalysis(raw: unknown): { lines: DraftLine[]; meta: DraftMeta; documentKind: 'devis' | 'facture' | null } {
+export function parseAnalysis(raw: unknown): { lines: DraftLine[]; meta: DraftMeta; documentKind: 'devis' | 'facture' | null; client: DetectedClient | null } {
   const r = (raw ?? {}) as Record<string, unknown>
   const supplier = (r.supplier ?? {}) as Record<string, unknown>
   const lines = (Array.isArray(r.items) ? r.items.slice(0, MAX_LINES) : []).map(item => {
@@ -70,6 +86,7 @@ export function parseAnalysis(raw: unknown): { lines: DraftLine[]; meta: DraftMe
       document_date: r.document_date,
     }),
     documentKind: r.document_kind === 'devis' || r.document_kind === 'facture' ? r.document_kind : null,
+    client: parseDetectedClient(r.client),
   }
 }
 
@@ -95,11 +112,11 @@ export async function analyzeDraft(
   if (!draft.document_url) throw new ClientActionError('Aucun document à analyser.', 400)
 
   const existing = await store.loadContent(requestId)
-  if (existing.lines.length > 0) return { items: existing.lines, meta: existing.meta, document_kind: null }
+  if (existing.lines.length > 0) return { items: existing.lines, meta: existing.meta, document_kind: null, client: existing.client ?? null }
 
-  const { lines, meta, documentKind } = parseAnalysis(await runAi(draft.document_url))
-  const items = lines.length > 0 ? await store.saveAnalysis(requestId, lines, meta) : []
-  return { items, meta, document_kind: documentKind }
+  const { lines, meta, documentKind, client } = parseAnalysis(await runAi(draft.document_url))
+  const items = lines.length > 0 ? await store.saveAnalysis(requestId, lines, meta, client) : []
+  return { items, meta, document_kind: documentKind, client }
 }
 
 export async function saveSelection(store: DraftStore, userId: string, requestId: string, selectedIds: unknown) {

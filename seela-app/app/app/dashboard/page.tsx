@@ -26,6 +26,10 @@ export default async function DashboardPage() {
     loadAccount(supabase, user.id),
   ])
 
+  // Distributeur partenaire : son accueil est « Mes clients » (parcours distributeur)
+  const { data: partnerRow } = await supabase.from('contacts').select('companies ( partner_enabled )').eq('user_id', user.id).maybeSingle()
+  if ((partnerRow as unknown as { companies: { partner_enabled: boolean | null } | null } | null)?.companies?.partner_enabled) redirect('/app/partenaire')
+
   const allRequests = requests ?? []
   const firstName = account?.firstName?.trim() || null
   const showProfileBanner = account?.company?.onboarding_completed === true && !account.company.financial_docs_uploaded

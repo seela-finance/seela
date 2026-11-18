@@ -32,14 +32,16 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
   const run = readContext()
   const db = stagingAdmin()
   const partner = await pageAs(browser, 'partner')
-  // SIREN du client propre au run : sa société est créée en prospect par l'envoi du partenaire
-  const clientSiren = `9${randomBytes(4).readUInt32BE(0).toString().padStart(8, '0').slice(-8)}`
+  // Client lu sur le faux devis (e2e/support/fake-anthropic.mjs) : SIRET réel de La Poste, retrouvé au registre public
+  const clientSiren = '356000000'
 
   try {
     await test.step('le partenaire voit « Mes clients » et monte le dossier', async () => {
       await partner.goto('/app/partenaire')
       await expect(partner.getByRole('heading', { name: 'Mes clients' })).toBeVisible()
-      await partner.getByRole('link', { name: 'Nouveau dossier client' }).click()
+      // Menu épuré du partenaire : « Mes clients » et « Nouveau dossier client », pas d'offres ni de contrats
+      await expect(partner.getByRole('link', { name: 'Offres' })).toHaveCount(0)
+      await partner.getByRole('link', { name: 'Nouveau dossier client' }).first().click()
       await expect(partner).toHaveURL(/\/app\/nouveau/)
       const analyze = partner.getByRole('button', { name: 'Analyser le document' })
       await expect(async () => {
@@ -54,10 +56,17 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
       await partner.getByRole('button', { name: 'Continuer' }).click()
     })
 
-    await test.step('étape « Votre client » : SIREN et email obligatoires', async () => {
+    await test.step('étape « Votre client » : société et email lus sur le devis, modifiables', async () => {
       const send = partner.getByRole('button', { name: 'Envoyer le dossier à mon client' })
+      // Pré-remplis depuis le devis : la société retrouvée au registre et l'email du client
+      await expect(partner.getByText(/la poste/i).first()).toBeVisible({ timeout: 20_000 })
+      await expect(partner.getByText('Société lue sur le devis')).toBeVisible()
+      await expect(partner.getByLabel('Email de votre interlocuteur')).toHaveValue('contact@client-final.test')
+      // Changer de société : la recherche par nom revient, puis on reprend la même
+      await partner.getByRole('button', { name: 'Changer' }).click()
       await expect(send).toBeDisabled()
-      await partner.getByLabel('SIREN de la société cliente').fill(clientSiren.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'))
+      await partner.getByLabel('Société cliente').fill('356000000')
+      await partner.getByRole('listbox').getByRole('button').first().click()
       await partner.getByLabel('Email de votre interlocuteur').fill(run.users.invitee.email)
       await shot(partner, '30-partenaire-votre-client')
       await send.click()
@@ -106,12 +115,31 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
       expect(await invitee.content()).not.toMatch(/Grenke|Leaser E2E/)
       await shot(invitee, '32-invitation-client')
       await invitee.getByRole('button', { name: 'Accéder à mon dossier' }).click()
+      // Directement sur ses offres, sans passer par l'onboarding
       await expect(invitee).toHaveURL(new RegExp(`/app/offres/${requestId}$`), { timeout: 30_000 })
+      await expect(invitee.getByText(/12\s000\s€/).first()).toBeVisible()
+      // Le dossier a quitté les offres du partenaire
+      await partner.goto('/app/offres')
+      expect(await partner.content()).not.toContain(requestId.slice(0, 4).toUpperCase())
       const res = await invitee.request.post(`/api/offers/${offer!.id}/confirm`)
       expect(res.ok()).toBe(true)
       const { data } = await db.from('financing_requests').select('user_id, status, client_joined_at').eq('id', requestId).single()
       expect(data).toMatchObject({ user_id: run.users.invitee.id, status: RS.offer_selected })
       expect(data!.client_joined_at).not.toBeNull()
+    })
+
+    await test.step('l’onboarding du client invité ne lui laisse pas changer de société', async () => {
+      // Le compte de test est créé onboarding terminé : on le remet au départ, comme un vrai compte tout neuf
+      const { data: inviteeContact } = await db.from('contacts').select('company_id').eq('user_id', run.users.invitee.id).single()
+      await db.from('companies').update({ onboarding_completed: false }).eq('id', inviteeContact!.company_id)
+      await invitee.goto('/app/onboarding')
+      await invitee.getByRole('button', { name: 'Continuer' }).click({ timeout: 20_000 })
+      await expect(invitee.getByText('Votre fournisseur a préparé ce dossier pour cette société')).toBeVisible()
+      await expect(invitee.getByText(/la poste/i).first()).toBeVisible()
+      await expect(invitee.getByPlaceholder('Nom de société ou SIREN')).toHaveCount(0)
+      await shot(invitee, '37-onboarding-verrouille')
+      await invitee.getByRole('button', { name: 'Continuer' }).click()
+      await expect(invitee.getByRole('heading', { name: 'Qui êtes-vous ?' })).toBeVisible()
     })
 
     await test.step('le lien ne sert qu’une fois', async () => {

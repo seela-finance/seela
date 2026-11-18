@@ -7,7 +7,7 @@ interface Props {
   offerId: string
 }
 
-// Accepter = confirmer la contre-offre (Everlease la valide ensuite) ; refuser = retour aux autres offres.
+// Accepter = confirmer la contre-offre (everlease la valide ensuite) ; refuser = retour aux autres offres.
 // Les statuts sont écrits côté serveur (routes /api/offers/[id]/confirm et /decline).
 export default function CounterOfferActions({ offerId }: Props) {
   const router = useRouter()

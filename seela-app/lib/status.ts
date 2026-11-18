@@ -196,7 +196,7 @@ export function canTransitionOffer(from: string, to: OfferStatus, actor: Actor):
 export const REQUEST_TIMELINE: { status: RequestStatus; label: string }[] = [
   { status: 'submitted', label: 'Dossier transmis' },
   { status: 'offer_selected', label: 'Offre choisie' },
-  { status: 'seela_validated', label: 'Validé par Everlease' },
+  { status: 'seela_validated', label: 'Validé par everlease' },
   { status: 'leaser_confirmed', label: 'Confirmé par le financeur' },
   { status: 'active', label: 'Contrat démarré' },
 ]

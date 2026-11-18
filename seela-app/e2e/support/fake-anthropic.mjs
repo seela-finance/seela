@@ -8,6 +8,7 @@ const ANALYSIS = {
   document_number: 'DV-E2E-1',
   document_date: '2026-10-01',
   document_kind: 'facture',
+  client: { name: 'La Poste', siren: '356 000 000 00048', email: 'Contact@Client-Final.test' },
   items: [
     { description: 'Serveur de calcul', quantity: 1, unit_price: 10000, total_price: 10000, equipment_type: 'postes-serveurs' },
     { description: 'Écrans 27 pouces', quantity: 4, unit_price: 500, total_price: 2000, equipment_type: 'affichage-ecrans' },
