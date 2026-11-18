@@ -9,6 +9,14 @@ test.describe('Landing', () => {
     await expect(page).toHaveURL(/\/auth$/)
   })
 
+  test('la nav propose Distributeurs à droite et ne liste plus Financeurs', async ({ page }) => {
+    await page.goto('/')
+    const nav = page.getByRole('navigation', { name: 'Navigation principale' })
+    await expect(nav.locator('.nav__cta a[href="/distributeurs"]')).toHaveCount(1)
+    await expect(nav.locator('.nav__links a[href="/distributeurs"]')).toHaveCount(0)
+    await expect(nav.locator('a[href="/#financeurs"]')).toHaveCount(0)
+  })
+
   test('pas de scroll horizontal', async ({ page }) => {
     await page.goto('/')
     const overflow = await page.evaluate(

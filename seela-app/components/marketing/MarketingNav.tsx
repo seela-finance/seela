@@ -1,14 +1,16 @@
 'use client'
 
-// Navigation commune (landing, Solutions, Secteurs), style du canvas v2 :
-// marque, liens, « Se connecter » + bouton encre, burger sous 900px.
+// Navigation commune (landing, Solutions, Secteurs, Distributeurs), style du
+// canvas v2. À gauche, près de la marque : les liens de contenu. À droite :
+// « Se connecter », le bouton contour « Distributeurs » (second public) et le
+// bouton encre. Burger sous 960px.
 // Les liens Solutions et Secteurs gardent un menu déroulant au survol pour
 // le maillage SEO ; les liens sont de vrais <Link> (crawlables).
 import React from 'react'
 import Link from 'next/link'
 import Brand from '@/components/landing/Brand'
 import { BtnGauge } from '@/components/landing/Gauge'
-import { IconArrowRight, IconUser } from '@/components/landing/icons'
+import { IconArrowRight, IconStore, IconUser } from '@/components/landing/icons'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import { SECTORS } from '@/lib/seo/sectors'
 import { createClient } from '@/lib/supabase/client'
@@ -76,12 +78,12 @@ export default function MarketingNav() {
                 </div>
               )}
             </div>
-            <Link href="/distributeurs">Distributeurs</Link>
             <Link href="/#comment">Comment ça marche</Link>
-            <Link href="/#financeurs">Financeurs</Link>
           </div>
 
           <div className="nav__cta">
+            {!userEmail && <Link className="login" href="/auth">Se connecter</Link>}
+            <Link className="btn btn--ghost btn--sm nav__dist" href="/distributeurs"><IconStore size={14} />Distributeurs</Link>
             {userEmail ? (
               <Link className="lp-user" href="/app/dashboard">
                 <span className="lp-user__avatar"><IconUser size={15} /></span>
@@ -91,10 +93,7 @@ export default function MarketingNav() {
                 </span>
               </Link>
             ) : (
-              <>
-                <Link className="login" href="/auth">Se connecter</Link>
-                <Link className="btn btn--ink btn--sm" href="/auth"><BtnGauge />Estimer mon financement</Link>
-              </>
+              <Link className="btn btn--ink btn--sm" href="/auth"><BtnGauge />Estimer mon financement</Link>
             )}
           </div>
 
@@ -111,16 +110,13 @@ export default function MarketingNav() {
           <div className="mnav">
             <Link href="/solutions" onClick={closeMenu}>Solutions</Link>
             <Link href="/secteurs" onClick={closeMenu}>Secteurs</Link>
-            <Link href="/distributeurs" onClick={closeMenu}>Distributeurs</Link>
             <Link href="/#comment" onClick={closeMenu}>Comment ça marche</Link>
-            <Link href="/#financeurs" onClick={closeMenu}>Financeurs</Link>
+            {!userEmail && <Link href="/auth" onClick={closeMenu}>Se connecter</Link>}
+            <Link className="btn btn--ghost" href="/distributeurs" onClick={closeMenu}><IconStore size={14} />Distributeurs</Link>
             {userEmail ? (
               <Link className="btn btn--ink" href="/app/dashboard" onClick={closeMenu}>Ouvrir l&apos;application</Link>
             ) : (
-              <>
-                <Link href="/auth" onClick={closeMenu}>Se connecter</Link>
-                <Link className="btn btn--ink" href="/auth" onClick={closeMenu}>Estimer mon financement</Link>
-              </>
+              <Link className="btn btn--ink" href="/auth" onClick={closeMenu}>Estimer mon financement</Link>
             )}
           </div>
         )}
