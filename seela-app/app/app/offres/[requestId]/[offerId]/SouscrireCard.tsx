@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { track } from '@/lib/track'
 import { createClient } from '@/lib/supabase/client'
 import { OS } from '@/lib/status'
 
@@ -128,6 +129,7 @@ export default function SouscrireCard({
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Confirmation impossible, réessayez.')
       setStatus(OS.client_confirmed)
+      track('offre_choisie')
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Confirmation impossible, réessayez.')

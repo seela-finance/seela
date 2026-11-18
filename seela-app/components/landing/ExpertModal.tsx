@@ -1,4 +1,5 @@
 'use client'
+import { track } from '@/lib/track'
 
 // Modale « Parler à un expert » : formulaire contrôlé, erreurs par champ,
 // état envoyé. Branchée sur l'envoi de lead existant (/api/contact-expert).
@@ -84,6 +85,7 @@ export default function ExpertModal({ kind, onClose, title = 'Parler à un exper
         }),
       })
       if (!res.ok) throw new Error('request failed')
+      track('demande_expert')
       setSent(true)
     } catch {
       setNetError('Une erreur est survenue. Réessayez ou écrivez-nous à contact@everlease.fr.')
