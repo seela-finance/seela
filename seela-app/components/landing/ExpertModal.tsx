@@ -33,7 +33,9 @@ function validate(f: Fields): Partial<Record<FieldKey, string>> {
   return e
 }
 
-export default function ExpertModal({ kind, onClose }: { kind: ModalKind; onClose: () => void }) {
+// `title` remplace « Parler à un expert » quand la page d'origine a son propre
+// appel à l'action (page /distributeurs).
+export default function ExpertModal({ kind, onClose, title = 'Parler à un expert' }: { kind: ModalKind; onClose: () => void; title?: string }) {
   const [f, setF] = React.useState<Fields>(EMPTY)
   const [submitted, setSubmitted] = React.useState(false)
   const [sending, setSending] = React.useState(false)
@@ -100,7 +102,7 @@ export default function ExpertModal({ kind, onClose }: { kind: ModalKind; onClos
         {!sent ? (
           <>
             <div className="kicker">{KICKER[kind]}</div>
-            <h2 id="modal-title" className="display h3" style={{ marginTop: 10, fontSize: 28 }}>Parler à un expert</h2>
+            <h2 id="modal-title" className="display h3" style={{ marginTop: 10, fontSize: 28 }}>{title}</h2>
             <p className="small" style={{ margin: '8px 0 0', color: 'var(--ink-2)' }}>Un conseiller vous rappelle sous 24&nbsp;h ouvrées. Aucune carte ni RIB demandé.</p>
             <form className="form" onSubmit={submit} noValidate>
               <div className={cls('company', ' full')}>

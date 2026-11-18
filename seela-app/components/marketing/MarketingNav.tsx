@@ -76,6 +76,7 @@ export default function MarketingNav() {
                 </div>
               )}
             </div>
+            <Link href="/distributeurs">Distributeurs</Link>
             <Link href="/#comment">Comment ça marche</Link>
             <Link href="/#financeurs">Financeurs</Link>
           </div>
@@ -110,6 +111,7 @@ export default function MarketingNav() {
           <div className="mnav">
             <Link href="/solutions" onClick={closeMenu}>Solutions</Link>
             <Link href="/secteurs" onClick={closeMenu}>Secteurs</Link>
+            <Link href="/distributeurs" onClick={closeMenu}>Distributeurs</Link>
             <Link href="/#comment" onClick={closeMenu}>Comment ça marche</Link>
             <Link href="/#financeurs" onClick={closeMenu}>Financeurs</Link>
             {userEmail ? (
