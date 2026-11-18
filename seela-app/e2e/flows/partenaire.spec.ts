@@ -151,6 +151,13 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
       await expect(row).toBeVisible()
       await expect(row.getByRole('cell').nth(4)).toHaveText('1')
       await shot(admin, '35-admin-partenaires')
+
+      // Onglet « Acquisition » : le client apporté par le partenaire compte dans le canal « Partenaire distributeur »
+      await admin.goto('/admin/acquisition?periode=30')
+      const channel = admin.getByRole('row').filter({ hasText: 'Partenaire distributeur' })
+      await expect(channel).toBeVisible()
+      expect(Number(await channel.getByRole('cell').nth(5).innerText())).toBeGreaterThanOrEqual(1)
+      await shot(admin, '36-admin-acquisition')
       await admin.context().close()
     })
   } finally {

@@ -14,6 +14,7 @@ const NAV: { href: string; label: string; hint?: string; section: string | null;
   { href: '/admin/crm/prospection', label: 'Leads', hint: 'Qualification inbound et prospection outbound', section: 'Vente', capability: 'crm' },
   { href: '/admin/crm/appels', label: 'Session d’appels', hint: 'Enchaîner les appels société par société', section: 'Vente', capability: 'crm' },
   { href: '/admin/crm/deals', label: 'Deals', hint: 'Opportunités après le RDV', section: 'Vente', capability: 'crm' },
+  { href: '/admin/acquisition', label: 'Acquisition', hint: 'Leads, dossiers et contrats par canal', section: 'Vente', capability: 'view' },
   { href: '/admin/crm/societes', label: 'Sociétés', section: 'Base', capability: 'crm' },
   { href: '/admin/crm/contacts', label: 'Contacts', section: 'Base', capability: 'crm' },
   { href: '/admin', label: 'Dossiers', hint: 'Demandes de financement à traiter', section: 'Financement', capability: 'view' },

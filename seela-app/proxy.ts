@@ -3,6 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE, decodeAttribution, encodeAttribution, readAttribution, shouldReplace } from '@/lib/attribution'
 
 export async function proxy(request: NextRequest) {
+  // skipTrailingSlashRedirect (next.config.ts, pour PostHog) : on garde la redirection /page/ → /page des pages
+  const path = request.nextUrl.pathname
+  if (path.length > 1 && path.endsWith('/')) {
+    // URL standard : l'objet NextURL remettrait la barre finale
+    const url = new URL(request.url)
+    url.pathname = path.replace(/\/+$/, '') || '/'
+    return NextResponse.redirect(url, 308)
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -60,5 +69,5 @@ function rememberSource(request: NextRequest, response: NextResponse) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|ingest|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

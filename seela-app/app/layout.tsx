@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Bricolage_Grotesque, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import Analytics from '@/components/Analytics'
 import { SITE_NAME, SITE_URL } from '@/lib/seo/site'
 import { JsonLd, organizationSchema } from '@/lib/seo/jsonld'
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         <JsonLd data={organizationSchema()} />
         {children}
+        <Analytics />
       </body>
     </html>
   )
