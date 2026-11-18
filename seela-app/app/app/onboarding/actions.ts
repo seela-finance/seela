@@ -6,6 +6,7 @@ import { decideCompany } from '@/lib/account'
 import { isSiren } from '@/lib/company-registry'
 import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
 import { recordSignupLead } from '@/lib/crm-inbound'
+import { saveCompanyAttribution } from '@/lib/attribution-store'
 
 type Result = { ok: true } | { ok: false; message: string }
 const FAIL: Result = { ok: false, message: 'Enregistrement impossible. Réessayez dans un instant.' }
@@ -82,6 +83,8 @@ export async function saveOnboardingCompany(input: {
     }
     // Dossiers créés avant que la société soit connue
     await db.from('financing_requests').update({ company_id: companyId, created_by: contact.id }).eq('user_id', user.id).is('company_id', null)
+    // Attribution : première source du visiteur (cookie) copiée sur la société, si elle n'en a pas encore
+    await saveCompanyAttribution(db, companyId)
     // Pré-pipe inbound : la demande entrante est à qualifier (sans bloquer l'inscription si ça échoue)
     try {
       await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'inscription', status: 'qualification', strong: true }, await getCrmSettings(db))

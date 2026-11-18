@@ -2,6 +2,8 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isWebmailDomain, nameFromDomain, normalizeDomain } from '@/lib/crm-companies'
 import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
+import { saveCompanyAttribution } from '@/lib/attribution-store'
+import type { Attribution } from '@/lib/attribution'
 
 const like = (s: string) => s.replace(/[\\%_]/g, c => `\\${c}`)
 
@@ -11,6 +13,8 @@ const like = (s: string) => s.replace(/[\\%_]/g, c => `\\${c}`)
  */
 export async function recordInboundLead(db: SupabaseClient, lead: {
   entreprise: string; prenom: string; nom: string; role: string; email: string; telephone: string; devis: string; origine?: string | null
+  /** Source du visiteur (cookie lu par la route), copiée sur la société si elle n'en a pas */
+  attribution?: Attribution | null
 }) {
   const email = lead.email.trim().toLowerCase()
   const domain = normalizeDomain(email)
@@ -42,6 +46,7 @@ export async function recordInboundLead(db: SupabaseClient, lead: {
     contact = data as { id: string; company_id: string | null }
   }
 
+  await saveCompanyAttribution(db, companyId, lead.attribution ?? null)
   await db.from('crm_activities').insert({
     type: 'note', source: 'site', company_id: companyId, contact_id: contact.id,
     body: [`Demande « Parler à un expert » depuis le site.`, `Rôle : ${lead.role}`, `Devis en main : ${lead.devis}`, lead.origine ? `Provenance : ${lead.origine}` : null].filter(Boolean).join('\n'),
@@ -81,6 +86,7 @@ export async function recordSignupLead(db: SupabaseClient, user: { id: string; e
   }
   const { error: cErr } = await db.from('contacts').update({ company_id: companyId, updated_at: new Date().toISOString() }).eq('id', contact.id)
   if (cErr) throw cErr
+  await saveCompanyAttribution(db, companyId)
   await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'inscription_partielle', status: 'qualification', strong: true }, await getCrmSettings(db))
   return 'entered'
 }
