@@ -3,7 +3,7 @@ import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAG
 import { isLemlistConfigured, syncLemlist } from '@/lib/lemlist-sync'
 
 // Synchro Lemlist → CRM (événements, pré-pipe, batches) sans dépendre de l'ouverture du CRM : appelée par le cron Vercel
-// (vercel.json) toutes les heures, ou à la main. Auth : `Authorization: Bearer <CRON_SECRET>` (Vercel l'ajoute lui-même).
+// (vercel.json) toutes les heures, ou à la main (?full=1 reprend tout l'historique, par exemple pour créer les batches des campagnes existantes). Auth : `Authorization: Bearer <CRON_SECRET>` (Vercel l'ajoute lui-même).
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +15,8 @@ export async function GET(req: Request) {
   if (!isLemlistConfigured()) return NextResponse.json({ skipped: 'Clé Lemlist absente' })
 
   try {
-    return NextResponse.json(await syncLemlist(createAdminClient()))
+    const full = new URL(req.url).searchParams.get('full') === '1'
+    return NextResponse.json(await syncLemlist(createAdminClient(), { full }))
   } catch (err) {
     console.error('[cron lemlist-sync]', err)
     return NextResponse.json({ error: 'Synchronisation Lemlist impossible' }, { status: 500 })
