@@ -20,6 +20,7 @@ import RequestActions from '@/components/admin/RequestActions'
 import { AddOfferForm, CounterOfferForm } from '@/components/admin/OfferForms'
 import { canAddManualOffer, canCounterOffer } from '@/lib/admin-offers'
 import RequestNote from '@/components/admin/RequestNote'
+import StartContractForm from '@/components/admin/StartContractForm'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { fetchRegistry } from '@/lib/company-registry'
 import { companyAlert } from '@/lib/admin-company'
@@ -54,7 +55,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const [{ data: request }, { data: rawEvents }] = await Promise.all([
     db
       .from('financing_requests')
-      .select('*, line_items(*), offers(*), profiles(company_name, siren, first_name, last_name, email, phone)')
+      .select('*, line_items(*), offers(*), companies(name, siren), contacts(first_name, last_name, email, phone)')
       .eq('id', id)
       .maybeSingle(),
     db
@@ -84,7 +85,9 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   )
   const lines = (request.line_items ?? []) as LineItem[]
   const selectedTotal = lines.filter(l => l.selected).reduce((s, l) => s + (l.total_price ?? 0), 0)
-  const profile = request.profiles as { company_name: string | null; siren: string | null; first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
+  const company = request.companies as { name: string | null; siren: string | null } | null
+  const contact = request.contacts as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
+  const profile = { company_name: company?.name ?? null, siren: company?.siren ?? null, ...contact }
   const contactName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || null
 
   // Société cessée au registre : bandeau rouge (même règle que la fiche société)
@@ -105,6 +108,13 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const awaitingLeaser = decide && !!selected && selected.status === OS.seela_validated && request.status === RS.seela_validated
   const canRefuse = decide && canTransitionRequest(request.status, RS.refused, 'admin')
   const canRerun = decide && canRerunMatching(request.status)
+  const canStartContract = decide && request.status === RS.leaser_confirmed
+  // Dossier apporté par un distributeur partenaire (parcours distributeur)
+  const partnerCompanyId = (request as { partner_company_id?: string | null }).partner_company_id ?? null
+  const { data: partnerCompany } = partnerCompanyId
+    ? await db.from('companies').select('id, name').eq('id', partnerCompanyId).maybeSingle()
+    : { data: null }
+  const contractStart = (request as { contract_start_date?: string | null }).contract_start_date ?? null
   const canAddOffer = decide && canAddManualOffer(request.status)
   const counterTargets = offers
     .filter(o => decide && canCounterOffer(o.status, request.status))
@@ -139,7 +149,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         status: selected.status ?? '',
       },
       request: { ...request, line_items: lines },
-      profile: profile ? { company_name: profile.company_name, siren: profile.siren, email: profile.email } : null,
+      profile: profile ? { company_name: profile.company_name, siren: profile.siren, email: profile.email ?? null } : null,
       leaser,
     }
     try {
@@ -159,7 +169,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
         {/* En-tête */}
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="ev-display text-xl" style={{ color: 'var(--ink)' }}>
-            <Link href={`/admin/societes/${request.user_id}`} className="underline-offset-4 hover:underline">
+            <Link href={request.company_id ? `/admin/crm/societes/${request.company_id}` : '/admin/crm/societes'} className="underline-offset-4 hover:underline">
               {profile?.company_name?.trim() || 'Société sans nom'}
             </Link>
           </h1>
@@ -177,6 +187,10 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             <Field label="Périodicité" value={request.periodicite} />
             <Field label="Document" value={request.document_type ? request.document_type.charAt(0).toUpperCase() + request.document_type.slice(1) : null} />
             <Field label="Créé le" value={fmtDate(request.created_at)} />
+            {partnerCompany && (
+              <Field label="Apporté par" value={<Link href={`/admin/crm/societes/${partnerCompany.id}`} className="underline">{partnerCompany.name}</Link>} />
+            )}
+            {contractStart && <Field label="Début du contrat" value={fmtDate(contractStart)} />}
           </dl>
           {request.notes?.trim() && (
             <div className="px-4 pb-4">
@@ -367,6 +381,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
               offer={selected ? { id: selected.id, leaserName: selected.leaser_name ?? 'le leaser' } : null}
               leaserPreview={leaserPreview}
             />
+            {canStartContract && <StartContractForm requestId={request.id} today={new Date().toISOString().slice(0, 10)} />}
           </Section>
         </div>
       </div>

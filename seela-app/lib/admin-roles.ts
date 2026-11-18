@@ -11,7 +11,7 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
   admin: 'Tous les droits : dossiers, leasers et barèmes, équipe.',
-  commercial: 'Consulte les dossiers et les sociétés, ajoute des notes internes. Ne voit pas les leasers.',
+  commercial: 'Utilise le CRM, consulte les dossiers et les sociétés, ajoute des notes internes. Ne voit pas les leasers.',
 }
 
 export type Capability =
@@ -25,10 +25,12 @@ export type Capability =
   | 'manage_leasers'
   /** Ajouter, retirer, changer le rôle d'un membre */
   | 'manage_team'
+  /** CRM : sociétés, contacts, deals, activités, tâches (consulter et modifier) */
+  | 'crm'
 
 const CAPABILITIES: Record<AdminRole, Capability[]> = {
-  admin: ['view', 'add_notes', 'decide_requests', 'manage_leasers', 'manage_team'],
-  commercial: ['view', 'add_notes'],
+  admin: ['view', 'add_notes', 'decide_requests', 'manage_leasers', 'manage_team', 'crm'],
+  commercial: ['view', 'add_notes', 'crm'],
 }
 
 export function isAdminRole(value: unknown): value is AdminRole {

@@ -10,7 +10,7 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
   const db = stagingAdmin()
   const runId = randomBytes(5).toString('hex')
   const companyName = `Société E2E ${runId}`
-  const roles: Role[] = ['client', 'admin', 'intruder', 'member']
+  const roles: Role[] = ['client', 'admin', 'intruder', 'member', 'partner', 'invitee']
   const users = {} as RunContext['users']
   const passwords = {} as Record<Role, string>
 
@@ -21,17 +21,22 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     if (error || !data.user) throw new Error(`Création du compte ${role} : ${error?.message}`)
     users[role] = { id: data.user.id, email }
 
-    const { error: profileError } = await db.from('profiles').upsert({
-      id: data.user.id,
-      email,
-      company_name: role === 'client' ? companyName : `${companyName} (${role})`,
-      siren: '123456789',
-      first_name: 'Test',
-      last_name: role,
-      date_creation: 2015,
+    // Société propre à chaque compte (SIREN unique par run : un SIREN partagé rattacherait les comptes entre eux)
+    const { data: company, error: companyError } = await db.from('companies').insert({
+      name: role === 'client' ? companyName : `${companyName} (${role})`,
+      siren: `9${randomBytes(4).readUInt32BE(0).toString().padStart(8, '0').slice(-8)}`,
+      creation_year: 2015,
       onboarding_completed: true,
-    })
-    if (profileError) throw new Error(`Profil ${role} : ${profileError.message}`)
+      source: 'E2E',
+      // Distributeur partenaire activé (parcours distributeur, migration 20261118090000)
+      ...(role === 'partner' ? { partner_enabled: true } : {}),
+    }).select('id').single()
+    if (companyError || !company) throw new Error(`Société ${role} : ${companyError?.message}`)
+    const { error: contactError } = await db.from('contacts').upsert(
+      { user_id: data.user.id, email, first_name: 'Test', last_name: role, company_id: company.id },
+      { onConflict: 'user_id' },
+    )
+    if (contactError) throw new Error(`Contact ${role} : ${contactError.message}`)
   }
 
   const { error: adminError } = await db.from('admins').insert({ user_id: users.admin.id, name: 'Admin E2E' })
@@ -69,8 +74,30 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     if (error) throw new Error(`${table} : ${error.message}`)
   }
 
+  // Même barème, réservé au partenaire : ses dossiers clients reçoivent une offre de test
+  const partnerLeaserName = `Leaser E2E partenaire ${runId}`
+  const { data: partnerLeaser, error: partnerLeaserError } = await db.from('leasers').insert({
+    name: partnerLeaserName, is_active: true, test_user_id: users.partner.id, referent_name: 'Référent E2E',
+    referent_email: `leaser-p-${runId}@everlease.test`, min_amount: 1000, max_amount: 500000, periodicites: ['mensuelle'],
+  }).select('id').single()
+  if (partnerLeaserError || !partnerLeaser) throw new Error(`Leaser partenaire : ${partnerLeaserError?.message}`)
+  for (const [table, row] of [
+    ['leaser_financing_types', { financing_type: 'leasing' }],
+    ['leaser_financing_types', { financing_type: 'lease_back' }],
+    ['leaser_rate_grid', { amount_min: 0, amount_max: null, duration_months: 36, coefficient_pct: coefficient * 100 }],
+    ['leaser_eligibility', { equipment_family: 'informatique', equipment_type: null, status: 'yes' }],
+    ['leaser_eligibility', { equipment_family: 'audiovisuel', equipment_type: null, status: 'yes' }],
+  ] as const) {
+    const { error } = await db.from(table).insert({ leaser_id: partnerLeaser.id, ...row })
+    if (error) throw new Error(`${table} (partenaire) : ${error.message}`)
+  }
+
   mkdirSync(AUTH_DIR, { recursive: true })
-  const context: RunContext = { runId, companyName, users, leaser: { id: leaser.id, name: leaserName, coefficient } }
+  const context: RunContext = {
+    runId, companyName, users,
+    leaser: { id: leaser.id, name: leaserName, coefficient },
+    partnerLeaser: { id: partnerLeaser.id, name: partnerLeaserName },
+  }
   writeFileSync(CONTEXT_FILE, JSON.stringify(context, null, 2))
 
   for (const role of roles) {

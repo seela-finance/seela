@@ -42,8 +42,8 @@ function loadRequests(status: AdminListParams['status']) {
   const query = createAdminClient()
     .from('financing_requests')
     .select(`
-      id, user_id, status, total_amount, duration_months, created_at, updated_at,
-      profiles ( company_name, siren ),
+      id, user_id, company_id, status, total_amount, duration_months, created_at, updated_at,
+      companies ( name, siren ),
       offers ( leaser_name, monthly_payment, duration_months, selected, confirmed_at, seela_validated_at, leaser_confirmed_at )
     `)
   return status === RS.draft ? query : query.or(`status.is.null,status.neq.${RS.draft}`)
@@ -164,8 +164,8 @@ export default async function AdminRequestsPage({
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm max-w-[220px]">
-                      {r.userId ? (
-                        <Link href={`/admin/societes/${r.userId}`} className="block truncate underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>
+                      {r.companyId ? (
+                        <Link href={`/admin/crm/societes/${r.companyId}`} className="block truncate underline-offset-2 hover:underline" style={{ color: 'var(--ink)' }}>
                           {r.companyName ?? 'Société sans nom'}
                         </Link>
                       ) : (

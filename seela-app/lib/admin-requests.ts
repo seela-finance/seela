@@ -28,13 +28,15 @@ export type AdminRequestRow = {
   duration_months: number | null
   created_at: string
   updated_at: string | null
-  profiles: { company_name: string | null; siren: string | null } | null
+  company_id?: string | null
+  companies: { name: string | null; siren: string | null } | null
   offers: OfferRow[] | null
 }
 
 export type AdminRequest = {
   id: string
   userId: string | null
+  companyId: string | null
   ref: string
   status: string | null
   companyName: string | null
@@ -61,10 +63,11 @@ export function toAdminRequest(row: AdminRequestRow): AdminRequest {
   return {
     id: row.id,
     userId: row.user_id ?? null,
+    companyId: row.company_id ?? null,
     ref: requestLabel(row),
     status: row.status,
-    companyName: row.profiles?.company_name?.trim() || null,
-    siren: row.profiles?.siren?.trim() || null,
+    companyName: row.companies?.name?.trim() || null,
+    siren: row.companies?.siren?.trim() || null,
     amount: row.total_amount,
     duration: selected?.duration_months ?? row.duration_months,
     leaserName: selected?.leaser_name ?? null,

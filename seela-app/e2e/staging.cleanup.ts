@@ -30,15 +30,25 @@ cleanup('suppression des comptes de test', async () => {
     const { data: files } = await db.storage.from('documents').list(user.id)
     if (files?.length) await db.storage.from('documents').remove(files.map(f => `${user.id}/${f.name}`))
 
+    const { data: contact } = await db.from('contacts').select('company_id').eq('user_id', user.id).maybeSingle()
     for (const [table, column] of [
       ['admin_events', 'admin_id'],
       ['financing_requests', 'user_id'],
       ['leasers', 'test_user_id'],
       ['admins', 'user_id'],
+      ['contacts', 'user_id'],
       ['profiles', 'id'],
     ] as const) {
       const { error: deleteError } = await db.from(table).delete().eq(column, user.id)
       if (deleteError) failures.push(`${table} : ${deleteError.message}`)
+    }
+    // Société du compte de test, seulement si plus personne n'y est rattaché
+    if (contact?.company_id) {
+      const { count } = await db.from('contacts').select('id', { count: 'exact', head: true }).eq('company_id', contact.company_id)
+      if (!count) {
+        const { error: companyError } = await db.from('companies').delete().eq('id', contact.company_id).eq('source', 'E2E')
+        if (companyError) failures.push(`companies : ${companyError.message}`)
+      }
     }
     const { error: userError } = await db.auth.admin.deleteUser(user.id)
     if (userError) failures.push(`compte ${user.email} : ${userError.message}`)

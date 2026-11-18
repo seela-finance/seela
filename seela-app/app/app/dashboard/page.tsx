@@ -5,6 +5,7 @@ import RequestsTable from '@/components/RequestsTable'
 import { REQUESTS_TABLE_HEADERS } from '@/components/requests-table-headers'
 import TopActions from '@/components/TopActions'
 import { RS } from '@/lib/status'
+import { loadAccount } from '@/lib/account'
 
 function fmt(n: number | null) {
   if (n == null) return '—'
@@ -16,22 +17,18 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
 
-  const [{ data: requests }, { data: profile }] = await Promise.all([
+  const [{ data: requests }, account] = await Promise.all([
     supabase
       .from('financing_requests')
       .select('*, supplier_name, document_number, offers(monthly_payment, selected, leaser_name:public_name, duration_months), line_items(description, selected, quantity)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('profiles')
-      .select('first_name, onboarding_completed, financial_docs_uploaded')
-      .eq('id', user.id)
-      .single(),
+    loadAccount(supabase, user.id),
   ])
 
   const allRequests = requests ?? []
-  const firstName = (profile?.first_name as string | null | undefined)?.trim() || null
-  const showProfileBanner = profile?.onboarding_completed === true && !profile?.financial_docs_uploaded
+  const firstName = account?.firstName?.trim() || null
+  const showProfileBanner = account?.company?.onboarding_completed === true && !account.company.financial_docs_uploaded
 
   const activeRequests = allRequests.filter(r => r.status === RS.active)
   const totalEncours = activeRequests.reduce((s: number, r: { total_amount: number | null }) => s + (r.total_amount ?? 0), 0)

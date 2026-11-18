@@ -42,6 +42,26 @@ async function listClientFiles(db: SupabaseClient, ownerId: string): Promise<Sto
   return [...files, ...nested.flat()].filter(f => !f.path.endsWith('/.emptyFolderPlaceholder'))
 }
 
+type AccountRow = {
+  first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; created_at: string
+  companies: Record<string, unknown> | null
+}
+
+// Contact du compte + sa société, sous les noms de champs de l'ancienne table profiles
+function accountProfile(r: AccountRow) {
+  const c = (r.companies ?? {}) as Record<string, never>
+  return {
+    id: c.id as string | undefined,
+    first_name: r.first_name, last_name: r.last_name, email: r.email, phone: r.phone, role: r.job_title, created_at: r.created_at,
+    company_name: (c.name ?? null) as string | null, siren: (c.siren ?? null) as string | null, legal_form: (c.legal_form ?? null) as string | null,
+    naf_code: (c.naf_code ?? null) as string | null, date_creation: (c.creation_year ?? null) as number | null, supplier_address: (c.address ?? null) as string | null,
+    country: (c.country ?? null) as string | null, headcount_bracket: (c.headcount_bracket ?? null) as string | null, revenue_bracket: (c.revenue_bracket ?? null) as string | null,
+    revenue_declared: (c.revenue_declared ?? null) as number | null, result_declared: (c.result_declared ?? null) as number | null,
+    seela_score: (c.seela_score ?? null) as number | null, seela_score_grade: (c.seela_score_grade ?? null) as string | null, seela_score_details: (c.seela_score_details ?? null) as unknown,
+    onboarding_completed: !!c.onboarding_completed, financial_docs_uploaded: !!c.financial_docs_uploaded,
+  }
+}
+
 // Tokens sémantiques uniquement (le cobalt reste réservé à l'action)
 const GRADE_COLOR: Record<string, string> = { A: 'var(--ok)', 'B+': 'var(--ok)', B: 'var(--warning)', 'C+': 'var(--warning)', C: 'var(--danger)' }
 
@@ -60,8 +80,8 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
 
   // Service role : lecture de la société de n'importe quel client, après requireAdmin()
   const db = createAdminClient()
-  const [{ data: profile }, { data: requestRows }, { data: authData }] = await Promise.all([
-    db.from('profiles').select('*').eq('id', id).maybeSingle(),
+  const [{ data: contactRow }, { data: requestRows }, { data: authData }] = await Promise.all([
+    db.from('contacts').select('first_name, last_name, email, phone, job_title, created_at, companies ( * )').eq('user_id', id).maybeSingle(),
     db
       .from('financing_requests')
       .select('id, status, total_amount, duration_months, document_url, document_type, created_at')
@@ -69,7 +89,8 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
       .order('created_at', { ascending: false }),
     db.auth.admin.getUserById(id),
   ])
-  if (!profile) notFound()
+  if (!contactRow) notFound()
+  const profile = accountProfile(contactRow as unknown as AccountRow)
 
   const requests = requestRows ?? []
   const requestIds = requests.map(r => r.id)
@@ -117,7 +138,7 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
 
   return (
     <div>
-      <Breadcrumb items={[{ label: 'Sociétés', href: '/admin/societes' }, { label: name }]} />
+      <Breadcrumb items={[{ label: 'Sociétés', href: '/admin/crm/societes' }, profile.id ? { label: name, href: `/admin/crm/societes/${profile.id}` } : { label: name }, { label: 'Compte client' }]} />
 
       <div className="px-6 py-6 max-w-6xl space-y-4">
         {alert && <AlertBanner>{alert}</AlertBanner>}

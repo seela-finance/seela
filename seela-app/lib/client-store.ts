@@ -32,7 +32,7 @@ export function supabaseClientStore(db: SupabaseClient): ClientStore {
       const { data: offer } = await db.from('offers').select('id, status, request_id').eq('id', offerId).maybeSingle()
       if (!offer) return null
       const [{ data: request }, { data: others }] = await Promise.all([
-        db.from('financing_requests').select('id, status, user_id').eq('id', offer.request_id).maybeSingle(),
+        db.from('financing_requests').select('id, status, user_id, partner_company_id, client_joined_at').eq('id', offer.request_id).maybeSingle(),
         db.from('offers').select('id, status').eq('request_id', offer.request_id).neq('id', offerId),
       ])
       return request ? { offer, request, others: others ?? [] } : null

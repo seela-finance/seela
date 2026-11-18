@@ -108,7 +108,7 @@ export function totalAmount(lines: SubmitLine[]): number {
 
 export type OfferWithRequest = {
   offer: { id: string; status: string; request_id: string }
-  request: { id: string; status: string; user_id: string }
+  request: { id: string; status: string; user_id: string; partner_company_id?: string | null; client_joined_at?: string | null }
   /** Statuts des autres offres du dossier. */
   others: { id: string; status: string }[]
 }
@@ -164,6 +164,13 @@ export async function submitRequest(store: ClientStore, userId: string, requestI
   return 'submitted'
 }
 
+/** Dossier monté par un partenaire : seul le client, une fois le dossier rejoint, décide de l'offre. */
+export const PARTNER_CANNOT_DECIDE = 'C’est votre client qui choisit l’offre, depuis le lien reçu par email.'
+
+function assertClientDecides(request: OfferWithRequest['request']) {
+  if (request.partner_company_id && !request.client_joined_at) throw new ClientActionError(PARTNER_CANNOT_DECIDE, 403)
+}
+
 // Une offre déjà choisie (ou plus loin dans le circuit) bloque la confirmation d'une autre
 const ENGAGED: string[] = [OS.client_confirmed, OS.seela_validated, OS.leaser_confirmed]
 
@@ -172,6 +179,7 @@ export async function confirmOffer(store: ClientStore, userId: string, offerId: 
   const ctx = await store.loadOffer(offerId)
   if (!ctx || ctx.request.user_id !== userId) throw new ClientActionError('Offre introuvable.', 404)
   const { offer, request, others } = ctx
+  assertClientDecides(request)
 
   if (others.some(o => ENGAGED.includes(o.status))) throw new ClientActionError('Une autre offre de ce dossier est déjà confirmée.', 409)
   if (!canTransitionOffer(offer.status, OS.client_confirmed, 'client') || !canTransitionRequest(request.status, RS.offer_selected, 'client')) {
@@ -193,6 +201,7 @@ export async function declineCounterOffer(store: ClientStore, userId: string, of
   const ctx = await store.loadOffer(offerId)
   if (!ctx || ctx.request.user_id !== userId) throw new ClientActionError('Offre introuvable.', 404)
   const { offer, request, others } = ctx
+  assertClientDecides(request)
 
   const requestTo = others.some(o => o.status !== OS.refused) ? RS.offers_available : RS.no_match
   if (offer.status !== OS.counter_offer || !canTransitionOffer(offer.status, OS.refused, 'client') || !canTransitionRequest(request.status, requestTo, 'client')) {

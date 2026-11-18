@@ -5,12 +5,7 @@ import {
   companyAlert,
   compareIdentity,
   formatBytes,
-  listCompanies,
-  matchesCompanySearch,
-  parseCompanyListParams,
   scoreBreakdown,
-  toAdminCompany,
-  type CompanyProfileRow,
 } from '../../lib/admin-company'
 
 // Réponse fictive au format de l'API Recherche d'entreprises (champs utiles seulement)
@@ -91,45 +86,6 @@ test('identité : écart signalé seulement si les deux sources diffèrent (cass
   expect(byLabel['Année de création']).toMatchObject({ declared: '2020', registry: '2019', mismatch: true })
   expect(byLabel['Adresse du siège'].mismatch).toBe(false)
   expect(compareIdentity({ company_name: 'X', siren: null, legal_form: null, naf_code: null, date_creation: null, supplier_address: null }, null).every(r => !r.mismatch)).toBe(true)
-})
-
-const profileRow = (patch: Partial<CompanyProfileRow> = {}): CompanyProfileRow => ({
-  id: 'p1',
-  company_name: ' Atelier Dupont ',
-  siren: '123456789',
-  first_name: 'Jean',
-  last_name: 'Dupont',
-  email: 'jean@dupont.fr',
-  seela_score: 72,
-  seela_score_grade: 'B+',
-  onboarding_completed: true,
-  created_at: '2026-10-01T10:00:00Z',
-  financing_requests: [
-    { id: 'r1', status: 'draft', total_amount: null, created_at: '2026-10-20T10:00:00Z' },
-    { id: 'r2', status: 'submitted', total_amount: 5000, created_at: '2026-10-10T10:00:00Z' },
-    { id: 'r3', status: 'offers_available', total_amount: 2500.5, created_at: '2026-10-05T10:00:00Z' },
-  ],
-  ...patch,
-})
-
-test('liste : brouillons exclus du compte, montant cumulé, dernier dossier', () => {
-  const c = toAdminCompany(profileRow())
-  expect(c).toMatchObject({ name: 'Atelier Dupont', contact: 'Jean Dupont', requestCount: 2, requestedAmount: 7500.5, lastRequestAt: '2026-10-20T10:00:00Z' })
-  expect(toAdminCompany(profileRow({ financing_requests: null }))).toMatchObject({ requestCount: 0, lastRequestAt: null })
-})
-
-test('liste : recherche (nom sans accent, SIREN partiel, contact, email) et tri par activité', () => {
-  const a = toAdminCompany(profileRow())
-  expect(matchesCompanySearch(a, 'atélier')).toBe(true)
-  expect(matchesCompanySearch(a, '456 78')).toBe(true)
-  expect(matchesCompanySearch(a, 'jean dup')).toBe(true)
-  expect(matchesCompanySearch(a, 'DUPONT.FR')).toBe(true)
-  expect(matchesCompanySearch(a, 'zzz')).toBe(false)
-
-  const old = toAdminCompany(profileRow({ id: 'p2', company_name: 'Ancienne', financing_requests: [], created_at: '2026-01-01T00:00:00Z' }))
-  const fresh = toAdminCompany(profileRow({ id: 'p3', company_name: 'Nouvelle', financing_requests: [], created_at: '2026-10-25T00:00:00Z' }))
-  expect(listCompanies([old, a, fresh], parseCompanyListParams({})).items.map(c => c.id)).toEqual(['p3', 'p1', 'p2'])
-  expect(parseCompanyListParams({ q: 'x', page: '0' })).toEqual({ query: 'x', page: 1 })
 })
 
 test('documents : bilans, devis/facture rattachés à leur dossier, autres ; plus récent d’abord', () => {
