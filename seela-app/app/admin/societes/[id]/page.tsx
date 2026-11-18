@@ -164,7 +164,7 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
             <Field label="Dossiers soumis" value={String(submitted.length)} />
             <Field label="Montant total demandé" value={<span className="ev-mono">{eur(submitted.reduce((s, r) => s + (r.total_amount ?? 0), 0))}</span>} />
             <Field
-              label="Score Everlease"
+              label="Score everlease"
               value={profile.seela_score_grade ? (
                 <span style={{ color: GRADE_COLOR[profile.seela_score_grade] ?? 'var(--ink)', fontWeight: 600 }}>
                   {profile.seela_score_grade} <span className="ev-mono" style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· {profile.seela_score}/100</span>
@@ -271,7 +271,7 @@ export default async function AdminCompanyPage({ params }: { params: Promise<{ i
 
           {/* Score */}
           <Section
-            title="Score Everlease"
+            title="Score everlease"
             right={score?.partial ? <span className="text-xs" style={{ color: 'var(--warning)' }}>Partiel : sans chiffres financiers</span> : undefined}
           >
             {!score ? (

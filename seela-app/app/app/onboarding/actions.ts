@@ -36,6 +36,11 @@ export async function saveOnboardingCompany(input: {
     const name = text(input.name)
     const siren = isSiren(input.siren) ? input.siren : null
     if (!name) return { ok: false, message: 'Choisissez votre entreprise.' }
+    // Client invité par un distributeur : la société du dossier ne se change pas depuis l'onboarding
+    const invited = await invitedCompany()
+    if (invited && invited.siren && invited.siren !== siren) {
+      return { ok: false, message: `Votre dossier a été préparé pour ${invited.name} (SIREN ${invited.siren}) : cette société ne peut pas être modifiée ici.` }
+    }
 
     let match = null
     if (siren) {
@@ -144,5 +149,49 @@ export async function registerSignupLead(): Promise<void> {
     if (user) await recordSignupLead(createAdminClient(), user)
   } catch (err) {
     console.error('[inscription pré-pipe]', err)
+  }
+}
+
+// ─── Client invité par un distributeur (parcours distributeur) ──────────────
+// Sa société est celle du dossier que le partenaire a monté : il ne la choisit pas à l'onboarding.
+
+export type InvitedCompany = { id: string; name: string; siren: string | null; legal_form: string | null; address: string | null; creation_year: number | null }
+
+/** Société du dernier dossier rejoint via une invitation, ou null si ce compte n'a pas été invité. */
+export async function invitedCompany(): Promise<InvitedCompany | null> {
+  try {
+    const ctx = await currentContact()
+    if (!ctx) return null
+    const { data } = await ctx.db.from('financing_requests')
+      .select('company_id, client_joined_at, companies ( id, name, siren, legal_form, address, creation_year )')
+      .eq('user_id', ctx.user.id).not('partner_company_id', 'is', null).not('client_joined_at', 'is', null)
+      .order('client_joined_at', { ascending: false }).limit(1)
+    const row = (data?.[0] ?? null) as unknown as { companies: InvitedCompany | null } | null
+    return row?.companies ?? null
+  } catch (err) {
+    console.error('[onboarding invité]', err)
+    return null
+  }
+}
+
+/**
+ * Rattache le compte invité à la société de son dossier (même règle qu'à l'inscription : jamais à une société
+ * où un autre compte travaille déjà). Si c'est impossible, la société d'origine du compte est gardée.
+ */
+export async function adoptInvitedCompany(): Promise<Result> {
+  try {
+    const ctx = await currentContact()
+    if (!ctx) return { ok: false, message: 'Session expirée, reconnectez-vous.' }
+    const company = await invitedCompany()
+    if (!company) return { ok: false, message: 'Aucun dossier invité trouvé pour ce compte.' }
+    if (ctx.contact.company_id === company.id) return { ok: true }
+    const { data: others } = await ctx.db.from('contacts').select('id').eq('company_id', company.id).not('user_id', 'is', null).neq('user_id', ctx.user.id).limit(1)
+    if ((others ?? []).length > 0) return { ok: true }
+    const { error } = await ctx.db.from('contacts').update({ company_id: company.id, updated_at: new Date().toISOString() }).eq('id', ctx.contact.id)
+    if (error) throw error
+    return { ok: true }
+  } catch (err) {
+    console.error('[onboarding invité]', err)
+    return FAIL
   }
 }

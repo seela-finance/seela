@@ -201,10 +201,10 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
             </section>
           )}
 
-          {/* Offres Everlease */}
+          {/* Offres everlease */}
           <section>
             <h2 className="ev-kicker mb-4">
-              Offres Everlease
+              Offres everlease
             </h2>
 
             {isWaiting ? (
@@ -212,15 +212,15 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                 <div className="w-8 h-8 rounded-full border-2 border-t-[var(--accent)] animate-spin shrink-0 mt-0.5" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--accent)' }} />
                 <div>
                   <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink)' }}>
-                    {isNoMatch ? 'Étude par un conseiller Everlease' : 'Recherche en cours'}
+                    {isNoMatch ? 'Étude par un conseiller everlease' : 'Recherche en cours'}
                   </p>
                   <p className="text-sm" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
                     {isNoMatch
-                      ? 'Aucune offre automatique ne correspond à votre demande : un conseiller Everlease étudie votre dossier et recherche une solution adaptée.'
-                      : `Everlease présente votre ${request.document_type ?? 'dossier'} à des financeurs adaptés.`}
+                      ? 'Aucune offre automatique ne correspond à votre demande : un conseiller everlease étudie votre dossier et recherche une solution adaptée.'
+                      : `everlease présente votre ${request.document_type ?? 'dossier'} à des financeurs adaptés.`}
                     {' '}Vous serez notifié dès que les offres sont disponibles.
                   </p>
-                  <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>Un conseiller Everlease vous rappelle sous 24 h ouvrées.</p>
+                  <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>Un conseiller everlease vous rappelle sous 24 h ouvrées.</p>
                 </div>
               </div>
             ) : offers.length === 0 ? (
@@ -241,7 +241,7 @@ export default async function OffresDetailPage({ params }: { params: Promise<{ r
                               <path d="M7 1l1.5 4H13l-3.5 2.5L11 12 7 9.5 3 12l1.5-4.5L1 5h4.5L7 1Z" fill="rgba(255,255,255,0.7)" />
                             </svg>
                             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-                              Recommandée par Everlease · {RECOMMENDATION_REASON}
+                              Recommandée par everlease · {RECOMMENDATION_REASON}
                             </span>
                           </div>
                         )}

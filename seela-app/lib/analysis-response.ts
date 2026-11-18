@@ -21,6 +21,11 @@ export const ANALYSIS_TOOL = {
       },
       document_number: nullable('string'),
       document_date: { ...nullable('string'), description: 'Format YYYY-MM-DD' },
+      client: {
+        type: ['object', 'null'],
+        description: 'Entreprise destinataire du devis (le client), null si absente',
+        properties: { name: nullable('string'), siren: nullable('string'), email: nullable('string') },
+      },
       items: {
         type: 'array',
         items: {
@@ -36,7 +41,7 @@ export const ANALYSIS_TOOL = {
         },
       },
     },
-    required: ['document_kind', 'supplier', 'document_number', 'document_date', 'items'],
+    required: ['document_kind', 'supplier', 'document_number', 'document_date', 'client', 'items'],
   },
 }
 

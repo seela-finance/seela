@@ -66,7 +66,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   // Bucket privé : lien temporaire, valable le temps de la consultation
   const documentHref = await signedDocumentUrl(supabase, request.document_url, user.id, 3600)
 
-  // Le client écrit à Everlease (pas d'adresse leaser devinée), avec la référence du dossier
+  // Le client écrit à everlease (pas d'adresse leaser devinée), avec la référence du dossier
   const contactHref = `mailto:contact@everlease.fr?subject=${encodeURIComponent(`Dossier ${ref}`)}`
 
   return (
@@ -116,7 +116,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 href={contactHref}
                 className="ev-btn ev-btn--ghost ev-btn--sm"
               >
-                Contacter Everlease
+                Contacter everlease
               </a>
             )}
           </div>
@@ -280,7 +280,7 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                 <div className="divide-y divide-[var(--line)]">
                   {[
                     {
-                      label: 'Contacter Everlease',
+                      label: 'Contacter everlease',
                       href: contactHref,
                       icon: (
                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">

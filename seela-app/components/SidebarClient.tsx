@@ -15,6 +15,21 @@ interface Props {
   partner?: boolean
 }
 
+const NAV_MAIN_NEW_ICON = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+    <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+)
+
+// Distributeur partenaire : il monte des dossiers pour ses clients, pas pour lui. Son menu se limite à ça.
+const NAV_PARTNER_NEW = {
+  href: '/app/nouveau',
+  activeOn: '/app/nouveau',
+  label: 'Nouveau dossier client',
+  badge: false,
+  plus: true,
+  icon: NAV_MAIN_NEW_ICON,
+}
 const NAV_PARTNER = {
   href: '/app/partenaire',
   activeOn: '/app/partenaire',
@@ -101,17 +116,17 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
     .join('')
 
   return (
-    <ResponsiveNav brand={<Link href="/app/dashboard"><Logo size="sm" /></Link>}>
+    <ResponsiveNav brand={<Link href={partner ? '/app/partenaire' : '/app/dashboard'}><Logo size="sm" /></Link>}>
       {/* Logo */}
       <div className="px-4 h-12 flex items-center shrink-0" style={{ borderBottom: '1px solid var(--line)' }}>
-        <Link href="/app/dashboard">
+        <Link href={partner ? '/app/partenaire' : '/app/dashboard'}>
           <Logo size="sm" />
         </Link>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 flex flex-col overflow-y-auto">
-        {(partner ? [...NAV_MAIN.slice(0, 2), NAV_PARTNER, ...NAV_MAIN.slice(2)] : NAV_MAIN).map((item) => {
+        {(partner ? [NAV_PARTNER, NAV_PARTNER_NEW] : NAV_MAIN).map((item) => {
           const active = pathname.startsWith(item.activeOn)
           return (
             <Link

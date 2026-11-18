@@ -1,6 +1,6 @@
 // Écritures du brouillon en service role : le propriétaire est vérifié par lib/draft-workflow.ts.
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DraftMeta, DraftStore, SavedLine } from '@/lib/draft-workflow'
+import type { DetectedClient, DraftMeta, DraftStore, SavedLine } from '@/lib/draft-workflow'
 import { RS } from '@/lib/status'
 
 const LINE_COLUMNS = 'id, description, quantity, unit_price, total_price, category, equipment_family, equipment_type, selected'
@@ -22,12 +22,18 @@ export function supabaseDraftStore(db: SupabaseClient): DraftStore {
       ])
       if (lines.error) throw new Error(`Lignes : lecture impossible (${lines.error.message})`)
       if (request.error) throw new Error(`Brouillon : lecture impossible (${request.error.message})`)
-      return { lines: (lines.data ?? []) as SavedLine[], meta: request.data as DraftMeta }
+      // Client détecté : colonne à part (migration 20261118170000), son absence n'empêche pas de reprendre le brouillon
+      const { data: detected } = await db.from('financing_requests').select('detected_client').eq('id', requestId).maybeSingle()
+      const client = ((detected as { detected_client?: DetectedClient | null } | null)?.detected_client) ?? null
+      return { lines: (lines.data ?? []) as SavedLine[], meta: request.data as DraftMeta, client }
     },
 
-    async saveAnalysis(requestId, lines, meta) {
+    async saveAnalysis(requestId, lines, meta, client = null) {
       const { error: metaErr } = await db.from('financing_requests').update(meta).eq('id', requestId).eq('status', RS.draft)
       if (metaErr) throw new Error(`Brouillon : écriture impossible (${metaErr.message})`)
+      // Écriture à part : avant la migration, l'analyse doit quand même aboutir
+      const { error: clientErr } = await db.from('financing_requests').update({ detected_client: client }).eq('id', requestId).eq('status', RS.draft)
+      if (clientErr) console.error('[draft] client détecté non enregistré', clientErr.message)
       // Deux analyses simultanées (deux onglets) ne doivent pas doubler les lignes
       const { error: delErr } = await db.from('line_items').delete().eq('request_id', requestId)
       if (delErr) throw new Error(`Lignes : suppression impossible (${delErr.message})`)
@@ -56,6 +62,8 @@ export function supabaseDraftStore(db: SupabaseClient): DraftStore {
         .select('id')
       if (error) throw new Error(`Brouillon : écriture impossible (${error.message})`)
       if (!data?.length) return false
+      // Le client lu sur l'ancien document ne vaut plus (colonne à part, voir saveAnalysis)
+      await db.from('financing_requests').update({ detected_client: null }).eq('id', requestId)
       const { error: delErr } = await db.from('line_items').delete().eq('request_id', requestId)
       if (delErr) throw new Error(`Lignes : suppression impossible (${delErr.message})`)
       return true

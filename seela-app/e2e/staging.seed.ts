@@ -107,7 +107,7 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     await page.locator('input[type="email"]').fill(users[role].email)
     await page.locator('input[type="password"]').first().fill(passwords[role])
     await page.locator('button[type="submit"]').click()
-    await expect(page).toHaveURL(/\/app\/dashboard/, { timeout: 60_000 })
+    await expect(page).toHaveURL(/\/app\/(dashboard|partenaire)/, { timeout: 60_000 })
     await ctx.storageState({ path: stateFile(role) })
     await ctx.close()
   }

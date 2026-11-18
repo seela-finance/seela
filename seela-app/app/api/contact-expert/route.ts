@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   const fullName = `${prenom} ${nom}`
 
   // ── Email à l'équipe ───────────────────────────────────────────────
-  const subject = `[Everlease] Demande d'expert — ${entreprise} (${fullName})`
+  const subject = `[everlease] Demande d'expert — ${entreprise} (${fullName})`
   const html = `
   <div style="font-family:Inter,Arial,sans-serif;color:#141517;max-width:520px">
     <h2 style="margin:0 0 16px;font-size:18px">Nouvelle demande « Parler à un expert »</h2>

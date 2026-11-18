@@ -35,6 +35,7 @@ Extrait aussi :
 - "supplier" : l'entreprise émettrice du document (nom, adresse, numéro SIREN/SIRET si présent)
 - "document_number" : le numéro de devis ou de facture (ex: DEV-2026-0142, FA-2024-00891)
 - "document_date" : la date d'émission au format YYYY-MM-DD
+- "client" : l'entreprise destinataire du document (le client facturé ou destinataire du devis) : nom, numéro SIREN ou SIRET s'il figure, email de contact s'il figure ; null si le document n'indique aucun client. Ne confonds pas le client avec l'émetteur.
 
 Enregistre le résultat avec l'outil ${ANALYSIS_TOOL_NAME}, en reprenant toutes les lignes retenues, même si le document est long.
 Si une valeur est absente ou non trouvée, utilise null.`
