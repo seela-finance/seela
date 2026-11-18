@@ -31,6 +31,7 @@ type Company = {
   lemlist_industry: string | null; location: string | null; description: string | null; linkedin_url: string | null
   headcount: number | null; company_type: string | null
   partner_enabled?: boolean | null
+  attribution_channel?: string | null
   lead_status: string | null; lead_channel: string | null; lead_signal: string | null; lead_entered_at: string | null; lead_exit_reason: string | null; lead_next_date: string | null
 }
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
@@ -114,6 +115,8 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['Type', c.company_type],
     ['CA déclaré', c.revenue_declared != null ? eur(Number(c.revenue_declared)) : null],
     ['Source', c.source],
+    // Attribution des leads : première source connue du visiteur (lien tagué, site référent ou accès direct)
+    ['Acquisition', c.attribution_channel ?? null],
     ['Signal', c.signal],
     ['Site web', c.website],
     ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Page entreprise</a> : null],

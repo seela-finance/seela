@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE, decodeAttribution, encodeAttribution, readAttribution, shouldReplace } from '@/lib/attribution'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -40,7 +41,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  rememberSource(request, supabaseResponse)
   return supabaseResponse
+}
+
+// Attribution des leads (lib/attribution.ts) : première source du visiteur, retenue 90 jours sur les pages
+// publiques et de l'app (pas l'API ni le back-office), copiée sur sa société à l'inscription.
+function rememberSource(request: NextRequest, response: NextResponse) {
+  const { pathname } = request.nextUrl
+  if (request.method !== 'GET' || pathname.startsWith('/api') || pathname.startsWith('/admin')) return
+  if (!(request.headers.get('accept') ?? '').includes('text/html')) return
+  const incoming = readAttribution(request.nextUrl, request.headers.get('referer'), request.nextUrl.hostname)
+  const current = decodeAttribution(request.cookies.get(ATTRIBUTION_COOKIE)?.value)
+  if (!shouldReplace(current, incoming) || !incoming) return
+  response.cookies.set(ATTRIBUTION_COOKIE, encodeAttribution(incoming), {
+    maxAge: ATTRIBUTION_MAX_AGE, httpOnly: true, sameSite: 'lax', secure: request.nextUrl.protocol === 'https:', path: '/',
+  })
 }
 
 export const config = {
