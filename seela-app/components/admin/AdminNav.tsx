@@ -17,6 +17,7 @@ const NAV: { href: string; label: string; hint?: string; section: string | null;
   { href: '/admin/crm/societes', label: 'Sociétés', section: 'Base', capability: 'crm' },
   { href: '/admin/crm/contacts', label: 'Contacts', section: 'Base', capability: 'crm' },
   { href: '/admin', label: 'Dossiers', hint: 'Demandes de financement à traiter', section: 'Financement', capability: 'view' },
+  { href: '/admin/partenaires', label: 'Partenaires', hint: 'Distributeurs qui montent les dossiers de leurs clients', section: 'Financement', capability: 'view' },
   { href: '/admin/leasers', label: 'Leasers', section: 'Financement', capability: 'manage_leasers' },
   { href: '/admin/equipe', label: 'Équipe', section: 'Réglages', capability: 'manage_team' },
 ]
