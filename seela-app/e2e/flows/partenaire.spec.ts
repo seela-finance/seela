@@ -144,6 +144,13 @@ test('distributeur : dossier client, invitation, choix de l’offre par le clien
       await admin.goto(`/admin/crm/societes/${partnerCompany!.company_id}`)
       await expect(admin.getByText('Partenaire distributeur')).toBeVisible()
       await shot(admin, '34-admin-partenaire')
+
+      // Onglet « Partenaires » : le distributeur du run, avec son contrat actif
+      await admin.goto('/admin/partenaires')
+      const row = admin.getByRole('row').filter({ hasText: run.companyName })
+      await expect(row).toBeVisible()
+      await expect(row.getByRole('cell').nth(4)).toHaveText('1')
+      await shot(admin, '35-admin-partenaires')
       await admin.context().close()
     })
   } finally {
