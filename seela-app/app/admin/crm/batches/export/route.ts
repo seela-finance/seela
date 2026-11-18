@@ -4,7 +4,7 @@ import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAG
 import { batchExport } from '@/lib/crm-batches'
 import { loadBatchReports } from '@/lib/crm-batches-load'
 
-// Export de la performance des batches, lu par la skill /analyse-batch (Claude n'accède jamais à la base de prod)
+// Export de la performance des batches, lu par les skills /batch et /revue (Claude n'accède jamais à la base de prod)
 export const dynamic = 'force-dynamic'
 
 export async function GET() {

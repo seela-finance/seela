@@ -90,7 +90,7 @@ export function attributedBatch<T extends { entered_at: string }>(dealCreatedAt:
     .reduce<T | null>((best, e) => (!best || Date.parse(e.entered_at) > Date.parse(best.entered_at) ? e : best), null)
 }
 
-// ─── Performance par batch (tableau et export pour /analyse-batch) ──────────
+// ─── Performance par batch (export pour les skills /batch et /revue) ──────────
 
 export type BatchFunnel = { sent: number; replied: number; positive: number; calls: number; connected: number; rdv: number; deals: number; deals_qualified: number; won_count: number; won_amount: number }
 
@@ -155,7 +155,7 @@ export function buildBatchReports(input: ReportInput): BatchReport[] {
   }).sort((a, b) => b.started_at.localeCompare(a.started_at))
 }
 
-/** Export JSON lu par la skill /analyse-batch (format figé : voir .claude/skills/analyse-batch). */
+/** Export JSON lu par les skills /batch et /revue (format figé : voir .claude/skills/revue). */
 export function batchExport(reports: BatchReport[], now: Date) {
   return {
     generated_at: now.toISOString(),
