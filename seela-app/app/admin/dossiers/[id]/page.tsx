@@ -110,6 +110,11 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const canRerun = decide && canRerunMatching(request.status)
   const canStartContract = decide && request.status === RS.leaser_confirmed
   // Dossier apporté par un distributeur partenaire (parcours distributeur)
+  // Source d'acquisition de la société (attribution des leads) : lecture à part, une colonne absente n'empêche pas d'ouvrir la fiche
+  const { data: sourceRow } = request.company_id
+    ? await db.from('companies').select('attribution_channel').eq('id', request.company_id).maybeSingle()
+    : { data: null }
+  const acquisition = (sourceRow as { attribution_channel?: string | null } | null)?.attribution_channel ?? null
   const partnerCompanyId = (request as { partner_company_id?: string | null }).partner_company_id ?? null
   const { data: partnerCompany } = partnerCompanyId
     ? await db.from('companies').select('id, name').eq('id', partnerCompanyId).maybeSingle()
@@ -187,6 +192,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             <Field label="Périodicité" value={request.periodicite} />
             <Field label="Document" value={request.document_type ? request.document_type.charAt(0).toUpperCase() + request.document_type.slice(1) : null} />
             <Field label="Créé le" value={fmtDate(request.created_at)} />
+            <Field label="Source d’acquisition" value={acquisition} />
             {partnerCompany && (
               <Field label="Apporté par" value={<Link href={`/admin/crm/societes/${partnerCompany.id}`} className="underline">{partnerCompany.name}</Link>} />
             )}

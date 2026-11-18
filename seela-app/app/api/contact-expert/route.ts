@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
 import { recordInboundLead } from '@/lib/crm-inbound'
+import { visitorAttribution } from '@/lib/attribution-store'
 import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
 
 // Où arrivent les demandes "Parler à un expert".
@@ -90,8 +91,10 @@ export async function POST(req: Request) {
   }
 
   // Le lead entre aussi dans le CRM (pré-pipe inbound). Un échec ici ne bloque ni l'email ni Slack.
+  // Source du visiteur, lue pendant la requête (le cookie n'est plus accessible une fois la réponse partie)
+  const attribution = await visitorAttribution()
   const crm = isServiceRoleConfigured()
-    ? recordInboundLead(createAdminClient(), { entreprise: String(entreprise), prenom: String(prenom), nom: String(nom), role: String(role), email: String(email), telephone: String(telephone), devis: devisLabel, origine }).catch(err => console.error('[contact-expert] CRM', err))
+    ? recordInboundLead(createAdminClient(), { entreprise: String(entreprise), prenom: String(prenom), nom: String(nom), role: String(role), email: String(email), telephone: String(telephone), devis: devisLabel, origine, attribution }).catch(err => console.error('[contact-expert] CRM', err))
     : Promise.resolve()
 
   // On tente les deux canaux indépendamment ; un lead n'est perdu que si les deux échouent.
