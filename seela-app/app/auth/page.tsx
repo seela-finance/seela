@@ -1,4 +1,5 @@
 'use client'
+import { track } from '@/lib/track'
 
 import { Suspense, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -66,6 +67,7 @@ function AuthForm() {
         // Le lien de confirmation revient sur ce site (et non sur l'adresse réglée dans Supabase, qui peut être périmée)
         const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: authCallbackUrlWithNext(window.location.origin, next) } })
         if (error) throw error
+        track('inscription')
 
         if (data.session) {
           router.push(next ?? '/app/onboarding')

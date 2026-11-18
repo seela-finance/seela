@@ -1,4 +1,5 @@
 'use client'
+import { track } from '@/lib/track'
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -854,6 +855,7 @@ function Step4Confirmation({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? `Erreur lors de la soumission (${res.status})`)
+      track('dossier_transmis', { partenaire: partner, offres: typeof data.offers === 'number' ? data.offers : 0 })
       // Partenaire : le dossier part chez son client, il le suit depuis « Mes clients »
       if (partner) {
         router.push(`/app/partenaire?envoye=${requestId}`)
@@ -1079,6 +1081,7 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
     .reduce((s, i) => s + (i.total_price ?? 0), 0)
 
   function handleStep1(data: { documentType: 'devis' | 'facture'; requestId: string; replaced: boolean }) {
+    track('devis_depose', { type: data.documentType })
     // Premier dépôt : l'adresse porte le brouillon, un rechargement le retrouve
     if (!requestId) {
       router.replace(`/app/nouveau?request=${data.requestId}`, { scroll: false })
