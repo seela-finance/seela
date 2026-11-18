@@ -179,3 +179,9 @@ export function listCrmCompanies(all: CrmCompany[], params: CompanyListParams, m
   const counts = Object.fromEntries(COMPANY_VIEWS.map(v => [v, all.filter(c => matchesView(c, v, me)).length])) as Record<CompanyView, number>
   return { items: filtered.slice((page - 1) * CRM_PAGE_SIZE, page * CRM_PAGE_SIZE), total: filtered.length, page, pageCount, counts }
 }
+
+/** « garage-martin.fr » → « Garage Martin » : nom provisoire, remplacé par le nom officiel à l'onboarding. */
+export function nameFromDomain(domain: string): string {
+  const label = domain.split('.')[0] ?? domain
+  return label.split(/[-_]+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || domain
+}

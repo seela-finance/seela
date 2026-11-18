@@ -801,6 +801,7 @@ function Step4Confirmation({
   notes,
   periodicite,
   meta,
+  partner,
 }: {
   requestId: string
   documentType: 'devis' | 'facture'
@@ -810,8 +811,12 @@ function Step4Confirmation({
   notes: string
   periodicite: Periodicite
   meta: DocumentMeta
+  /** Compte d'un distributeur partenaire : il saisit son client, qui reçoit le dossier par email */
+  partner: boolean
 }) {
   const router = useRouter()
+  const [client, setClient] = useState({ siren: '', email: '' })
+  const [clientName, setClientName] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -844,10 +849,16 @@ function Step4Confirmation({
           documentType,
           notes,
           meta,
+          ...(partner ? { client } : {}),
         }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? `Erreur lors de la soumission (${res.status})`)
+      // Partenaire : le dossier part chez son client, il le suit depuis « Mes clients »
+      if (partner) {
+        router.push(`/app/partenaire?envoye=${requestId}`)
+        return
+      }
       // Offres déjà calculées (ou dossier déjà soumis) : directement sur la page du dossier
       if (data.status === 'already' || (typeof data.offers === 'number' && data.offers > 0)) {
         router.push(`/app/offres/${requestId}`)
@@ -912,13 +923,62 @@ function Step4Confirmation({
   }
 
   const eur = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+  const sirenDigits = client.siren.replace(/\s+/g, '')
+  const clientReady = !partner || (/^\d{9}$/.test(sirenDigits) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client.email.trim()))
+
+  // Nom de la société du client, pour que le partenaire vérifie le SIREN saisi
+  async function lookupClient() {
+    setClientName(null)
+    if (!/^\d{9}$/.test(sirenDigits)) return
+    try {
+      const res = await fetch(`/api/search-company?q=${sirenDigits}`)
+      const data = await res.json()
+      const found = (data.results ?? []).find((r: { siren: string }) => r.siren === sirenDigits)
+      setClientName(found?.name ?? null)
+    } catch {
+      setClientName(null)
+    }
+  }
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <h2 className="ev-display text-xl mb-2 text-center" style={{ color: 'var(--ink)' }}>Transmettre votre demande</h2>
+      <h2 className="ev-display text-xl mb-2 text-center" style={{ color: 'var(--ink)' }}>
+        {partner ? 'Envoyer le dossier à votre client' : 'Transmettre votre demande'}
+      </h2>
       <p className="text-sm mb-6 text-center" style={{ color: 'var(--ink-3)' }}>
-        Vérifiez le récapitulatif : Everlease présente ensuite votre dossier à des financeurs adaptés.
+        {partner
+          ? 'Votre client reçoit un lien par email : il consulte ses offres et choisit la sienne. Vous suivez le dossier dans « Mes clients ».'
+          : 'Vérifiez le récapitulatif : Everlease présente ensuite votre dossier à des financeurs adaptés.'}
       </p>
+      {partner && (
+        <div className="ev-card p-4 mb-4 flex flex-col gap-3">
+          <p className="ev-kicker">Votre client</p>
+          <div>
+            <label className="ev-label" htmlFor="client-siren">SIREN de la société cliente</label>
+            <input
+              id="client-siren"
+              inputMode="numeric"
+              value={client.siren}
+              onChange={e => { setClient(c => ({ ...c, siren: e.target.value })); setClientName(null) }}
+              onBlur={lookupClient}
+              placeholder="123 456 789"
+              className="ev-input ev-mono"
+            />
+            {clientName && <p className="text-xs mt-1.5" style={{ color: 'var(--ok)' }}>{clientName}</p>}
+          </div>
+          <div>
+            <label className="ev-label" htmlFor="client-email">Email de votre interlocuteur</label>
+            <input
+              id="client-email"
+              type="email"
+              value={client.email}
+              onChange={e => setClient(c => ({ ...c, email: e.target.value }))}
+              placeholder="dirigeant@client.fr"
+              className="ev-input"
+            />
+          </div>
+        </div>
+      )}
       <dl className="ev-card divide-y divide-[var(--line)] mb-6">
         {[
           ['Document', documentType === 'facture' ? 'Facture (lease-back)' : 'Devis (leasing)'],
@@ -935,10 +995,10 @@ function Step4Confirmation({
       </dl>
       <button
         onClick={submit}
-        disabled={submitting || items.length === 0}
+        disabled={submitting || items.length === 0 || !clientReady}
         className="ev-btn ev-btn--primary ev-btn--full"
       >
-        {submitting ? 'Transmission de votre dossier…' : 'Transmettre ma demande'}
+        {submitting ? 'Transmission de votre dossier…' : partner ? 'Envoyer le dossier à mon client' : 'Transmettre ma demande'}
       </button>
     </div>
   )
@@ -966,6 +1026,22 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
 
   // Step 2 data (null tant que les lignes du document ne sont pas chargées)
   const [lines, setLines] = useState<{ items: LineItem[]; selected: string[]; meta: DocumentMeta } | null>(null)
+
+  // Compte d'un distributeur partenaire (société activée par l'équipe) : étape 4 « Votre client »
+  const [partner, setPartner] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user || cancelled) return
+      supabase.from('contacts').select('companies ( partner_enabled )').eq('user_id', user.id).maybeSingle()
+        .then(({ data }) => {
+          const company = (data as unknown as { companies: { partner_enabled: boolean | null } | null } | null)?.companies
+          if (!cancelled) setPartner(!!company?.partner_enabled)
+        })
+    })
+    return () => { cancelled = true }
+  }, [])
 
   // Step 3 data
   const [config, setConfig] = useState<{ duration: Duration; notes: string; periodicite: Periodicite }>({ duration: 36, notes: '', periodicite: 'mensuelle' })
@@ -1074,6 +1150,7 @@ function Wizard({ resumeId }: { resumeId: string | null }) {
                 notes={config.notes}
                 periodicite={config.periodicite}
                 meta={lines.meta}
+                partner={partner}
               />
             )}
           </>

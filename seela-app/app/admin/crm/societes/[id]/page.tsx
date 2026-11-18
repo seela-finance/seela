@@ -7,10 +7,14 @@ import { isLifecycleStage, LIFECYCLE_LABEL } from '@/lib/crm-companies'
 import {
   buildTimeline, daysUntil, OUTCOME_LABEL, PRIORITY_LABEL, type ActivityRow, type AdminEventRow, type Priority,
 } from '@/lib/crm-activities'
-import { isDealStage } from '@/lib/crm-deals'
+import { CLOSED_DEAL_STAGES, isDealStage } from '@/lib/crm-deals'
 import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
+import PartnerCard from '@/components/admin/partner/PartnerCard'
+import { can } from '@/lib/admin-roles'
+import { LeadStatusControl } from '@/components/admin/crm/PrepipeForms'
+import { LEAD_SIGNAL_LABEL } from '@/lib/crm-prepipe'
 import CallButton from '@/components/admin/crm/CallButton'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
@@ -24,6 +28,10 @@ type Company = {
   legal_form: string | null; naf_code: string | null; creation_year: number | null; headcount_bracket: string | null
   revenue_declared: number | null; source: string | null; signal: string | null; website: string | null; owner_id: string | null
   seela_score: number | null; seela_score_grade: string | null; created_at: string
+  lemlist_industry: string | null; location: string | null; description: string | null; linkedin_url: string | null
+  headcount: number | null; company_type: string | null
+  partner_enabled?: boolean | null
+  lead_status: string | null; lead_channel: string | null; lead_signal: string | null; lead_entered_at: string | null; lead_exit_reason: string | null; lead_next_date: string | null
 }
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null; persona: string | null; user_id: string | null }
 type Request = { id: string; status: string | null; total_amount: number | null; duration_months: number | null; created_at: string }
@@ -53,16 +61,17 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, mailRes, dealsRes] = await Promise.all([
+  const [companyRes, contactsRes, requestsRes, adminsRes, tasksRes, activitiesRes, lemlistRes, mailRes, dealsRes, boxesRes] = await Promise.all([
     db.from('companies').select('*').eq('id', id).maybeSingle(),
     db.from('contacts').select('id, first_name, last_name, email, phone, job_title, persona, user_id').eq('company_id', id).order('created_at'),
     db.from('financing_requests').select('id, status, total_amount, duration_months, created_at').eq('company_id', id).order('created_at', { ascending: false }),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_tasks').select('id, title, due_date, priority, assignee_id').eq('company_id', id).is('done_at', null).order('due_date', { nullsFirst: false }),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('company_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
-    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('company_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
     db.from('crm_deals').select('id, name, stage, amount, next_action, next_action_date').eq('company_id', id).order('updated_at', { ascending: false }),
+    db.from('crm_mailboxes').select('email, user_id'),
   ])
   const c = companyRes.data as Company | null
   if (!c) notFound()
@@ -71,8 +80,7 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
   const tasks = (tasksRes.data ?? []) as Task[]
   const deals = (dealsRes.data ?? []) as Deal[]
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
-  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
-  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
+  const mailboxNames = new Map(((boxesRes.data ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
 
   // Journal admin lié : dossiers de la société, comptes de ses contacts, actions CRM sur la fiche
@@ -97,14 +105,18 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
     ['SIREN', c.siren ? <span className="ev-mono">{c.siren}</span> : null],
     ['Domaine', c.domain],
     ['Secteur', c.sector],
+    ['Secteur (LinkedIn)', c.lemlist_industry],
+    ['Localisation', c.location],
     ['Forme juridique', c.legal_form],
     ['Code NAF', c.naf_code],
     ['Création', c.creation_year],
-    ['Effectif', c.headcount_bracket],
+    ['Effectif', [c.headcount && `${c.headcount} salariés`, c.headcount_bracket].filter(Boolean).join(' · ') || null],
+    ['Type', c.company_type],
     ['CA déclaré', c.revenue_declared != null ? eur(Number(c.revenue_declared)) : null],
     ['Source', c.source],
     ['Signal', c.signal],
     ['Site web', c.website],
+    ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Page entreprise</a> : null],
     ['Propriétaire', nameOf(c.owner_id)],
     ['Créée le', fmtDate(c.created_at)],
   ]
@@ -122,11 +134,38 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
           <section className="ev-card p-5 flex flex-col gap-3">
             <h1 className="ev-display text-2xl">{c.name}</h1>
             {c.domain && <p className="text-sm -mt-2" style={{ color: 'var(--ink-3)' }}>{c.domain}</p>}
+            {c.description && (
+              <details className="text-sm" style={{ color: 'var(--ink-2)' }}>
+                <summary className="cursor-pointer text-xs" style={{ color: 'var(--ink-3)' }}>Description de l’entreprise</summary>
+                <p className="mt-1 whitespace-pre-line">{c.description}</p>
+              </details>
+            )}
             <div className="flex flex-wrap gap-1.5">
               <span className={STAGE_TAG[stage]}>{LIFECYCLE_LABEL[stage]}</span>
               {c.seela_score_grade && <span className="ev-tag">Score {c.seela_score_grade} · {c.seela_score}</span>}
             </div>
           </section>
+          <Card title="Prospection">
+            <LeadStatusControl key={`${c.lead_status}-${c.lead_channel}`} companyId={c.id} status={c.lead_status} channel={c.lead_channel} />
+            {(() => {
+              const files = requests.filter(r => r.status && r.status !== 'draft')
+              return (
+                <p className="text-sm mt-2 flex justify-between gap-2">
+                  <span style={{ color: 'var(--ink-3)' }}>Dossier déposé</span>
+                  {files.length
+                    ? <span className="ev-tag ev-tag--ok">Oui · {fmtDate(files[0].created_at)}{files.length > 1 ? ` (${files.length})` : ''}</span>
+                    : <span style={{ color: 'var(--ink-3)' }}>Non</span>}
+                </p>
+              )
+            })()}
+            {c.lead_status && (
+              <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+                {[c.lead_signal && `Entrée : ${LEAD_SIGNAL_LABEL[c.lead_signal] ?? c.lead_signal}`, c.lead_entered_at && `le ${fmtDate(c.lead_entered_at)}`,
+                  c.lead_status === 'disqualifie' && c.lead_exit_reason && `Raison : ${c.lead_exit_reason}`,
+                  c.lead_status === 'pas_maintenant' && c.lead_next_date && `Relance le ${fmtDate(c.lead_next_date)}`].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </Card>
           <Card title="À propos de cette société">
             <dl className="divide-y divide-[var(--line)] mb-3">
               {props.map(([k, v]) => (
@@ -138,6 +177,10 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
             </dl>
             <PropertiesForm companyId={c.id} values={values} team={team} />
           </Card>
+          {/* Parcours distributeur : espace partenaire (colonne absente avant la migration : rien ne s'affiche) */}
+          {c.partner_enabled != null && (
+            <PartnerCard companyId={c.id} enabled={!!c.partner_enabled} canEdit={can(admin.role, 'decide_requests')} />
+          )}
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
@@ -224,11 +267,11 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
                   {(d.next_action || d.next_action_date) && (
                     <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{d.next_action ?? 'Prochaine action'}{d.next_action_date ? ` · ${fmtDate(d.next_action_date)}` : ''}</span>
                   )}
-                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'a_contacter'} />
+                  <DealStageSelect dealId={d.id} stage={isDealStage(d.stage) ? d.stage : 'pending_qualification'} />
                 </li>
               ))}
             </ul>
-            {deals.length > 0 && <Link href="/admin/crm/deals" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pipeline · {deals.filter(d => d.stage !== 'signe' && d.stage !== 'perdu').length} en cours</Link>}
+            {deals.length > 0 && <Link href="/admin/crm/deals" className="text-xs hover:underline" style={{ color: 'var(--ink-3)' }}>Voir le pipeline · {deals.filter(d => !(CLOSED_DEAL_STAGES as string[]).includes(d.stage)).length} en cours</Link>}
           </Card>
           <Card title={`Dossiers (${requests.length})`}>
             {requests.length === 0 && <p className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>Aucun dossier.</p>}

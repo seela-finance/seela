@@ -5,6 +5,7 @@ import {
   addActivityAction, addContactAction, addTaskAction, completeTaskAction, updateCompanyAction, type FicheState,
 } from '@/app/admin/crm/fiche-actions'
 import { LIFECYCLE_LABEL, LIFECYCLE_STAGES, SECTORS } from '@/lib/crm-companies'
+import { ExitReasonField } from '@/components/admin/crm/PrepipeForms'
 import { ACTIVITY_LABEL, ACTIVITY_TYPES, CALL_OUTCOMES, OUTCOME_LABEL, PERSONAS, PRIORITIES, PRIORITY_LABEL, type ActivityType } from '@/lib/crm-activities'
 
 type Member = { id: string; name: string }
@@ -141,6 +142,7 @@ export function AddContactForm({ companyId }: { companyId: string }) {
 
 export function ActivityComposer({ companyId, contacts, team, defaultContactId = '' }: { companyId: string; contacts: ContactOption[]; team: Member[]; defaultContactId?: string }) {
   const [type, setType] = useState<ActivityType>('note')
+  const [outcome, setOutcome] = useState('')
   const [state, submit, pending] = useActionState<FicheState, FormData>(addActivityAction, null)
   const ref = useResetOnSuccess(state)
 
@@ -163,7 +165,7 @@ export function ActivityComposer({ companyId, contacts, team, defaultContactId =
         ))}
       </div>
       {type === 'call' && (
-        <div className="flex flex-wrap gap-3 text-sm" role="radiogroup" aria-label="Issue de l’appel">
+        <div className="flex flex-wrap gap-3 text-sm" role="radiogroup" aria-label="Issue de l’appel" onChange={e => setOutcome((e.target as unknown as HTMLInputElement).value)}>
           {CALL_OUTCOMES.map(o => (
             <label key={o} className="flex items-center gap-1.5">
               <input type="radio" name="call_outcome" value={o} style={{ accentColor: 'var(--accent)' }} /> {OUTCOME_LABEL[o]}
@@ -171,6 +173,7 @@ export function ActivityComposer({ companyId, contacts, team, defaultContactId =
           ))}
         </div>
       )}
+      {type === 'call' && outcome === 'societe_disqualifiee' && <ExitReasonField />}
       <textarea name="body" className="ev-input" placeholder={type === 'call' ? 'Compte rendu (facultatif)' : 'Écrivez une note, collez un transcript…'} aria-label="Contenu" />
       <div className="flex flex-wrap gap-3 items-center text-sm">
         {contacts.length > 0 && (

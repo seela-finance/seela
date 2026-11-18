@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { loadAccount, onboardingDone } from '@/lib/account'
-import { completeOnboarding, markFinancialDocsUploaded, saveOnboardingCompany, saveOnboardingContact } from './actions'
+import { completeOnboarding, markFinancialDocsUploaded, registerSignupLead, saveOnboardingCompany, saveOnboardingContact } from './actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -837,6 +837,7 @@ export default function OnboardingPage() {
       if (!user) { router.replace('/auth'); return }
       setUserEmail(user.email ?? '')
 
+      void registerSignupLead()
       if (onboardingDone(await loadAccount(supabase, user.id))) {
         // Allow revisiting step 4 for bilan upload
         setAlreadyCompleted(true)

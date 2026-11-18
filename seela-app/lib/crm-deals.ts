@@ -2,12 +2,14 @@
 import { CrmError } from '@/lib/crm-companies'
 import { PERSONAS } from '@/lib/crm-activities'
 
-export const DEAL_STAGES = ['a_contacter', 'en_conversation', 'rdv_pris', 'proposition', 'a_recontacter', 'signe', 'perdu'] as const
+export const DEAL_STAGES = ['pending_qualification', 'interested', 'evaluating', 'negociating', 'closing_confirmed', 'won', 'lost', 'stand_by'] as const
 export type DealStage = (typeof DEAL_STAGES)[number]
 export const DEAL_STAGE_LABEL: Record<DealStage, string> = {
-  a_contacter: 'À contacter', en_conversation: 'En conversation', rdv_pris: 'RDV pris', proposition: 'Proposition',
-  a_recontacter: 'À recontacter', signe: 'Signé', perdu: 'Perdu',
+  pending_qualification: 'Pending qualification', interested: 'Interested', evaluating: 'Evaluating', negociating: 'Negociating',
+  closing_confirmed: 'Closing confirmed', won: 'Won', lost: 'Lost', stand_by: 'Stand by',
 }
+/** Étapes où le deal n'est plus en cours (pour les totaux « en cours »). */
+export const CLOSED_DEAL_STAGES: DealStage[] = ['won', 'lost', 'stand_by']
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
@@ -35,7 +37,7 @@ export function parseDealInput(f: Record<string, unknown>, teamIds: string[], co
   if (date && !isDate(date)) throw new CrmError('Date de prochaine action invalide.')
   const owner = str(f.owner_id)
   return {
-    name: name.slice(0, 200), company_id: company, stage: isDealStage(f.stage) ? f.stage : 'a_contacter', amount,
+    name: name.slice(0, 200), company_id: company, stage: isDealStage(f.stage) ? f.stage : 'pending_qualification', amount,
     next_action: str(f.next_action) || null, next_action_date: date || null, owner_id: teamIds.includes(owner) ? owner : null,
   }
 }
@@ -51,7 +53,7 @@ export type PipelineColumn = { stage: DealStage; deals: DealRow[]; total: number
 export function buildPipeline(deals: DealRow[], filter: { mine: boolean; me: string }): PipelineColumn[] {
   const kept = deals.filter(d => !filter.mine || d.owner_id === filter.me)
   return DEAL_STAGES.map(stage => {
-    const list = kept.filter(d => (isDealStage(d.stage) ? d.stage : 'a_contacter') === stage).sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    const list = kept.filter(d => (isDealStage(d.stage) ? d.stage : 'pending_qualification') === stage).sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     return { stage, deals: list, total: list.reduce((s, d) => s + (Number(d.amount) || 0), 0) }
   })
 }

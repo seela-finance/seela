@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { formatPhone, toE164 } from '../../lib/phone'
+import { formatPhone, sinceLabel, toE164 } from '../../lib/phone'
 
 test('numéros français et étrangers au format international, numéros inexploitables refusés', () => {
   expect(toE164('06 12 34 56 78')).toBe('+33612345678')
@@ -10,4 +10,12 @@ test('numéros français et étrangers au format international, numéros inexplo
   expect(toE164('')).toBeNull()
   expect(formatPhone('+33612345678')).toBe('+33 6 12 34 56 78')
   expect(formatPhone('+32470123456')).toBe('+32470123456')
+})
+
+test('ancienneté dans le poste', () => {
+  const now = new Date('2026-11-17T12:00:00Z')
+  expect(sinceLabel('2026-08-01', now)).toBe('depuis 3 mois')
+  expect(sinceLabel('2026-11-01', now)).toBe('depuis moins d’un mois')
+  expect(sinceLabel('2022-01-01', now)).toBe('depuis 4 ans')
+  expect(sinceLabel(null, now)).toBeNull()
 })

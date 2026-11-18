@@ -10,6 +10,7 @@ import { parseContactInput } from '@/lib/crm-activities'
 import { isDealStage, parseContactPatch, parseDealInput, DEAL_STAGE_LABEL } from '@/lib/crm-deals'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { syncLemlist } from '@/lib/lemlist-sync'
+import { checkPhoneEnrichment, isFullEnrichConfigured, startPhoneEnrichment } from '@/lib/fullenrich'
 import { syncMailbox, testImapLogin, type Mailbox } from '@/lib/mailbox-sync'
 import { isSecretBoxConfigured, seal } from '@/lib/secret-box'
 
@@ -100,7 +101,7 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
     if (!isUuid(id) || !isDealStage(stage)) throw new CrmError('Deal introuvable.')
     const lost = String(form.get('lost_reason') ?? '').trim()
     const { data, error } = await db.from('crm_deals')
-      .update({ stage, lost_reason: stage === 'perdu' ? lost || null : null, updated_at: new Date().toISOString() })
+      .update({ stage, lost_reason: stage === 'lost' ? lost || null : null, updated_at: new Date().toISOString() })
       .eq('id', id).select('company_id, name').single()
     if (error) throw error
     await logAdminEvent(admin, { action: `CRM : deal « ${data.name} » → ${DEAL_STAGE_LABEL[stage]}`, after: { company_id: data.company_id, deal_id: id, stage } })
@@ -113,9 +114,12 @@ export async function moveDealAction(_: CrmFormState, form: FormData): Promise<C
 export async function syncLemlistAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
   return guard(async ({ admin, db }) => {
     const result = await syncLemlist(db, { full: form.get('full') === 'on' })
-    if ('skipped' in result) throw new CrmError(result.skipped)
+    if ('skipped' in result) {
+      if (result.skipped.includes('en cours')) return { message: 'Un import est déjà en cours : rafraîchissez la page dans une minute.' }
+      throw new CrmError(result.skipped)
+    }
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
-    return { message: `${result.imported} événement(s) importé(s), ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.leadsCompleted} fiche(s) complétée(s) depuis Lemlist, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })
 }
 
@@ -159,4 +163,63 @@ export async function disconnectMailboxAction(): Promise<CrmFormState> {
     await logAdminEvent(admin, { action: 'CRM : boîte mail déconnectée' })
     return { message: 'Boîte déconnectée, mot de passe effacé. Les emails déjà enregistrés restent sur les fiches.' }
   })
+}
+
+// ─── Réglages du pré-pipe ────────────────────────────────────────────────────
+
+export async function saveCrmSettingsAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
+  return guard(async ({ admin, db, teamIds }) => {
+    const owner = String(form.get('prepipe_owner') ?? '')
+    const threshold = Number(form.get('sequence_threshold'))
+    if (owner && !teamIds.includes(owner)) throw new CrmError('Propriétaire inconnu.')
+    if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) throw new CrmError('Seuil invalide.')
+    const now = new Date().toISOString()
+    const { error } = await db.from('crm_settings').upsert([
+      { key: 'prepipe_owner', value: owner || null, updated_at: now },
+      { key: 'sequence_threshold', value: threshold, updated_at: now },
+    ])
+    if (error) throw error
+    await logAdminEvent(admin, { action: 'CRM : réglages du pré-pipe', after: { prepipe_owner: owner || null, sequence_threshold: threshold } })
+    return { message: 'Réglages enregistrés. Ils s’appliquent aux prochains leads.' }
+  })
+}
+
+// ─── Enrichissement des téléphones (FullEnrich), lancé à la main avant une session ───
+
+export type EnrichState = { ok: boolean; message: string; enrichmentIds?: string[] } | null
+
+export async function startEnrichmentAction(companyIds: string[]): Promise<EnrichState> {
+  const admin = await requireAdmin()
+  if (!can(admin.role, 'crm')) return { ok: false, message: 'Votre rôle ne donne pas accès au CRM.' }
+  if (!isFullEnrichConfigured()) return { ok: false, message: 'Clé FullEnrich absente sur le serveur (FULLENRICH_API_KEY).' }
+  const ids = companyIds.filter(isUuid).slice(0, 500)
+  if (!ids.length) return { ok: false, message: 'Aucune société choisie.' }
+  try {
+    const db = createAdminClient()
+    const r = await startPhoneEnrichment(db, ids, admin.userId)
+    if (!r.sent) return { ok: false, message: r.unidentifiable ? `Aucun contact enrichissable : ${r.unidentifiable} sans nom complet ni LinkedIn.` : 'Tous les contacts ont déjà un téléphone.' }
+    await logAdminEvent(admin, { action: 'CRM : enrichissement des téléphones lancé', after: { companies: ids.length, contacts: r.sent } })
+    return { ok: true, enrichmentIds: r.enrichmentIds, message: `${r.sent} contact(s) envoyé(s) à FullEnrich${r.unidentifiable ? `, ${r.unidentifiable} non identifiable(s)` : ''}. Résultat dans 1 à 3 minutes.` }
+  } catch (err) {
+    console.error('[fullenrich]', err)
+    return { ok: false, message: err instanceof Error ? err.message : 'Enrichissement impossible.' }
+  }
+}
+
+export async function checkEnrichmentAction(enrichmentIds: string[]): Promise<{ done: boolean; found: number; sent: number; credits: number; message: string }> {
+  const admin = await requireAdmin()
+  if (!can(admin.role, 'crm')) return { done: true, found: 0, sent: 0, credits: 0, message: 'Accès refusé.' }
+  const db = createAdminClient()
+  const results = await Promise.all(enrichmentIds.filter(isUuid).map(id => checkPhoneEnrichment(db, id)))
+  const done = results.every(r => ['FINISHED', 'CANCELED', 'CREDITS_INSUFFICIENT', 'UNKNOWN'].includes(r.status))
+  const found = results.reduce((n, r) => n + r.found, 0)
+  const sent = results.reduce((n, r) => n + r.sent, 0)
+  const credits = results.reduce((n, r) => n + (r.credits ?? 0), 0)
+  const short = results.some(r => r.status === 'CREDITS_INSUFFICIENT')
+  if (done) revalidatePath('/admin/crm', 'layout')
+  return {
+    done, found, sent, credits,
+    message: !done ? 'Enrichissement en cours…'
+      : `${found} téléphone(s) trouvé(s) sur ${sent} contact(s) · ${credits} crédit(s) utilisé(s).${short ? ' Crédits FullEnrich insuffisants : une partie n’a pas été enrichie.' : ''}`,
+  }
 }

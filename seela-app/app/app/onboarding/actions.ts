@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decideCompany } from '@/lib/account'
 import { isSiren } from '@/lib/company-registry'
+import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
+import { recordSignupLead } from '@/lib/crm-inbound'
 
 type Result = { ok: true } | { ok: false; message: string }
 const FAIL: Result = { ok: false, message: 'Enregistrement impossible. Réessayez dans un instant.' }
@@ -64,8 +66,28 @@ export async function saveOnboardingCompany(input: {
 
     const { error: cErr } = await db.from('contacts').update({ company_id: companyId, updated_at: new Date().toISOString() }).eq('id', contact.id)
     if (cErr) throw cErr
+    // Fiche provisoire créée à l'inscription (par le domaine) remplacée par une autre société : les dossiers suivent,
+    // et la fiche provisoire est supprimée si plus personne ni aucun dossier n'y est rattaché (pas de doublon).
+    if (contact.company_id && contact.company_id !== companyId) {
+      const old = contact.company_id
+      await db.from('financing_requests').update({ company_id: companyId }).eq('company_id', old).eq('user_id', user.id)
+      const [{ count: people }, { count: files }, { data: oldCompany }] = await Promise.all([
+        db.from('contacts').select('id', { count: 'exact', head: true }).eq('company_id', old),
+        db.from('financing_requests').select('id', { count: 'exact', head: true }).eq('company_id', old),
+        db.from('companies').select('siren, source').eq('id', old).maybeSingle(),
+      ])
+      if (!people && !files && oldCompany && !oldCompany.siren && oldCompany.source === 'Inscription app') {
+        await db.from('companies').delete().eq('id', old)
+      }
+    }
     // Dossiers créés avant que la société soit connue
     await db.from('financing_requests').update({ company_id: companyId, created_by: contact.id }).eq('user_id', user.id).is('company_id', null)
+    // Pré-pipe inbound : la demande entrante est à qualifier (sans bloquer l'inscription si ça échoue)
+    try {
+      await enterPrepipe(db, companyId, { channel: 'inbound', signal: 'inscription', status: 'qualification', strong: true }, await getCrmSettings(db))
+    } catch (err) {
+      console.error('[onboarding pré-pipe]', err)
+    }
     return { ok: true }
   } catch (err) {
     console.error('[onboarding société]', err)
@@ -109,4 +131,15 @@ export async function completeOnboarding(): Promise<Result> {
 
 export async function markFinancialDocsUploaded(): Promise<Result> {
   return setCompanyFlag('financial_docs_uploaded')
+}
+
+/** À l'ouverture de l'onboarding : l'inscription entre dans le pré-pipe par le domaine de l'email (sans rien bloquer). */
+export async function registerSignupLead(): Promise<void> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) await recordSignupLead(createAdminClient(), user)
+  } catch (err) {
+    console.error('[inscription pré-pipe]', err)
+  }
 }

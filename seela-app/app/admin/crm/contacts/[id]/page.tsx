@@ -10,13 +10,14 @@ import { ActivityComposer } from '@/components/admin/crm/FicheForms'
 import { ContactPropertiesForm, type ContactValues } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
 import CallButton from '@/components/admin/crm/CallButton'
+import { LINE_TYPE_LABEL, sinceLabel } from '@/lib/phone'
 import EmailCard from '@/components/admin/crm/EmailCard'
 import { summarizeMail, type MailRow } from '@/lib/crm-mail'
 import { summarizeLemlist, type LemlistRow } from '@/lib/crm-lemlist'
 
 type Contact = {
   id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null
-  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; user_id: string | null; owner_id: string | null
+  persona: string | null; linkedin_url: string | null; lemlist_url: string | null; headline: string | null; location: string | null; phone_line_type: string | null; job_started_at: string | null; user_id: string | null; owner_id: string | null
   company_id: string | null; created_at: string; companies: { name: string; lifecycle_stage: string } | null
 }
 
@@ -28,19 +29,19 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
   if (!isUuid(id)) notFound()
 
   const db = createAdminClient()
-  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes, mailRes] = await Promise.all([
+  const [contactRes, companiesRes, adminsRes, activitiesRes, lemlistRes, mailRes, boxesRes] = await Promise.all([
     db.from('contacts').select('*, companies ( name, lifecycle_stage )').eq('id', id).maybeSingle(),
     db.from('companies').select('id, name').order('name'),
     db.from('admins').select('user_id, name').order('name'),
     db.from('crm_activities').select('id, type, call_outcome, body, occurred_at, author_id, contact_id, source, event, title, summary, crm_mentions ( user_id )').eq('contact_id', id).not('source', 'in', '(lemlist,mailbox)').order('occurred_at', { ascending: false }).limit(100),
-    db.from('crm_activities').select('event, occurred_at, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
+    db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'lemlist').limit(5000),
     db.from('crm_activities').select('id, event, occurred_at, title, body, metadata').eq('contact_id', id).eq('source', 'mailbox').order('occurred_at', { ascending: false }).limit(500),
+    db.from('crm_mailboxes').select('email, user_id'),
   ])
   const c = contactRes.data as Contact | null
   if (!c) notFound()
   const team = ((adminsRes.data ?? []) as { user_id: string; name: string }[]).map(a => ({ id: a.user_id, name: a.name }))
-  const { data: boxes } = await db.from('crm_mailboxes').select('email, user_id')
-  const mailboxNames = new Map(((boxes ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
+  const mailboxNames = new Map(((boxesRes.data ?? []) as { email: string; user_id: string }[]).map(b => [b.email, team.find(m => m.id === b.user_id)?.name ?? b.email]))
   const nameOf = (uid: string | null) => team.find(m => m.id === uid)?.name ?? null
   const timeline = buildTimeline((activitiesRes.data ?? []) as ActivityRow[], [])
   const name = contactName(c)
@@ -54,6 +55,10 @@ export default async function CrmContactPage({ params }: { params: Promise<{ id:
     ['Email', c.email],
     ['Téléphone', c.phone ? <CallButton phone={c.phone} companyId={c.company_id} contactId={c.id} contactName={contactName(c)} compact /> : null],
     ['Poste', c.job_title],
+    ['Type de ligne', c.phone_line_type ? LINE_TYPE_LABEL[c.phone_line_type] ?? c.phone_line_type : null],
+    ['En poste', c.job_started_at ? `${sinceLabel(c.job_started_at, new Date())} (${fmtDate(c.job_started_at)})` : null],
+    ['Accroche LinkedIn', c.headline],
+    ['Localisation', c.location],
     ['Persona', c.persona],
     ['LinkedIn', c.linkedin_url ? <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="underline">Profil</a> : null],
     ['Propriétaire', nameOf(c.owner_id)],

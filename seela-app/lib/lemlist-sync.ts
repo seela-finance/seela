@@ -1,24 +1,104 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { companyNameFor, newSince, pageReachedCursor, type LemlistActivity, type MappedActivity } from '@/lib/crm-lemlist'
+import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
+import { lemlistEntry, type LeadEvent } from '@/lib/crm-prepipe'
+import { companyNameFor, emailHtmlToText, fillEmpty, mapLemlistLead, type LemlistLead, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
 const PAGE = 100
 const MAX_PAGES = 100
-const LOCK_MS = 5 * 60 * 1000
+const LOCK_MS = 15 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number }
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
+const authHeader = (key: string) => ({ Authorization: `Basic ${Buffer.from(`:${key}`).toString('base64')}` })
+
 async function fetchPage(key: string, offset: number): Promise<LemlistActivity[]> {
-  const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, {
-    headers: { Authorization: `Basic ${Buffer.from(`:${key}`).toString('base64')}` },
-    cache: 'no-store',
-  })
+  const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, { headers: authHeader(key), cache: 'no-store' })
   if (!res.ok) throw new Error(`Lemlist a répondu ${res.status}`)
   const json = await res.json()
   return (Array.isArray(json) ? json : json.activities ?? []) as LemlistActivity[]
+}
+
+/** Toute la conversation d'un contact dans la boîte Lemlist (contenu complet des emails envoyés et reçus). */
+async function fetchInbox(key: string, lemlistContactId: string): Promise<LemlistInboxMessage[]> {
+  const out: LemlistInboxMessage[] = []
+  for (let page = 1; page <= 10; page++) {
+    const res = await fetch(`https://api.lemlist.com/api/inbox/${encodeURIComponent(lemlistContactId)}?page=${page}`, { headers: authHeader(key), cache: 'no-store' })
+    if (!res.ok) break
+    const json = (await res.json()) as { data?: LemlistInboxMessage[]; pagination?: { nextPage?: number | null } }
+    out.push(...(json.data ?? []))
+    if (!json.pagination?.nextPage) break
+  }
+  return out
+}
+
+/**
+ * À l'arrivée d'un lead (ou s'il n'a jamais été complété) : la fiche Lemlist du lead remplit les champs vides du
+ * contact et de sa société. Une saisie de l'équipe n'est jamais écrasée. Marqué complété par l'identifiant Lemlist.
+ */
+async function completeLead(db: SupabaseClient, key: string, email: string, contact: { id: string; company_id: string | null }, stats: LemlistSyncResult) {
+  const { data: current } = await db.from('contacts').select('first_name, last_name, job_title, linkedin_url, headline, location, lemlist_contact_id').eq('id', contact.id).single()
+  if (!current || current.lemlist_contact_id) return
+  const res = await fetch(`https://api.lemlist.com/api/leads/${encodeURIComponent(email)}`, { headers: authHeader(key), cache: 'no-store' })
+  if (!res.ok) return
+  const mapped = mapLemlistLead((await res.json()) as LemlistLead)
+  const contactPatch = fillEmpty(current, mapped.contact)
+  if (!contactPatch.lemlist_contact_id) contactPatch.lemlist_contact_id = mapped.contact.lemlist_contact_id ?? 'inconnu'
+  const { error } = await db.from('contacts').update({ ...contactPatch, updated_at: new Date().toISOString() }).eq('id', contact.id)
+  if (error) throw error
+  if (contact.company_id) {
+    const { data: company } = await db.from('companies').select('lemlist_industry, headcount_bracket, creation_year, location, description, linkedin_url').eq('id', contact.company_id).single()
+    const companyPatch = company ? fillEmpty(company, mapped.company) : {}
+    if (Object.keys(companyPatch).length) {
+      const { error: cErr } = await db.from('companies').update({ ...companyPatch, updated_at: new Date().toISOString() }).eq('id', contact.company_id)
+      if (cErr) throw cErr
+    }
+  }
+  stats.leadsCompleted++
+}
+
+/** Types des étapes de chaque campagne, dans l'ordre de la séquence (pour l'avancement des leads). */
+async function fetchSequences(key: string, campaignIds: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  for (const id of campaignIds) {
+    const res = await fetch(`https://api.lemlist.com/api/campaigns/${encodeURIComponent(id)}/sequences`, { headers: authHeader(key), cache: 'no-store' })
+    if (!res.ok) continue
+    const json = (await res.json()) as Record<string, { steps?: { type?: string }[] }>
+    out.set(id, Object.values(json).flatMap(s => (s.steps ?? []).map(step => step.type ?? '')))
+  }
+  return out
+}
+
+/** Lemlist donne l'étape tantôt en nombre, tantôt en texte. */
+const stepOf = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+
+/** Sociétés touchées par ce passage : entrée ou avancée dans le pré-pipe outbound selon leurs événements Lemlist. */
+async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: string[], stats: LemlistSyncResult) {
+  if (!companyIds.length) return
+  const settings = await getCrmSettings(db)
+  const rows: { company_id: string; event: string | null; metadata: Record<string, unknown> | null }[] = []
+  for (let i = 0; i < companyIds.length; i += 200) {
+    const { data, error } = await db.from('crm_activities').select('company_id, event, metadata').eq('source', 'lemlist').in('company_id', companyIds.slice(i, i + 200)).limit(20000)
+    if (error) throw error
+    rows.push(...((data ?? []) as typeof rows))
+  }
+  const campaigns = [...new Set(rows.map(r => r.metadata?.campaignId).filter((v): v is string => typeof v === 'string'))]
+  const sequences = await fetchSequences(key, campaigns)
+  const byCompany = new Map<string, LeadEvent[]>()
+  for (const r of rows) {
+    const list = byCompany.get(r.company_id) ?? []
+    list.push({ event: r.event, campaignId: typeof r.metadata?.campaignId === 'string' ? r.metadata.campaignId : null, sequenceStep: stepOf(r.metadata?.sequenceStep) })
+    byCompany.set(r.company_id, list)
+  }
+  for (const [companyId, events] of byCompany) {
+    const entry = lemlistEntry(events, sequences, settings.threshold)
+    if (!entry) continue
+    const strong = entry.signal !== 'sequence'
+    if (await enterPrepipe(db, companyId, { channel: 'outbound', signal: entry.signal, status: entry.status, strong }, settings)) stats.leadsEntered++
+  }
 }
 
 /** Contact du lead (créé s'il manque), rattaché à la société de son domaine ou de son nom (créée s'il le faut). */
@@ -63,7 +143,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
   if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -75,7 +155,11 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
     const events = newSince(all, cursor)
     const leads = new Map<string, { id: string; company_id: string | null }>()
     for (const e of events) {
-      if (!leads.has(e.lead.email)) leads.set(e.lead.email, await resolveLead(db, e.lead, stats))
+      if (!leads.has(e.lead.email)) {
+        const lead = await resolveLead(db, e.lead, stats)
+        leads.set(e.lead.email, lead)
+        await completeLead(db, key, e.lead.email, lead, stats)
+      }
     }
     const rows = events.map(e => {
       const lead = leads.get(e.lead.email)!
@@ -85,10 +169,26 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
       }
     })
     for (let i = 0; i < rows.length; i += 500) {
-      const { data, error } = await db.from('crm_activities').upsert(rows.slice(i, i + 500), { onConflict: 'source,external_id', ignoreDuplicates: true }).select('id')
+      const { data, error } = await db.from('crm_activities').upsert(rows.slice(i, i + 500), { onConflict: 'source,external_id' }).select('id')
       if (error) throw error
       stats.imported += data?.length ?? 0
     }
+    // Contenu complet : une lecture de la boîte Lemlist par contact ayant échangé des emails dans ce passage
+    const lemlistContacts = [...new Set(events.filter(e => e.event === 'emailsSent' || e.event === 'emailsReplied')
+      .map(e => e.metadata.lemlistContactId).filter((v): v is string => typeof v === 'string' && !!v))]
+    for (const cid of lemlistContacts) {
+      for (const m of await fetchInbox(key, cid)) {
+        const text = emailHtmlToText(m.message)
+        if (!m.messageId || !text) continue
+        const { data } = await db.from('crm_activities').update({ body: text })
+          .eq('source', 'lemlist').in('event', ['emailsSent', 'emailsReplied']).eq('metadata->>messageId', m.messageId).select('id')
+        stats.emailsWithContent += data?.length ?? 0
+      }
+    }
+
+    const touched = [...new Set(events.map(e => leads.get(e.lead.email)?.company_id).filter((v): v is string => !!v))]
+    await routeToPrepipe(db, key, touched, stats)
+
     const latest = all.reduce<string | null>((m, a) => (!m || a.createdAt > m ? a.createdAt : m), cursor)
     await db.from('crm_sync_state').upsert({
       source: 'lemlist', last_event_at: latest, last_run_at: new Date().toISOString(), running_since: null, last_error: null, last_result: stats,
