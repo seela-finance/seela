@@ -505,3 +505,18 @@ export const SECTORS: Sector[] = [
 export function getSector(slug: string): Sector | undefined {
   return SECTORS.find((s) => s.slug === slug)
 }
+
+/**
+ * Inverse of the sector → solution mapping: every sector whose `solutionFit`
+ * cites this solution, with the contextual equipment + reason. Powers the
+ * "Dans quels secteurs ?" cross-links on the Solution pages (maillage interne),
+ * so the solution ↔ sector linking runs both ways instead of one-way.
+ */
+export function getSectorsForSolution(
+  solutionSlug: string,
+): { sector: Sector; equipment: string; why: string }[] {
+  return SECTORS.flatMap((sector) => {
+    const fit = sector.solutionFit.find((f) => f.solutionSlug === solutionSlug)
+    return fit ? [{ sector, equipment: fit.equipment, why: fit.why }] : []
+  })
+}

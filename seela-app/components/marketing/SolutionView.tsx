@@ -11,11 +11,13 @@ import {
 } from '@/components/landing/icons'
 import { CONTACT_EMAIL } from '@/lib/seo/site'
 import { getSolution, type Solution } from '@/lib/seo/solutions'
+import { getSectorsForSolution } from '@/lib/seo/sectors'
 import Breadcrumbs from './Breadcrumbs'
 import ComparisonTable from './ComparisonTable'
 
 export default function SolutionView({ solution }: { solution: Solution }) {
   const related = solution.related.map(getSolution).filter(Boolean) as Solution[]
+  const sectors = getSectorsForSolution(solution.slug)
 
   return (
     <main>
@@ -141,6 +143,28 @@ export default function SolutionView({ solution }: { solution: Solution }) {
           </div>
         </div>
       </section>
+
+      {/* Dans quels secteurs ? — maillage retour vers les pages Secteurs */}
+      {sectors.length > 0 && (
+        <section className="lp-section" style={{ paddingTop: 0 }}>
+          <div className="lp-wrap">
+            <h2 className="lp-h2" style={{ fontSize: 26 }}>{solution.name} : dans quels secteurs ?</h2>
+            <p className="lp-lede" style={{ fontSize: 15, marginTop: 12, marginBottom: 24, maxWidth: 640 }}>
+              {solution.name} est particulièrement adapté au matériel de ces secteurs d&apos;activité.
+            </p>
+            <div className="mk-hubgrid">
+              {sectors.map(({ sector, equipment, why }) => (
+                <Link key={sector.slug} href={`/secteurs/${sector.slug}`} className="card mk-hubcard">
+                  <h3 className="mk-hubcard__title" style={{ fontSize: 19 }}>{sector.name}</h3>
+                  <p className="mk-solsec__eq">{equipment}</p>
+                  <p className="mk-hubcard__body">{why}</p>
+                  <span className="mk-hubcard__cta">Voir le secteur <IconArrowRight size={13} /></span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Related + CTA */}
       <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>

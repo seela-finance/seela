@@ -34,6 +34,7 @@ export default function MarketingFooter() {
             <div className="foot__lbl">Everlease</div>
             <Link href="/">Accueil</Link>
             <Link href="/#comment">Comment ça marche</Link>
+            <Link href="/blog">Blog</Link>
             <Link href="/distributeurs">Distributeurs</Link>
             <Link href="/#financeurs">Financeurs</Link>
             <Link href="/auth">Se connecter</Link>
