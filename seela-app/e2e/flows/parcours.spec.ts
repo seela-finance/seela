@@ -616,7 +616,9 @@ test('équipe : un admin ajoute un commercial, change son rôle puis le retire',
   const admin = await pageAs(browser, 'admin')
   const member = await pageAs(browser, 'member')
   const memberId = run.users.member.id
-  const row = admin.getByRole('listitem').filter({ hasText: 'Membre E2E' })
+  // Nom propre au run : deux runs simultanés sur le staging (push + pull_request en CI) ajoutent chacun un membre
+  const memberName = `Membre E2E ${run.runId}`
+  const row = admin.getByRole('listitem').filter({ hasText: memberName })
 
   // Dossier sans offre du client, pour vérifier ce que le commercial peut y faire
   const { data: request, error } = await db
@@ -636,13 +638,13 @@ test('équipe : un admin ajoute un commercial, change son rôle puis le retire',
     await expect(admin.getByRole('status').filter({ hasText: 'd’abord en créer un' })).toBeVisible({ timeout: 30_000 })
 
     await admin.getByLabel('Email du compte everlease').fill(run.users.member.email.toUpperCase())
-    await admin.getByLabel('Nom affiché').fill('Membre E2E')
+    await admin.getByLabel('Nom affiché').fill(memberName)
     await admin.getByLabel('Rôle').selectOption('commercial')
     await admin.getByRole('button', { name: 'Ajouter à l’équipe' }).click()
     await expect(admin.getByRole('status').filter({ hasText: 'a rejoint l’équipe' })).toBeVisible({ timeout: 30_000 })
     await expect(row).toContainText('Commercial')
     const { data } = await db.from('admins').select('name, role').eq('user_id', memberId).single()
-    expect(data).toEqual({ name: 'Membre E2E', role: 'commercial' })
+    expect(data).toEqual({ name: memberName, role: 'commercial' })
     await shot(admin, '23-admin-equipe')
   })
 
