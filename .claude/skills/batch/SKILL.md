@@ -15,7 +15,7 @@ Repères fixes :
 ## Ouverture
 1. Lire la page Notion « Outbound · Portefeuille de segments » (règles, rythme), la base **Segments** et les dernières entrées du **Journal des décisions**.
 2. Lister les campagnes Lemlist (`get_campaigns`) et repérer : les batches **à J+21 ou plus pas encore débriefés** (aucune entrée « Verdict segment » ou « Batches de la semaine » qui les mentionne), les batches en cours.
-3. Annoncer le programme de la séance en 3 lignes, puis demander l'export CRM : ouvrir `/admin/crm/batches/export` dans le CRM (connecté) et déposer le fichier JSON. **Claude n'accède jamais à la base de prod** : l'export est la seule source CRM (appels, deals, réponses). S'il n'est pas fourni, le dire et continuer avec Lemlist seul.
+3. Annoncer le programme de la séance en 3 lignes, puis récupérer l'export CRM : lancer `set -a; . seela-app/.env.export.local; set +a; curl -sf -H "Authorization: Bearer $CRM_EXPORT_TOKEN" https://everlease.fr/api/crm/batches-export -o <scratchpad>/batches.json` (lecture seule, exception validée par Louis ; ne jamais afficher la clé). Si la clé manque ou si l'appel échoue, demander à Lorenzo d'ouvrir `/admin/crm/batches/export` dans le CRM et de déposer le fichier JSON. **Claude n'accède jamais directement à la base de prod** : cet export est la seule source CRM (appels, deals, réponses). S'il n'est pas fourni, le dire et continuer avec Lemlist seul.
 
 ---
 

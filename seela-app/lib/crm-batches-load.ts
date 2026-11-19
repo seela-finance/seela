@@ -1,6 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { buildBatchReports, type BatchReport, type ReportInput } from '@/lib/crm-batches'
+import { batchExport, buildBatchReports, type BatchReport, type ReportInput } from '@/lib/crm-batches'
 
 const chunks = <T,>(list: T[], size = 200) => Array.from({ length: Math.ceil(list.length / size) }, (_, i) => list.slice(i * size, (i + 1) * size))
 
@@ -39,5 +39,17 @@ export async function loadBatchReports(db: SupabaseClient): Promise<BatchReport[
     lemlist: acts.map(a => ({ event: a.event, contact_id: a.contact_id, company_id: a.company_id, body: a.body, campaign_id: typeof a.metadata?.campaignId === 'string' ? a.metadata.campaignId : null })),
     calls, deals,
     companyNames: new Map(companies.map(c => [c.id, c.name])),
+  })
+}
+
+/** Réponse JSON de l'export des batches (back-office connecté ou lecture par clé). */
+export async function batchExportResponse(db: SupabaseClient, now = new Date()): Promise<Response> {
+  const body = batchExport(await loadBatchReports(db), now)
+  return new Response(JSON.stringify(body, null, 2), {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'content-disposition': `attachment; filename="batches-${now.toISOString().slice(0, 10)}.json"`,
+      'cache-control': 'no-store',
+    },
   })
 }

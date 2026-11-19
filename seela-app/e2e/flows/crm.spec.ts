@@ -177,6 +177,7 @@ test('Batches : export brut des batches Lemlist rattachés aux sociétés, rése
 
     const intruder = await pageAs(browser, 'intruder')
     expect((await intruder.request.get('/admin/crm/batches/export')).status()).toBe(404)
+    expect([401, 503]).toContain((await intruder.request.get('/api/crm/batches-export', { headers: { authorization: 'Bearer mauvaise-cle' } })).status())
   } finally {
     if (batchId) await db.from('crm_batches').delete().eq('id', batchId)
     if (contactId) await db.from('contacts').delete().eq('id', contactId)
