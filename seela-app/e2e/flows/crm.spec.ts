@@ -145,3 +145,42 @@ test('CRM : société, doublon SIREN, contact, appel, tâche et deal jusqu’au 
     }
   }
 })
+
+test('Batches : export brut des batches Lemlist rattachés aux sociétés, réservé à l’équipe', async ({ browser }) => {
+  test.setTimeout(120_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const campaign = `B99 · Batch E2E ${run.runId}`
+  let companyId = '', contactId = '', batchId = ''
+
+  try {
+    const { data: company, error: cErr } = await db.from('companies').insert({ name: `Batch E2E ${run.runId}`, source: 'E2E' }).select('id').single()
+    if (cErr) throw new Error(cErr.message)
+    companyId = company.id
+    const { data: contact, error: ctErr } = await db.from('contacts').insert({ first_name: 'Paul', email: `paul-${run.runId}@everlease.test`, company_id: companyId }).select('id').single()
+    if (ctErr) throw new Error(ctErr.message)
+    contactId = contact.id
+    const { data: batch, error: bErr } = await db.from('crm_batches')
+      .insert({ lemlist_campaign_id: `cam_e2e_${run.runId}`, campaign_name: campaign, code: 'B99', segment: 'Boulangeries IDF', angle: 'Trésorerie', cta: 'Est-ce que je peux vous appeler 10 minutes ?' })
+      .select('id').single()
+    if (bErr) throw new Error(bErr.message)
+    batchId = batch.id
+    const { error: lErr } = await db.from('crm_batch_leads').insert({
+      batch_id: batchId, contact_id: contactId, company_id: companyId, entered_at: new Date().toISOString(),
+      variables: { icebreaker: `Bravo pour l’ouverture du 2e site ${run.runId}` },
+    })
+    if (lErr) throw new Error(lErr.message)
+
+    const admin = await pageAs(browser, 'admin')
+    const exported = await (await admin.request.get('/admin/crm/batches/export')).json()
+    expect(exported.batches.find((x: { campaign_name: string }) => x.campaign_name === campaign)).toMatchObject({ segment: 'Boulangeries IDF', cta: 'Est-ce que je peux vous appeler 10 minutes ?', leads: 1, companies: 1, funnel: { deals: 0 } })
+
+    const intruder = await pageAs(browser, 'intruder')
+    expect((await intruder.request.get('/admin/crm/batches/export')).status()).toBe(404)
+    expect([401, 503]).toContain((await intruder.request.get('/api/crm/batches-export', { headers: { authorization: 'Bearer mauvaise-cle' } })).status())
+  } finally {
+    if (batchId) await db.from('crm_batches').delete().eq('id', batchId)
+    if (contactId) await db.from('contacts').delete().eq('id', contactId)
+    if (companyId) await db.from('companies').delete().eq('id', companyId)
+  }
+})
