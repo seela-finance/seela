@@ -15,7 +15,12 @@ Repères fixes :
 ## Ouverture
 1. Lire la page Notion « Outbound · Portefeuille de segments » (règles, rythme), la base **Segments** et les dernières entrées du **Journal des décisions**.
 2. Lister les campagnes Lemlist (`get_campaigns`) et repérer : les batches **à J+21 ou plus pas encore débriefés** (aucune entrée « Verdict segment » ou « Batches de la semaine » qui les mentionne), les batches en cours.
-3. Annoncer le programme de la séance en 3 lignes, puis récupérer l'export CRM : lancer `set -a; . seela-app/.env.export.local; set +a; curl -sf -H "Authorization: Bearer $CRM_EXPORT_TOKEN" https://everlease.fr/api/crm/batches-export -o <scratchpad>/batches.json` (lecture seule, exception validée par Louis ; ne jamais afficher la clé). Si la clé manque ou si l'appel échoue, demander à Lorenzo d'ouvrir `/admin/crm/batches/export` dans le CRM et de déposer le fichier JSON. **Claude n'accède jamais directement à la base de prod** : cet export est la seule source CRM (appels, deals, réponses). S'il n'est pas fourni, le dire et continuer avec Lemlist seul.
+3. Annoncer le programme de la séance en 3 lignes, puis lire le CRM.
+
+**Lire le CRM** (lecture seule, exception validée par Louis le 19/11/2026) :
+- **Connecteur `supabase-prod`** (`execute_sql`, configuré en `read_only=true`) : interroger directement `crm_batches`, `crm_batch_leads`, `crm_activities` (source `lemlist`, appels `type = 'call'`), `crm_deals`, `companies`, `contacts`, `financing_requests`. **Uniquement des `select`** : jamais d'écriture, jamais de migration par ce connecteur.
+- Pour l'entonnoir déjà calculé par batch : `set -a; . seela-app/.env.export.local; set +a; curl -sf -H "Authorization: Bearer $CRM_EXPORT_TOKEN" https://www.everlease.fr/api/crm/batches-export -o <scratchpad>/batches.json` (ne jamais afficher la clé).
+- Si le connecteur n'est pas authentifié : demander à Lorenzo `/mcp` → `supabase-prod` → Authenticate ; en dernier recours, l'export manuel `/admin/crm/batches/export`. S'il n'est pas fourni, le dire et continuer avec Lemlist seul.
 
 ---
 
@@ -59,17 +64,24 @@ Pour chaque batch proposé, une fiche courte :
 ## Partie 3 · Préparer chaque batch
 Un batch après l'autre.
 
-**3.1 Sourcing (~300 candidats)** depuis la source de la fiche :
-- Lemlist : `load_skill("lead-search")` puis `lemleads_search` ;
+**3.1 Sourcing (~300 candidats)** depuis la source de la fiche (détail par segment : `references/sources.md`) :
+- **Segments à intent « ouverture »** (boulangeries, salles de sport, CHR…) : chaîne gratuite SIRENE → annuaire des entreprises → Google Maps, scripts dans `scripts/` (voir ci-dessous) ;
+- Lemlist : `load_skill("lead-search")` puis `lemleads_search` (PME, personas Finance ou Direction) ;
 - Sales Navigator (claudnav) : `sn_search_companies`, `sn_search_people`, `sn_search_from_url` ;
-- recherche web pour les signaux ;
-- Pharow, Google Maps, fichiers publics : donner à Lorenzo les filtres exacts et le format du CSV attendu (société, domaine, SIREN, ville, nom, poste, email, LinkedIn).
+- recherche web pour les signaux.
 
-**3.2 Enrichissement et notation** : compléter email et LinkedIn ; annoncer volume et coût en crédits avant tout enrichissement payant en masse. Noter chaque société de 1 à 3 en **adéquation** et en **signal** ; un signal sans source (URL, date) ne compte pas.
+**Exclusions systématiques** : sociétés de **moins de 3 ans** (elles ne passent pas le scoring financier), auto-entrepreneurs, grandes entreprises et ETI, succursales de chaînes intégrées (le groupe finance lui-même). Les franchisés indépendants restent des cibles.
+
+**Chaîne « ouverture »** (Python avec `duckdb` ; venv : `python3 -m venv <scratchpad>/venv && <scratchpad>/venv/bin/pip install duckdb`) :
+1. `python scripts/ouvertures.py --naf 10.71C,10.71D --depuis <AAAA-MM-JJ> --segment boulangerie --out <scratchpad>/ouv.csv` : nouveaux établissements (nouvel établissement, rachat, transfert, nouvel établissement principal ; pas de location-gérance) dans des sociétés de 3 ans ou plus, une ligne par société. ~10 min. Codes NAF : boulangerie 10.71C/10.71D, salle de sport 93.13Z, restauration 56.10A/56.10C, hôtels 55.10Z. Élargir `--depuis` si le volume est sous 150.
+2. `python scripts/enrichir.py <scratchpad>/ouv.csv <scratchpad>/enrichi.csv` : gérant, chiffre d'affaires, nombre d'établissements (gratuit), téléphone, site et avis Google Maps (clé dans `seela-app/.env.google.local`, ~1 appel par société).
+3. `python scripts/noter.py <scratchpad>/enrichi.csv <scratchpad>/candidats.csv --metier "boulangerie,patisserie,pain"` : score sur 8, 150 meilleures. Le téléphone n'est gardé que si la fiche Google Maps correspond à la société.
+
+**3.2 Enrichissement et notation** : compléter email et LinkedIn. Ordre : email affiché sur le site (gratuit) → Fullenrich. Fullenrich se **teste d'abord sur 20 leads** pour mesurer le taux réel ; annoncer volume et coût en crédits avant tout enrichissement payant en masse. Pour les TPE peu présentes en ligne (boulangeries), le **téléphone de la boutique** est le canal principal : séquence « appel d'abord ». Noter chaque société de 1 à 3 en **adéquation** et en **signal** ; un signal sans source (URL, date, SIRET) ne compte pas.
 
 **3.3 Lorenzo choisit les 120** dans un tableau trié (150 lignes max) : société, ville, contact, poste, adéquation, signal, signal en une ligne avec sa source. Sélection par défaut = les 120 premiers. Jamais plus de 120.
 
-**3.4 Dédoublonnage** : retirer les leads déjà dans une campagne (`search_campaign_leads` avec `include: ["campaigns"]`) et les sociétés de l'export CRM (clients, deals ouverts, disqualifiées récemment). Sous 100 leads, proposer des remplaçants.
+**3.4 Dédoublonnage** : retirer les leads déjà dans une campagne (`search_campaign_leads` avec `include: ["campaigns"]`) et les sociétés déjà connues du CRM (requête `supabase-prod` sur `companies` par SIREN ou domaine : clients, dossiers en cours, deals ouverts, disqualifiées récemment). Sous 100 leads, proposer des remplaçants.
 
 **3.5 Trois angles → Lorenzo en choisit 1.** Chacun : problème (avec les mots du persona), bénéfice, preuve, CTA en texte entier. Trois angles vraiment différents. Pour un segment validé, partir de l'angle qui a marché.
 

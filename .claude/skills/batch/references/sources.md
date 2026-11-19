@@ -6,6 +6,18 @@
 
 ---
 
+## Décidé avec Lorenzo le 19/11/2026 (prime sur le reste du document)
+
+- **Outils payés** : Lemlist et Fullenrich. Rien d'autre à payer pour l'instant.
+- **Segments à intent « ouverture »** (boulangeries, salles de sport, puis CHR) : chaîne gratuite **SIRENE** (nouveaux établissements, fichier open data) → **annuaire des entreprises** (gérant, CA, établissements) → **Google Maps Places** (téléphone, site, avis). Scripts : `scripts/ouvertures.py`, `scripts/enrichir.py`, `scripts/noter.py` (mode d'emploi dans `SKILL.md`, 3.1).
+- **Types d'ouverture retenus** : nouvel établissement, rachat de fonds, transfert ou déménagement, changement de gérant, extension d'activité. Exclus : location-gérance. Les créations et rachats par une société de moins de 3 ans tombent avec l'exclusion d'ancienneté.
+- **Volumes constatés** (SIRENE, sociétés de 3 ans ou plus) : boulangeries ~380 ouvertures en 8 mois ; salles de sport ~140 en 20 mois.
+- **Google Maps** ne donne pas la date d'ouverture : la date vient de SIRENE ou du BODACC. Maps sert au téléphone de la boutique.
+- **Fullenrich** couvre mal les TPE peu présentes en ligne (boulangeries) : tester sur 20 leads avant d'acheter des crédits ; récupérer d'abord l'email affiché sur le site. Pour les boulangeries, le canal principal est le téléphone.
+- **Industrie × Finance** : base de contacts Lemlist (DAF/RAF, PME de 20 à 250 salariés), ancienneté vérifiée via l'annuaire des entreprises.
+
+---
+
 ## 0. Règles d'usage (pour l'IA qui prépare le batch)
 
 1. **Lister** les entreprises avec la source « Liste » du micro-segment → toujours récupérer le **SIREN/SIRET**.
