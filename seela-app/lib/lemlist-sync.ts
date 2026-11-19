@@ -2,6 +2,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
 import { lemlistEntry, type LeadEvent } from '@/lib/crm-prepipe'
+import { batchCode, batchEntries, batchFieldsFrom, campaignVariables, leadInCampaign, type BatchEntry } from '@/lib/crm-batches'
 import { companyNameFor, emailHtmlToText, fillEmpty, mapLemlistLead, type LemlistLead, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
@@ -9,7 +10,7 @@ const PAGE = 100
 const MAX_PAGES = 100
 const LOCK_MS = 15 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number }
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number; batchLeads: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
@@ -101,6 +102,54 @@ async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: strin
   }
 }
 
+/**
+ * Batches : chaque campagne vue devient un batch (créé une fois), chaque lead y entre avec la copie de ses variables Lemlist
+ * de cette campagne (icebreaker, CTA…), daté de son premier événement. Les champs vides du batch sont remplis depuis ces variables.
+ */
+async function syncBatches(db: SupabaseClient, key: string, entries: BatchEntry[], stats: LemlistSyncResult) {
+  if (!entries.length) return
+  const campaigns = new Map<string, string | null>()
+  for (const e of entries) if (!campaigns.get(e.campaignId)) campaigns.set(e.campaignId, e.campaignName)
+  const { data: existing, error } = await db.from('crm_batches').select('*').in('lemlist_campaign_id', [...campaigns.keys()])
+  if (error) throw error
+  const batches = new Map<string, Record<string, unknown>>(((existing ?? []) as Record<string, unknown>[]).map(b => [b.lemlist_campaign_id as string, b]))
+  for (const [campaignId, name] of campaigns) {
+    const cur = batches.get(campaignId)
+    if (!cur) {
+      const { data, error: insErr } = await db.from('crm_batches').insert({ lemlist_campaign_id: campaignId, campaign_name: name, code: batchCode(name) }).select('*').single()
+      if (insErr) throw insErr
+      batches.set(campaignId, data)
+    } else if (name && name !== cur.campaign_name) {
+      const patch = { campaign_name: name, code: batchCode(name) ?? cur.code, updated_at: new Date().toISOString() }
+      await db.from('crm_batches').update(patch).eq('id', cur.id as string)
+      Object.assign(cur, patch)
+    }
+  }
+
+  for (const e of entries) {
+    const batch = batches.get(e.campaignId)!
+    const { data: row } = await db.from('crm_batch_leads').select('id, entered_at').eq('batch_id', batch.id as string).eq('contact_id', e.contactId).maybeSingle()
+    if (row) {
+      if (e.at < row.entered_at) await db.from('crm_batch_leads').update({ entered_at: e.at }).eq('id', row.id)
+      continue
+    }
+    const res = await fetch(`https://api.lemlist.com/api/leads/${encodeURIComponent(e.email)}?version=v2`, { headers: authHeader(key), cache: 'no-store' })
+    const lead = res.ok ? leadInCampaign(await res.json(), e.campaignId) : null
+    const variables = campaignVariables(lead?.variables)
+    const { error: insErr } = await db.from('crm_batch_leads').insert({
+      batch_id: batch.id, contact_id: e.contactId, company_id: e.companyId, lemlist_lead_id: lead?.id ?? e.leadId, entered_at: e.at, variables,
+    })
+    if (insErr) throw insErr
+    stats.batchLeads++
+    const patch = fillEmpty(batch, batchFieldsFrom(variables))
+    if (Object.keys(patch).length) {
+      const { error: upErr } = await db.from('crm_batches').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', batch.id as string)
+      if (upErr) throw upErr
+      Object.assign(batch, patch)
+    }
+  }
+}
+
 /** Contact du lead (créé s'il manque), rattaché à la société de son domaine ou de son nom (créée s'il le faut). */
 async function resolveLead(db: SupabaseClient, lead: MappedActivity['lead'], stats: LemlistSyncResult) {
   const exact = lead.email.replace(/[\\%_]/g, c => `\\${c}`)
@@ -143,7 +192,7 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
   if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0, batchLeads: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -185,6 +234,13 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
         stats.emailsWithContent += data?.length ?? 0
       }
     }
+
+    const entries = batchEntries(events.map(e => {
+      const lead = leads.get(e.lead.email)!
+      return { campaignId: e.metadata.campaignId, campaignName: e.metadata.campaignName, contactId: lead.id, companyId: lead.company_id, email: e.lead.email, leadId: e.metadata.leadId, at: e.occurredAt }
+    }))
+    // Un échec des batches ne bloque pas l'import des événements ni le pré-pipe
+    await syncBatches(db, key, entries, stats).catch(err => console.error('[lemlist batches]', err))
 
     const touched = [...new Set(events.map(e => leads.get(e.lead.email)?.company_id).filter((v): v is string => !!v))]
     await routeToPrepipe(db, key, touched, stats)

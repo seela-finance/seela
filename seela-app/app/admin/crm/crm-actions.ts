@@ -119,7 +119,7 @@ export async function syncLemlistAction(_: CrmFormState, form: FormData): Promis
       throw new CrmError(result.skipped)
     }
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
-    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.leadsCompleted} fiche(s) complétée(s) depuis Lemlist, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.leadsCompleted} fiche(s) complétée(s) depuis Lemlist, ${result.batchLeads} lead(s) ajouté(s) à un batch, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
   })
 }
 
