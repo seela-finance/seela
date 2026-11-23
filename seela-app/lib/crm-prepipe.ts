@@ -19,6 +19,7 @@ export const EXIT_REASONS = ['Pas la cible', 'Pas de besoin', 'Déjà équipé o
 
 export const LEAD_SIGNAL_LABEL: Record<string, string> = {
   interested: 'Intéressé (Lemlist)', replied: 'A répondu (Lemlist)', clicked: 'A cliqué (Lemlist)', sequence: 'Séquence à 60 %',
+  selection: 'Choisi dans la base outbound',
   inscription: 'Inscrit sur l’app', inscription_partielle: 'Inscrit, entreprise non indiquée', expert: 'Formulaire expert', manuel: 'Ajout manuel', appel: 'Appel',
 }
 
@@ -64,6 +65,18 @@ export function sequenceProgress(stepTypes: string[], reachedIndex: number): num
 }
 
 export type LeadEvent = { event: string | null; campaignId: string | null; sequenceStep: number | null }
+
+/** Lemlist donne l'étape tantôt en nombre, tantôt en texte. */
+export const stepOf = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+
+/**
+ * Entrée automatique depuis Lemlist. « strong » (par défaut) : seuls intéressé et réponse font entrer une société seule,
+ * le reste se choisit à la main. « all » : aussi le clic et la séquence au seuil réglé.
+ */
+export type AutoEntry = 'strong' | 'all'
+export function autoEntryAllowed(signal: string, mode: AutoEntry): boolean {
+  return mode === 'all' || signal === 'interested' || signal === 'replied'
+}
 
 /**
  * Signal d'entrée dans le pré-pipe outbound (le plus fort l'emporte) et étape visée.

@@ -184,3 +184,48 @@ test('Batches : export brut des batches Lemlist rattachés aux sociétés, rése
     if (companyId) await db.from('companies').delete().eq('id', companyId)
   }
 })
+
+test('Ajouter des leads : filtrer la base outbound et faire entrer une société choisie dans le pré-pipe', async ({ browser }) => {
+  test.setTimeout(120_000)
+  const run = readContext()
+  const db = stagingAdmin()
+  const name = `Outbound E2E ${run.runId}`
+  const { data: company, error } = await db.from('companies').insert({ name, lifecycle_stage: 'prospect' }).select('id').single()
+  if (error) throw error
+  const admin = await pageAs(browser, 'admin')
+
+  try {
+    await db.from('contacts').insert({ company_id: company.id, first_name: 'Paul', email: `paul-${run.runId}@everlease.test`, phone: '+33600000000' })
+
+    await test.step('la société froide, hors pré-pipe, apparaît avec les filtres « sans batch » et « froid »', async () => {
+      await admin.goto('/admin/crm/prospection')
+      await admin.getByRole('link', { name: 'Ajouter des leads outbound' }).click()
+      await admin.getByLabel('Batch', { exact: true }).selectOption({ label: 'Sans batch (jamais dans Lemlist)' })
+      await admin.getByRole('checkbox', { name: /^Froid/ }).check()
+      await admin.getByLabel('Avec téléphone').check()
+      const row = admin.getByRole('row').filter({ hasText: name })
+      await expect(row).toBeVisible({ timeout: 30_000 })
+      await expect(row.getByText('Froid')).toBeVisible()
+      await row.getByRole('checkbox', { name: `Choisir ${name}` }).check()
+      const add = admin.getByRole('button', { name: /^Ajouter au pré-pipe \(1\)/ })
+      await expect(add).toBeEnabled()
+      await shot(admin, '26-crm-ajouter-leads')
+      await add.click()
+      await expect(admin.getByText('1 société ajoutée au pré-pipe outbound.')).toBeVisible()
+      await expect(admin.getByRole('row').filter({ hasText: name })).toHaveCount(0)
+    })
+
+    await test.step('elle est dans le pré-pipe outbound, en « À contacter »', async () => {
+      await admin.goto('/admin/crm/prospection?vue=outbound')
+      await expect(admin.getByRole('region', { name: 'À contacter' }).getByRole('link', { name })).toBeVisible()
+      const { data } = await db.from('companies').select('lead_status, lead_channel, lead_signal').eq('id', company.id).single()
+      expect(data).toEqual({ lead_status: 'a_contacter', lead_channel: 'outbound', lead_signal: 'selection' })
+    })
+
+    const intruder = await pageAs(browser, 'intruder')
+    expect((await intruder.goto('/admin/crm/prospection/ajouter'))?.status()).toBe(404)
+  } finally {
+    await db.from('contacts').delete().eq('company_id', company.id)
+    await db.from('companies').delete().eq('id', company.id)
+  }
+})

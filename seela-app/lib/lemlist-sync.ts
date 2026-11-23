@@ -1,26 +1,37 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
-import { lemlistEntry, type LeadEvent } from '@/lib/crm-prepipe'
+import { enterPrepipe, getCrmSettings, type CrmSettings } from '@/lib/crm-prepipe-store'
+import { autoEntryAllowed, lemlistEntry, stepOf, type LeadEvent } from '@/lib/crm-prepipe'
 import { batchCode, batchEntries, batchFieldsFrom, campaignVariables, leadInCampaign, type BatchEntry } from '@/lib/crm-batches'
-import { companyNameFor, emailHtmlToText, fillEmpty, mapLemlistLead, type LemlistLead, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
+import { chunkByTime, companyNameFor, syncIsRunning, emailHtmlToText, fillEmpty, mapLemlistLead, type LemlistLead, newSince, pageReachedCursor, type LemlistActivity, type LemlistInboxMessage, type MappedActivity } from '@/lib/crm-lemlist'
 
 const API = 'https://api.lemlist.com/api/activities'
 const PAGE = 100
 const MAX_PAGES = 100
-const LOCK_MS = 15 * 60 * 1000
+/** Événements par tranche, et temps de travail d'un passage (le serveur coupe à 5 min). */
+const CHUNK = 50
+const BUDGET_MS = 3 * 60 * 1000
 
-export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number; batchLeads: number }
+/** `remaining` : événements laissés au passage suivant (0 = à jour). */
+export type LemlistSyncResult = { imported: number; contactsCreated: number; companiesCreated: number; emailsWithContent: number; leadsEntered: number; leadsCompleted: number; batchLeads: number; remaining: number }
 
 export const isLemlistConfigured = () => !!process.env.LEMLIST_API_KEY
 
 const authHeader = (key: string) => ({ Authorization: `Basic ${Buffer.from(`:${key}`).toString('base64')}` })
 
 async function fetchPage(key: string, offset: number): Promise<LemlistActivity[]> {
-  const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, { headers: authHeader(key), cache: 'no-store' })
-  if (!res.ok) throw new Error(`Lemlist a répondu ${res.status}`)
-  const json = await res.json()
-  return (Array.isArray(json) ? json : json.activities ?? []) as LemlistActivity[]
+  // Une coupure réseau ponctuelle (« terminated ») ne doit pas faire échouer tout le passage : un nouvel essai
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(`${API}?version=v2&limit=${PAGE}&offset=${offset}`, { headers: authHeader(key), cache: 'no-store' })
+      if (!res.ok) throw new Error(`Lemlist a répondu ${res.status}`)
+      const json = await res.json()
+      return (Array.isArray(json) ? json : json.activities ?? []) as LemlistActivity[]
+    } catch (err) {
+      if (attempt >= 3) throw err
+      await new Promise(r => setTimeout(r, 2000 * attempt))
+    }
+  }
 }
 
 /** Toute la conversation d'un contact dans la boîte Lemlist (contenu complet des emails envoyés et reçus). */
@@ -61,25 +72,25 @@ async function completeLead(db: SupabaseClient, key: string, email: string, cont
   stats.leadsCompleted++
 }
 
-/** Types des étapes de chaque campagne, dans l'ordre de la séquence (pour l'avancement des leads). */
-async function fetchSequences(key: string, campaignIds: string[]): Promise<Map<string, string[]>> {
-  const out = new Map<string, string[]>()
-  for (const id of campaignIds) {
-    const res = await fetch(`https://api.lemlist.com/api/campaigns/${encodeURIComponent(id)}/sequences`, { headers: authHeader(key), cache: 'no-store' })
-    if (!res.ok) continue
+/**
+ * Types des étapes de chaque campagne, dans l'ordre de la séquence (pour l'avancement des leads). Complète `known`
+ * avec les campagnes qui manquent (une lecture par campagne, en parallèle).
+ */
+export async function fetchSequences(campaignIds: string[], known = new Map<string, string[]>()): Promise<Map<string, string[]>> {
+  const key = process.env.LEMLIST_API_KEY
+  if (!key) return known
+  await Promise.all(campaignIds.filter(id => !known.has(id)).map(async id => {
+    const res = await fetch(`https://api.lemlist.com/api/campaigns/${encodeURIComponent(id)}/sequences`, { headers: authHeader(key), cache: 'no-store' }).catch(() => null)
+    if (!res?.ok) return
     const json = (await res.json()) as Record<string, { steps?: { type?: string }[] }>
-    out.set(id, Object.values(json).flatMap(s => (s.steps ?? []).map(step => step.type ?? '')))
-  }
-  return out
+    known.set(id, Object.values(json).flatMap(s => (s.steps ?? []).map(step => step.type ?? '')))
+  }))
+  return known
 }
 
-/** Lemlist donne l'étape tantôt en nombre, tantôt en texte. */
-const stepOf = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
-
 /** Sociétés touchées par ce passage : entrée ou avancée dans le pré-pipe outbound selon leurs événements Lemlist. */
-async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: string[], stats: LemlistSyncResult) {
+async function routeToPrepipe(db: SupabaseClient, companyIds: string[], sequences: Map<string, string[]>, settings: CrmSettings, stats: LemlistSyncResult) {
   if (!companyIds.length) return
-  const settings = await getCrmSettings(db)
   const rows: { company_id: string; event: string | null; metadata: Record<string, unknown> | null }[] = []
   for (let i = 0; i < companyIds.length; i += 200) {
     const { data, error } = await db.from('crm_activities').select('company_id, event, metadata').eq('source', 'lemlist').in('company_id', companyIds.slice(i, i + 200)).limit(20000)
@@ -87,7 +98,7 @@ async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: strin
     rows.push(...((data ?? []) as typeof rows))
   }
   const campaigns = [...new Set(rows.map(r => r.metadata?.campaignId).filter((v): v is string => typeof v === 'string'))]
-  const sequences = await fetchSequences(key, campaigns)
+  await fetchSequences(campaigns, sequences)
   const byCompany = new Map<string, LeadEvent[]>()
   for (const r of rows) {
     const list = byCompany.get(r.company_id) ?? []
@@ -96,7 +107,8 @@ async function routeToPrepipe(db: SupabaseClient, key: string, companyIds: strin
   }
   for (const [companyId, events] of byCompany) {
     const entry = lemlistEntry(events, sequences, settings.threshold)
-    if (!entry) continue
+    // Par défaut seuls « intéressé » et « réponse » entrent seuls : le reste se choisit dans « Ajouter des leads »
+    if (!entry || !autoEntryAllowed(entry.signal, settings.autoEntry)) continue
     const strong = entry.signal !== 'sequence'
     if (await enterPrepipe(db, companyId, { channel: 'outbound', signal: entry.signal, status: entry.status, strong }, settings)) stats.leadsEntered++
   }
@@ -180,19 +192,69 @@ async function resolveLead(db: SupabaseClient, lead: MappedActivity['lead'], sta
   return data as { id: string; company_id: string | null }
 }
 
+/** Une tranche d'événements traitée de bout en bout : contacts, activités, contenu des emails, batches, pré-pipe. */
+async function processChunk(
+  db: SupabaseClient, key: string, events: MappedActivity[], ctx: { leads: Map<string, { id: string; company_id: string | null }>; sequences: Map<string, string[]>; settings: CrmSettings }, stats: LemlistSyncResult,
+) {
+  const { leads } = ctx
+  for (const e of events) {
+    if (!leads.has(e.lead.email)) {
+      const lead = await resolveLead(db, e.lead, stats)
+      leads.set(e.lead.email, lead)
+      await completeLead(db, key, e.lead.email, lead, stats)
+    }
+  }
+  const rows = events.map(e => {
+    const lead = leads.get(e.lead.email)!
+    return {
+      type: e.type, source: 'lemlist', external_id: e.externalId, event: e.event, occurred_at: e.occurredAt,
+      title: e.title, summary: e.summary, body: e.body, metadata: e.metadata, contact_id: lead.id, company_id: lead.company_id,
+    }
+  })
+  const { data, error } = await db.from('crm_activities').upsert(rows, { onConflict: 'source,external_id' }).select('id')
+  if (error) throw error
+  stats.imported += data?.length ?? 0
+
+  // Contenu complet : une lecture de la boîte Lemlist par contact ayant échangé des emails dans cette tranche
+  const lemlistContacts = [...new Set(events.filter(e => e.event === 'emailsSent' || e.event === 'emailsReplied')
+    .map(e => e.metadata.lemlistContactId).filter((v): v is string => typeof v === 'string' && !!v))]
+  for (const cid of lemlistContacts) {
+    for (const m of await fetchInbox(key, cid)) {
+      const text = emailHtmlToText(m.message)
+      if (!m.messageId || !text) continue
+      const { data: updated } = await db.from('crm_activities').update({ body: text })
+        .eq('source', 'lemlist').in('event', ['emailsSent', 'emailsReplied']).eq('metadata->>messageId', m.messageId).select('id')
+      stats.emailsWithContent += updated?.length ?? 0
+    }
+  }
+
+  const entries = batchEntries(events.map(e => {
+    const lead = leads.get(e.lead.email)!
+    return { campaignId: e.metadata.campaignId, campaignName: e.metadata.campaignName, contactId: lead.id, companyId: lead.company_id, email: e.lead.email, leadId: e.metadata.leadId, at: e.occurredAt }
+  }))
+  // Un échec des batches ne bloque pas l'import des événements ni le pré-pipe
+  await syncBatches(db, key, entries, stats).catch(err => console.error('[lemlist batches]', err))
+
+  const touched = [...new Set(events.map(e => leads.get(e.lead.email)?.company_id).filter((v): v is string => !!v))]
+  await routeToPrepipe(db, touched, ctx.sequences, ctx.settings, stats)
+}
+
 /**
- * Importe les nouveaux événements Lemlist dans crm_activities. Une seule synchro à la fois (verrou de 5 min),
- * jamais deux fois le même événement (source + identifiant Lemlist). `full` reprend tout l'historique.
+ * Importe les nouveaux événements Lemlist dans crm_activities. Une seule synchro à la fois, jamais deux fois le même
+ * événement (source + identifiant Lemlist). Traitement par tranches, du plus ancien au plus récent : la progression est
+ * enregistrée après chaque tranche et le passage s'arrête avant d'être coupé par le serveur. Le passage suivant reprend
+ * là où celui-ci s'est arrêté. `full` repart du début de l'historique.
  */
-export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } = {}): Promise<LemlistSyncResult | { skipped: string }> {
+export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean; budgetMs?: number } = {}): Promise<LemlistSyncResult | { skipped: string }> {
   const key = process.env.LEMLIST_API_KEY
   if (!key) return { skipped: 'Clé Lemlist absente' }
+  const deadline = Date.now() + (opts.budgetMs ?? BUDGET_MS)
 
   const { data: state } = await db.from('crm_sync_state').select('*').eq('source', 'lemlist').maybeSingle()
-  if (state?.running_since && Date.now() - Date.parse(state.running_since) < LOCK_MS) return { skipped: 'Synchronisation déjà en cours' }
+  if (syncIsRunning(state?.running_since ?? null, new Date())) return { skipped: 'Synchronisation déjà en cours' }
   await db.from('crm_sync_state').upsert({ source: 'lemlist', running_since: new Date().toISOString() })
 
-  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0, batchLeads: 0 }
+  const stats: LemlistSyncResult = { imported: 0, contactsCreated: 0, companiesCreated: 0, emailsWithContent: 0, leadsEntered: 0, leadsCompleted: 0, batchLeads: 0, remaining: 0 }
   const cursor: string | null = opts.full ? null : state?.last_event_at ?? null
   try {
     const all: LemlistActivity[] = []
@@ -202,57 +264,26 @@ export async function syncLemlist(db: SupabaseClient, opts: { full?: boolean } =
       if (items.length < PAGE || pageReachedCursor(items, cursor)) break
     }
     const events = newSince(all, cursor)
-    const leads = new Map<string, { id: string; company_id: string | null }>()
-    for (const e of events) {
-      if (!leads.has(e.lead.email)) {
-        const lead = await resolveLead(db, e.lead, stats)
-        leads.set(e.lead.email, lead)
-        await completeLead(db, key, e.lead.email, lead, stats)
-      }
-    }
-    const rows = events.map(e => {
-      const lead = leads.get(e.lead.email)!
-      return {
-        type: e.type, source: 'lemlist', external_id: e.externalId, event: e.event, occurred_at: e.occurredAt,
-        title: e.title, summary: e.summary, body: e.body, metadata: e.metadata, contact_id: lead.id, company_id: lead.company_id,
-      }
-    })
-    for (let i = 0; i < rows.length; i += 500) {
-      const { data, error } = await db.from('crm_activities').upsert(rows.slice(i, i + 500), { onConflict: 'source,external_id' }).select('id')
-      if (error) throw error
-      stats.imported += data?.length ?? 0
-    }
-    // Contenu complet : une lecture de la boîte Lemlist par contact ayant échangé des emails dans ce passage
-    const lemlistContacts = [...new Set(events.filter(e => e.event === 'emailsSent' || e.event === 'emailsReplied')
-      .map(e => e.metadata.lemlistContactId).filter((v): v is string => typeof v === 'string' && !!v))]
-    for (const cid of lemlistContacts) {
-      for (const m of await fetchInbox(key, cid)) {
-        const text = emailHtmlToText(m.message)
-        if (!m.messageId || !text) continue
-        const { data } = await db.from('crm_activities').update({ body: text })
-          .eq('source', 'lemlist').in('event', ['emailsSent', 'emailsReplied']).eq('metadata->>messageId', m.messageId).select('id')
-        stats.emailsWithContent += data?.length ?? 0
-      }
+    const ctx = { leads: new Map<string, { id: string; company_id: string | null }>(), sequences: new Map<string, string[]>(), settings: await getCrmSettings(db) }
+    let done = 0
+    for (const chunk of chunkByTime(events, CHUNK)) {
+      if (Date.now() > deadline) break
+      await processChunk(db, key, chunk, ctx, stats)
+      done += chunk.length
+      stats.remaining = events.length - done
+      await db.from('crm_sync_state').upsert({ source: 'lemlist', last_event_at: chunk.at(-1)!.occurredAt, last_result: stats })
     }
 
-    const entries = batchEntries(events.map(e => {
-      const lead = leads.get(e.lead.email)!
-      return { campaignId: e.metadata.campaignId, campaignName: e.metadata.campaignName, contactId: lead.id, companyId: lead.company_id, email: e.lead.email, leadId: e.metadata.leadId, at: e.occurredAt }
-    }))
-    // Un échec des batches ne bloque pas l'import des événements ni le pré-pipe
-    await syncBatches(db, key, entries, stats).catch(err => console.error('[lemlist batches]', err))
-
-    const touched = [...new Set(events.map(e => leads.get(e.lead.email)?.company_id).filter((v): v is string => !!v))]
-    await routeToPrepipe(db, key, touched, stats)
-
+    // Tout est traité : on avance jusqu'à l'activité la plus récente, même ignorée (étape sautée…)
     const latest = all.reduce<string | null>((m, a) => (!m || a.createdAt > m ? a.createdAt : m), cursor)
     await db.from('crm_sync_state').upsert({
-      source: 'lemlist', last_event_at: latest, last_run_at: new Date().toISOString(), running_since: null, last_error: null, last_result: stats,
+      source: 'lemlist', ...(stats.remaining === 0 ? { last_event_at: latest } : {}),
+      last_run_at: new Date().toISOString(), running_since: null, last_error: null, last_result: stats,
     })
     return stats
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    await db.from('crm_sync_state').upsert({ source: 'lemlist', last_run_at: new Date().toISOString(), running_since: null, last_error: message.slice(0, 500) })
+    await db.from('crm_sync_state').upsert({ source: 'lemlist', last_run_at: new Date().toISOString(), running_since: null, last_error: message.slice(0, 500), last_result: stats })
     throw err
   }
 }

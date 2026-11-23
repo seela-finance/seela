@@ -1,17 +1,18 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { DEFAULT_SEQUENCE_THRESHOLD, forward, isLeadStatus, statusAfterCall, type LeadChannel, type LeadStatus } from '@/lib/crm-prepipe'
+import { DEFAULT_SEQUENCE_THRESHOLD, forward, type AutoEntry, isLeadStatus, statusAfterCall, type LeadChannel, type LeadStatus } from '@/lib/crm-prepipe'
 import { CLOSED_DEAL_STAGES } from '@/lib/crm-deals'
 
-export type CrmSettings = { ownerId: string | null; threshold: number }
+export type CrmSettings = { ownerId: string | null; threshold: number; autoEntry: AutoEntry }
 
 export async function getCrmSettings(db: SupabaseClient): Promise<CrmSettings> {
-  const { data } = await db.from('crm_settings').select('key, value').in('key', ['prepipe_owner', 'sequence_threshold'])
+  const { data } = await db.from('crm_settings').select('key, value').in('key', ['prepipe_owner', 'sequence_threshold', 'lemlist_auto_entry'])
   const map = new Map(((data ?? []) as { key: string; value: unknown }[]).map(r => [r.key, r.value]))
   const t = Number(map.get('sequence_threshold'))
   return {
     ownerId: typeof map.get('prepipe_owner') === 'string' ? (map.get('prepipe_owner') as string) : null,
     threshold: Number.isFinite(t) && t > 0 && t <= 1 ? t : DEFAULT_SEQUENCE_THRESHOLD,
+    autoEntry: map.get('lemlist_auto_entry') === 'all' ? 'all' : 'strong',
   }
 }
 

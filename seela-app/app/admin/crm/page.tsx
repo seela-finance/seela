@@ -16,11 +16,14 @@ import { isSecretBoxConfigured } from '@/lib/secret-box'
 import { isLemlistConfigured, syncLemlist } from '@/lib/lemlist-sync'
 import { syncIsDue, syncIsRunning } from '@/lib/crm-lemlist'
 
-type SyncState = { last_run_at: string | null; running_since: string | null; last_error: string | null; last_result: { imported: number } | null } | null
+type SyncState = { last_run_at: string | null; running_since: string | null; last_error: string | null; last_result: { imported: number; remaining?: number } | null } | null
 type Task = { id: string; title: string; due_date: string | null; priority: string; company_id: string | null; companies: { name: string } | null }
 type Mention = { crm_activities: { id: string; type: string; body: string | null; occurred_at: string; author_id: string | null; company_id: string | null; companies: { name: string } | null } | null }
 
 const BUCKET_TAG: Record<TaskBucket, string> = { retard: 'ev-tag ev-tag--danger', aujourdhui: 'ev-tag ev-tag--warning', a_venir: 'ev-tag', sans_date: 'ev-tag' }
+
+// La synchro Lemlist (bouton ou arrière-plan) travaille jusqu'à 3 min par passage
+export const maxDuration = 300
 
 export default async function CrmHomePage() {
   const admin = await requireCapability('crm')
@@ -39,7 +42,6 @@ export default async function CrmHomePage() {
     ])
     : [none, none, none, none, none, []]
   const lemlist = syncRes.data as SyncState
-  // Verrou de la synchro : 5 min au plus (au-delà, considéré comme interrompu)
   const lemlistRunning = syncIsRunning(lemlist?.running_since ?? null, new Date())
   // Synchro Lemlist en arrière-plan, après l'affichage, au plus toutes les 15 min (l'historique complet se lance au bouton)
   if (db && isLemlistConfigured() && lemlist?.last_run_at && syncIsDue(lemlist.last_run_at, new Date())) {
@@ -128,7 +130,7 @@ export default async function CrmHomePage() {
               <div className="flex flex-col gap-2 text-sm">
                 <p style={{ color: 'var(--ink-2)' }}>
                   {lemlist?.last_run_at
-                    ? <>Dernière synchronisation {fmtDateTime(lemlist.last_run_at)}{lemlist.last_result ? ` · ${lemlist.last_result.imported} importé(s)` : ''}. Automatique toutes les 15 min quand le CRM est ouvert.</>
+                    ? <>Dernière synchronisation {fmtDateTime(lemlist.last_run_at)}{lemlist.last_result ? ` · ${lemlist.last_result.imported} importé(s)` : ''}.{lemlist.last_result?.remaining ? ` Rattrapage en cours : ${lemlist.last_result.remaining} événement(s) restant(s), repris au prochain passage.` : ' À jour.'} Automatique toutes les heures, et toutes les 15 min quand le CRM est ouvert.</>
                     : 'Jamais synchronisé. Importez l’historique de vos campagnes : envois, réponses, leads intéressés et LinkedIn arrivent sur les fiches.'}
                 </p>
                 {lemlistRunning

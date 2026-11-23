@@ -54,6 +54,7 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
           <span className="font-medium" style={{ color: 'var(--ink)' }}>Leads</span> <span className="ev-mono text-xs">{all.length}</span>
           <span className="hidden sm:inline"> · qualification inbound et prospection outbound, avant les deals</span>
         </span>
+        <Link href="/admin/crm/prospection/ajouter" className="ev-btn ev-btn--primary ev-btn--sm">Ajouter des leads outbound</Link>
       </div>
       <div className="px-6 pt-3 flex flex-wrap items-center justify-between gap-2 border-b" style={{ borderColor: 'var(--line)' }}>
         <div className="flex gap-1" role="tablist" aria-label="Canal">
@@ -69,13 +70,13 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
         </div>
         <details className="pb-2">
           <summary className="text-sm cursor-pointer" style={{ color: 'var(--ink-3)' }}>Réglages</summary>
-          <div className="ev-card p-4 mt-2"><PrepipeSettingsForm ownerId={settings.ownerId} threshold={settings.threshold} team={team} /></div>
+          <div className="ev-card p-4 mt-2"><PrepipeSettingsForm ownerId={settings.ownerId} threshold={settings.threshold} autoEntry={settings.autoEntry} team={team} /></div>
         </details>
       </div>
 
       {all.length === 0 && (
         <p className="px-6 py-10 text-sm text-center" style={{ color: 'var(--ink-3)' }}>
-          Le pré-pipe est vide. Les leads y entrent depuis Lemlist (séquence à {Math.round(settings.threshold * 100)} %, intéressé, réponse, clic), à l’inscription sur l’app, par le formulaire expert, ou depuis une fiche société.
+          Le pré-pipe est vide. Les leads y entrent seuls depuis Lemlist ({settings.autoEntry === 'all' ? `intéressé, réponse, clic ou séquence à ${Math.round(settings.threshold * 100)} %` : 'intéressé ou réponse'}), à l’inscription sur l’app, par le formulaire expert, ou à la main avec « Ajouter des leads outbound ».
         </p>
       )}
 
