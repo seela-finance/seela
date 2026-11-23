@@ -10,6 +10,9 @@ import { parseContactInput } from '@/lib/crm-activities'
 import { isDealStage, parseContactPatch, parseDealInput, DEAL_STAGE_LABEL } from '@/lib/crm-deals'
 import { createAdminClient, isServiceRoleConfigured, SERVICE_ROLE_MISSING_MESSAGE } from '@/lib/supabase/admin'
 import { syncLemlist } from '@/lib/lemlist-sync'
+import { enterPrepipe, getCrmSettings } from '@/lib/crm-prepipe-store'
+import { outboundProfile, selectionEntry } from '@/lib/crm-outbound'
+import { loadLemlistEvents } from '@/lib/crm-outbound-load'
 import { checkPhoneEnrichment, isFullEnrichConfigured, startPhoneEnrichment } from '@/lib/fullenrich'
 import { syncMailbox, testImapLogin, type Mailbox } from '@/lib/mailbox-sync'
 import { isSecretBoxConfigured, seal } from '@/lib/secret-box'
@@ -119,7 +122,8 @@ export async function syncLemlistAction(_: CrmFormState, form: FormData): Promis
       throw new CrmError(result.skipped)
     }
     await logAdminEvent(admin, { action: 'CRM : synchronisation Lemlist', after: result })
-    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.leadsCompleted} fiche(s) complétée(s) depuis Lemlist, ${result.batchLeads} lead(s) ajouté(s) à un batch, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.` }
+    const more = result.remaining ? ` Il reste ${result.remaining} événement(s) : la suite est reprise automatiquement au prochain passage (ou relancez).` : ''
+    return { message: `${result.imported} événement(s) importé(s), ${result.emailsWithContent} email(s) complet(s), ${result.leadsEntered} société(s) entrée(s) ou avancée(s) dans le pré-pipe, ${result.leadsCompleted} fiche(s) complétée(s) depuis Lemlist, ${result.batchLeads} lead(s) ajouté(s) à un batch, ${result.contactsCreated} contact(s) et ${result.companiesCreated} société(s) créés.${more}` }
   })
 }
 
@@ -170,17 +174,53 @@ export async function disconnectMailboxAction(): Promise<CrmFormState> {
 export async function saveCrmSettingsAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
   return guard(async ({ admin, db, teamIds }) => {
     const owner = String(form.get('prepipe_owner') ?? '')
-    const threshold = Number(form.get('sequence_threshold'))
+    // « strong » ou « all:<seuil> »
+    const [mode, rawThreshold] = String(form.get('auto_entry') ?? 'strong').split(':')
+    if (mode !== 'strong' && mode !== 'all') throw new CrmError('Réglage d’entrée invalide.')
+    const threshold = mode === 'all' ? Number(rawThreshold) : null
     if (owner && !teamIds.includes(owner)) throw new CrmError('Propriétaire inconnu.')
-    if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) throw new CrmError('Seuil invalide.')
+    if (threshold !== null && (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1)) throw new CrmError('Seuil invalide.')
     const now = new Date().toISOString()
     const { error } = await db.from('crm_settings').upsert([
       { key: 'prepipe_owner', value: owner || null, updated_at: now },
-      { key: 'sequence_threshold', value: threshold, updated_at: now },
+      { key: 'lemlist_auto_entry', value: mode, updated_at: now },
+      ...(threshold !== null ? [{ key: 'sequence_threshold', value: threshold, updated_at: now }] : []),
     ])
     if (error) throw error
-    await logAdminEvent(admin, { action: 'CRM : réglages du pré-pipe', after: { prepipe_owner: owner || null, sequence_threshold: threshold } })
+    await logAdminEvent(admin, { action: 'CRM : réglages du pré-pipe', after: { prepipe_owner: owner || null, lemlist_auto_entry: mode, sequence_threshold: threshold } })
     return { message: 'Réglages enregistrés. Ils s’appliquent aux prochains leads.' }
+  })
+}
+
+// ─── Base outbound : l'équipe choisit les sociétés qui entrent dans le pré-pipe ───
+
+export async function addToPrepipeAction(ids: string[]): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    const chosen = [...new Set(ids.filter(isUuid))].slice(0, 500)
+    if (!chosen.length) throw new CrmError('Aucune société choisie.')
+    const [settings, events] = await Promise.all([getCrmSettings(db), loadLemlistEvents(db, chosen)])
+    let added = 0
+    for (const id of chosen) {
+      const { warmth } = outboundProfile(events.get(id) ?? [], new Map())
+      const entry = selectionEntry(warmth)
+      if (await enterPrepipe(db, id, { channel: 'outbound', ...entry }, settings)) added++
+    }
+    await logAdminEvent(admin, { action: 'CRM : sociétés ajoutées au pré-pipe outbound', after: { chosen: chosen.length, added } })
+    const skipped = chosen.length - added
+    return { message: `${added} société${added > 1 ? 's' : ''} ajoutée${added > 1 ? 's' : ''} au pré-pipe outbound.${skipped ? ` ${skipped} déjà dans le pré-pipe, cliente ou exclue : inchangée${skipped > 1 ? 's' : ''}.` : ''}` }
+  })
+}
+
+export async function saveBatchSegmentAction(_: CrmFormState, form: FormData): Promise<CrmFormState> {
+  return guard(async ({ admin, db }) => {
+    const id = String(form.get('batch_id') ?? '')
+    const segment = String(form.get('segment') ?? '').trim().slice(0, 200) || null
+    if (!isUuid(id)) throw new CrmError('Batch inconnu.')
+    const { data, error } = await db.from('crm_batches').update({ segment, updated_at: new Date().toISOString() }).eq('id', id).select('id').maybeSingle()
+    if (error) throw error
+    if (!data) throw new CrmError('Batch inconnu.')
+    await logAdminEvent(admin, { action: 'CRM : segment d’un batch', after: { batch_id: id, segment } })
+    return { message: segment ? `Segment enregistré : ${segment}.` : 'Segment retiré.' }
   })
 }
 

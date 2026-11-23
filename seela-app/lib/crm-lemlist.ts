@@ -84,6 +84,21 @@ export function newSince(all: LemlistActivity[], cursor: string | null): MappedA
     .sort((x, y) => x.occurredAt.localeCompare(y.occurredAt))
 }
 
+/**
+ * Découpe les événements (déjà triés du plus ancien au plus récent) en tranches d'environ `size`, sans jamais séparer
+ * deux événements de même date : la reprise se fait sur la date du dernier événement traité.
+ */
+export function chunkByTime<T extends { occurredAt: string }>(events: T[], size: number): T[][] {
+  const out: T[][] = []
+  let cur: T[] = []
+  for (const e of events) {
+    if (cur.length >= size && cur.at(-1)!.occurredAt !== e.occurredAt) { out.push(cur); cur = [] }
+    cur.push(e)
+  }
+  if (cur.length) out.push(cur)
+  return out
+}
+
 /** Nom de la société à créer pour un lead inconnu : celui donné dans Lemlist, sinon le domaine. */
 export function companyNameFor(lead: MappedActivity['lead']): string | null {
   return lead.companyName ?? lead.domain
@@ -91,9 +106,11 @@ export function companyNameFor(lead: MappedActivity['lead']): string | null {
 
 export const SYNC_EVERY_MS = 15 * 60 * 1000
 
-/** Une synchro a démarré il y a moins de 15 min (au-delà, considérée comme interrompue). */
+/** Durée au-delà de laquelle une synchro démarrée est considérée comme interrompue (le serveur la coupe à 5 min). */
+export const SYNC_LOCK_MS = 6 * 60 * 1000
+
 export function syncIsRunning(runningSince: string | null, now: Date): boolean {
-  return !!runningSince && now.getTime() - Date.parse(runningSince) < 15 * 60 * 1000
+  return !!runningSince && now.getTime() - Date.parse(runningSince) < SYNC_LOCK_MS
 }
 
 export function syncIsDue(lastRunAt: string | null, now: Date): boolean {

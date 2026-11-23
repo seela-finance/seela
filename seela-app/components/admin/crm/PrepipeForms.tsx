@@ -68,7 +68,7 @@ export function ExitReasonField() {
   )
 }
 
-export function PrepipeSettingsForm({ ownerId, threshold, team }: { ownerId: string | null; threshold: number; team: { id: string; name: string }[] }) {
+export function PrepipeSettingsForm({ ownerId, threshold, autoEntry, team }: { ownerId: string | null; threshold: number; autoEntry: 'strong' | 'all'; team: { id: string; name: string }[] }) {
   const [state, submit, pending] = useActionState<CrmFormState, FormData>(saveCrmSettingsAction, null)
   return (
     <form action={submit} className="flex flex-wrap items-end gap-3 text-sm">
@@ -80,9 +80,10 @@ export function PrepipeSettingsForm({ ownerId, threshold, team }: { ownerId: str
         </select>
       </div>
       <div>
-        <label htmlFor="ps-threshold" className="ev-label">Entrée outbound à (séquence Lemlist)</label>
-        <select id="ps-threshold" name="sequence_threshold" defaultValue={String(threshold)} className="ev-input">
-          {[0.33, 0.5, 0.6, 0.67, 0.75, 1].map(t => <option key={t} value={t}>{Math.round(t * 100)} %</option>)}
+        <label htmlFor="ps-auto" className="ev-label">Entrée automatique depuis Lemlist</label>
+        <select id="ps-auto" name="auto_entry" defaultValue={autoEntry === 'all' ? `all:${threshold}` : 'strong'} className="ev-input">
+          <option value="strong">Intéressé ou réponse seulement (le reste au choix)</option>
+          {[0.33, 0.5, 0.6, 0.67, 0.75, 1].map(t => <option key={t} value={`all:${t}`}>Aussi au clic et à {Math.round(t * 100)} % de séquence</option>)}
         </select>
       </div>
       <button type="submit" className="ev-btn ev-btn--ghost ev-btn--sm" disabled={pending}>{pending ? 'Enregistrement…' : 'Enregistrer'}</button>
