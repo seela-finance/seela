@@ -75,8 +75,9 @@ export default function MetiersHub() {
           </div>
         </section>
 
-        <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
-          <div className="lp-wrap" style={{ textAlign: 'center', maxWidth: 560 }}>
+        <section className="lp-section--tight">
+          <div className="lp-wrap">
+          <div className="mk-cta-center" style={{ marginTop: 0 }}>
             <h2 className="lp-h2">Votre métier n&apos;est pas listé ?</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 460 }}>
               Si c&apos;est un actif physique professionnel, ça se finance. Déposez un devis pour vérifier votre éligibilité.
@@ -84,6 +85,7 @@ export default function MetiersHub() {
             <div className="lp-cta-row" style={{ marginTop: 28 }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
             </div>
+          </div>
           </div>
         </section>
       </main>
