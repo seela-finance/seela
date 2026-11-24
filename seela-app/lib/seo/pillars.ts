@@ -118,11 +118,11 @@ export const PILLARS: Pillar[] = [
   },
   {
     slug: 'courtier-financement-equipement-professionnel',
-    metaTitle: 'Courtier en financement d’équipement professionnel',
+    metaTitle: 'Courtier en financement de matériel professionnel',
     metaDescription:
       "everlease, votre courtier en financement de matériel professionnel : un seul dossier présenté à plusieurs financeurs adaptés. Location financière, crédit-bail, LLD, lease-back. Estimation en ligne.",
     kicker: 'Courtier en financement',
-    h1: 'Votre courtier en financement d’équipement professionnel',
+    h1: 'Votre courtier en financement de matériel professionnel',
     standfirst:
       "Un courtier en financement d'équipement est un intermédiaire qui prépare votre dossier et le présente à plusieurs financeurs à votre place, au lieu de les démarcher un par un. everlease joue ce rôle : vous déposez votre devis une fois, nous structurons le dossier et le présentons à des financeurs adaptés à votre projet.",
     valueProps: [

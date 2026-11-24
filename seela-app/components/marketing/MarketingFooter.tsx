@@ -64,7 +64,7 @@ export default function MarketingFooter() {
           <p className="legal" style={{ margin: 0 }}>Les montants affichés sur cette page sont des exemples illustratifs, hors assurance et services. Tout financement est soumis à l&apos;acceptation du dossier par le financeur, qui fixe seul ses conditions.</p>
         </div>
         <div className="foot__bottom legal">
-          <span>© 2026 Everlease SAS</span>
+          <span>© 2026 everlease</span>
           <span><Link href="/mentions-legales">Mentions légales</Link> · <Link href="/confidentialite">Confidentialité</Link></span>
         </div>
       </div>
