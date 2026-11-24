@@ -175,6 +175,8 @@ export type PartnerRequestRow = {
   offers: { monthly_payment: number | string | null; duration_months: number | null; status: string; selected: boolean | null }[] | null
   /** Pièces du client (chargées à part) : « 2/3 » dans le suivi, pour que le partenaire relance */
   pieces?: { done: number; total: number } | null
+  /** Demandes ouvertes du client sur son contrat : nature et état seulement, jamais le contenu */
+  openRequests?: string | null
 }
 
 export type PartnerLine = {
@@ -190,6 +192,7 @@ export type PartnerLine = {
   contractEnd: string | null
   createdAt: string
   pieces: { done: number; total: number } | null
+  openRequests: string | null
 }
 
 const toNum = (v: number | string | null | undefined) => (v == null || v === '' ? null : Number(v))
@@ -244,6 +247,7 @@ export function partnerLine(r: PartnerRequestRow): PartnerLine {
     contractEnd: r.status === RS.active ? contractEndDate(r.contract_start_date, durationMonths) : null,
     createdAt: r.created_at,
     pieces: r.pieces ?? null,
+    openRequests: r.openRequests ?? null,
   }
 }
 

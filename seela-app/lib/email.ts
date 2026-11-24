@@ -451,3 +451,52 @@ export function emailClientContractPieces({ userEmail, companyName, requestRef }
 </div>`,
   }
 }
+
+// ─── Demandes du client sur son contrat (docs/contrat-client.md) ────────────
+
+/** Un client a fait une demande sur son contrat : l'équipe la traite depuis la fiche dossier. Envoyé même hors production. */
+export function emailTeamContractRequest({ companyName, requestRef, requestId, kindLabel, message }: {
+  companyName: string; requestRef: string; requestId: string; kindLabel: string; message: string
+}) {
+  return {
+    to: TEAM_EMAILS,
+    alwaysSend: true,
+    subject: `[everlease] Demande client — ${oneLine(kindLabel)} · ${oneLine(companyName)} · ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">${esc(kindLabel)}</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)} · ${esc(requestRef)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0;white-space:pre-line;border-left:3px solid #141517;padding-left:12px">${esc(message)}</p>
+  </div>
+  <p style="font-size:13px;margin:0 0 20px">À prendre en charge sous 24 h ouvrées : le client voit l'état de sa demande sur sa fiche contrat.</p>
+  <p style="margin-bottom:24px"><a href="${APP_URL}/admin/dossiers/${esc(requestId)}" style="display:inline-block;padding:10px 20px;background:#141517;color:#fff;border-radius:999px;text-decoration:none;font-size:13px;font-weight:500">Ouvrir le dossier</a></p>
+</div>`,
+  }
+}
+
+/** L'équipe a répondu : le client lit la réponse sur sa fiche contrat. */
+export function emailClientContractRequestAnswered({ userEmail, companyName, requestRef, requestId, kindLabel, answer }: {
+  userEmail: string; companyName: string; requestRef: string; requestId: string; kindLabel: string; answer: string
+}) {
+  return {
+    to: userEmail,
+    subject: `[everlease] Réponse à votre demande — ${oneLine(kindLabel)} · ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Votre conseiller a répondu</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)} · ${esc(kindLabel)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0;white-space:pre-line;border-left:3px solid #141517;padding-left:12px">${esc(answer)}</p>
+  </div>
+  <p style="margin-bottom:24px"><a href="${APP_URL}/app/contrats/${esc(requestId)}" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Voir mon contrat</a></p>
+  <p style="font-size:13px;color:#6B6F76">Réf. ${esc(requestRef)}. Une question ? <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+</div>`,
+  }
+}
