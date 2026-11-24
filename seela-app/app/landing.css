@@ -508,7 +508,7 @@
 
 /* ----- footer ----- */
 .lp .foot{background:var(--surface);border-top:1px solid var(--line);padding:var(--sp-8) 0 var(--sp-6)}
-.lp .foot__grid{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:40px}
+.lp .foot__grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:36px}
 .lp .foot__col{display:flex;flex-direction:column;gap:9px}
 .lp .foot__lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
 .lp .foot__col a{font-size:14px;color:var(--ink-2)}

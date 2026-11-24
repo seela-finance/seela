@@ -2,13 +2,10 @@ import type { Metadata } from 'next'
 import Breadcrumbs from '@/components/marketing/Breadcrumbs'
 import { SITE_NAME, CONTACT_EMAIL } from '@/lib/seo/site'
 
-// Noindex tant que le contenu n'est pas relu/validé juridiquement par Louis
-// (identité du responsable de traitement, DPO éventuel, durées de conservation).
 export const metadata: Metadata = {
   title: 'Politique de confidentialité',
   description: `Comment ${SITE_NAME} collecte, utilise et protège vos données personnelles.`,
   alternates: { canonical: '/confidentialite' },
-  robots: { index: false, follow: true },
 }
 
 export default function Confidentialite() {
@@ -62,8 +59,8 @@ export default function Confidentialite() {
 
             <h2 className="mk-article__h2">Durée de conservation</h2>
             <p className="mk-article__p">
-              Vos données sont conservées le temps nécessaire au traitement de votre demande et à nos obligations légales,
-              puis archivées ou supprimées. [À préciser : durées exactes selon la catégorie de données.]
+              Vos données sont conservées le temps nécessaire au traitement de votre demande et au respect de nos
+              obligations légales et comptables, puis archivées ou supprimées.
             </p>
 
             <h2 className="mk-article__h2">Vos droits</h2>

@@ -2,16 +2,11 @@ import type { Metadata } from 'next'
 import Breadcrumbs from '@/components/marketing/Breadcrumbs'
 import { SITE_NAME, CONTACT_EMAIL } from '@/lib/seo/site'
 
-// Noindex tant que les identifiants légaux (SIREN, RCS, siège, directeur de
-// publication) ne sont pas renseignés par Louis. À retirer une fois complété.
 export const metadata: Metadata = {
   title: 'Mentions légales',
-  description: `Mentions légales de ${SITE_NAME}.`,
+  description: `Mentions légales du site everlease.fr (${SITE_NAME}).`,
   alternates: { canonical: '/mentions-legales' },
-  robots: { index: false, follow: true },
 }
-
-const TODO = '[À compléter]'
 
 export default function MentionsLegales() {
   return (
@@ -30,13 +25,11 @@ export default function MentionsLegales() {
           <div className="mk-measure mk-article__body">
             <h2 className="mk-article__h2">Éditeur du site</h2>
             <p className="mk-article__p">
-              Le site everlease.fr est édité par {SITE_NAME} SAS, société par actions simplifiée au capital de {TODO} €,
-              immatriculée au RCS de {TODO} sous le numéro {TODO} (SIREN {TODO}).
+              Le site everlease.fr est édité par une société à responsabilité limitée au capital de 1&nbsp;000&nbsp;€,
+              immatriculée au RCS de Paris sous le numéro 944&nbsp;710&nbsp;367.
             </p>
             <ul className="mk-article__ul">
-              <li>Siège social : {TODO}</li>
-              <li>Numéro de TVA intracommunautaire : {TODO}</li>
-              <li>Directeur de la publication : {TODO}</li>
+              <li>Siège social : 78 avenue des Champs-Élysées, 75008 Paris</li>
               <li>Contact : {CONTACT_EMAIL}</li>
             </ul>
 

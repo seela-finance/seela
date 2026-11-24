@@ -5,6 +5,15 @@ import Link from 'next/link'
 import Brand from '@/components/landing/Brand'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import { SECTORS } from '@/lib/seo/sectors'
+import { METIERS } from '@/lib/seo/metiers'
+import { PILLARS } from '@/lib/seo/pillars'
+
+// Libellés courts pour les pages money dans le footer.
+const PILLAR_LABELS: Record<string, string> = {
+  'financement-materiel-professionnel': 'Financement matériel pro',
+  'leasing-materiel-professionnel': 'Leasing matériel pro',
+  'courtier-financement-equipement-professionnel': 'Courtier en financement',
+}
 
 export default function MarketingFooter() {
   return (
@@ -17,8 +26,11 @@ export default function MarketingFooter() {
             <p className="legal" style={{ margin: '6px 0 0' }}>Location financière · Crédit-bail · LLD · LOA · Lease-back</p>
           </div>
           <div className="foot__col">
-            <div className="foot__lbl">Solutions</div>
+            <div className="foot__lbl">Financement</div>
             <Link href="/solutions">Tous les financements</Link>
+            {PILLARS.map((p) => (
+              <Link key={p.slug} href={`/${p.slug}`}>{PILLAR_LABELS[p.slug] ?? p.metaTitle}</Link>
+            ))}
             {SOLUTIONS.map((s) => (
               <Link key={s.slug} href={`/solutions/${s.slug}`}>{s.nav}</Link>
             ))}
@@ -28,6 +40,13 @@ export default function MarketingFooter() {
             <Link href="/secteurs">Tous les secteurs</Link>
             {SECTORS.map((s) => (
               <Link key={s.slug} href={`/secteurs/${s.slug}`}>{s.nav}</Link>
+            ))}
+          </div>
+          <div className="foot__col">
+            <div className="foot__lbl">Métiers</div>
+            <Link href="/metiers">Tous les métiers</Link>
+            {METIERS.map((m) => (
+              <Link key={m.slug} href={`/metiers/${m.slug}`}>{m.nav}</Link>
             ))}
           </div>
           <div className="foot__col">
@@ -45,7 +64,7 @@ export default function MarketingFooter() {
           <p className="legal" style={{ margin: 0 }}>Les montants affichés sur cette page sont des exemples illustratifs, hors assurance et services. Tout financement est soumis à l&apos;acceptation du dossier par le financeur, qui fixe seul ses conditions.</p>
         </div>
         <div className="foot__bottom legal">
-          <span>© 2026 Everlease SAS</span>
+          <span>© 2026 everlease</span>
           <span><Link href="/mentions-legales">Mentions légales</Link> · <Link href="/confidentialite">Confidentialité</Link></span>
         </div>
       </div>

@@ -1,18 +1,23 @@
 import { test, expect } from '@playwright/test'
 import { SECTORS } from '../../lib/seo/sectors'
 import { SOLUTIONS } from '../../lib/seo/solutions'
+import { METIERS } from '../../lib/seo/metiers'
+import { PILLARS } from '../../lib/seo/pillars'
 import { publishedArticles } from '../../lib/seo/blog'
 
 // Chaque page SEO doit répondre, avoir un h1 et un canonical.
 const pages = [
   '/solutions',
   '/secteurs',
+  '/metiers',
   '/distributeurs',
   '/blog',
   '/mentions-legales',
   '/confidentialite',
+  ...PILLARS.map(p => `/${p.slug}`),
   ...SOLUTIONS.map(s => `/solutions/${s.slug}`),
   ...SECTORS.map(s => `/secteurs/${s.slug}`),
+  ...METIERS.map(m => `/metiers/${m.slug}`),
   ...publishedArticles().map(a => `/blog/${a.slug}`),
 ]
 
@@ -94,6 +99,32 @@ test.describe('Blog', () => {
     if (await burger.isVisible()) await burger.click()
     await page.getByRole('navigation').getByRole('link', { name: 'Blog', exact: true }).first().click()
     await expect(page).toHaveURL(/\/blog$/)
+  })
+})
+
+test.describe('Métiers & pages money', () => {
+  test('une page métier respecte les règles de vérité', async ({ page }) => {
+    await page.goto(`/metiers/${METIERS[0].slug}`)
+    const text = (await page.locator('main').innerText()).toLowerCase()
+    expect(text).toContain('exemple illustratif')
+    expect(text).toContain("sous réserve d'acceptation du dossier par le financeur")
+    for (const forbidden of ['grenke', 'bnp', 'leasecom', 'meilleures conditions']) {
+      expect(text).not.toContain(forbidden)
+    }
+  })
+
+  test('une page money respecte les règles de vérité', async ({ page }) => {
+    await page.goto(`/${PILLARS[0].slug}`)
+    const text = (await page.locator('main').innerText()).toLowerCase()
+    expect(text).toContain("sous réserve d'acceptation du dossier par le financeur")
+    for (const forbidden of ['grenke', 'bnp', 'leasecom', 'meilleures conditions']) {
+      expect(text).not.toContain(forbidden)
+    }
+  })
+
+  test('métier inconnu → 404', async ({ page }) => {
+    const res = await page.goto('/metiers/metier-qui-nexiste-pas')
+    expect(res?.status()).toBe(404)
   })
 })
 
