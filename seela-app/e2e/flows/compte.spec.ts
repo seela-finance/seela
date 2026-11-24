@@ -79,7 +79,8 @@ test('mon compte : le client dépose une pièce, l’équipe la refuse puis la v
     await situation.getByRole('button', { name: 'Dispenser cette pièce' }).click()
     await situation.getByPlaceholder(/Motif interne/).fill('Comptes déjà transmis au financeur')
     await situation.getByRole('button', { name: 'Enregistrer la dispense' }).click()
-    await expect(admin.getByText(/dispense enregistrée/)).toBeVisible()
+    // Le formulaire disparaît avec la ligne « Non requise » : on vérifie l'état, pas le message
+    await expect(situation.getByText('Non requise')).toBeVisible()
 
     await client.goto('/app/dashboard')
     await expect(client.getByText(/Pièces du dossier : 2\/3/)).toBeVisible()

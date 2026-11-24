@@ -21,8 +21,13 @@ function Feedback({ state }: { state: PieceReviewState }) {
 
 /** Décision sur une pièce déposée : valider, ou refuser avec un motif envoyé au client. */
 function ReviewForm({ row, companyId }: { row: PieceView; companyId: string }) {
-  const [state, submit, pending] = useActionState<PieceReviewState, FormData>(reviewPieceAction, null)
   const [refusing, setRefusing] = useState(false)
+  // Décision enregistrée : le champ de motif se referme, le message reste
+  const [state, submit, pending] = useActionState<PieceReviewState, FormData>(async (prev, form) => {
+    const result = await reviewPieceAction(prev, form)
+    if (result?.ok) setRefusing(false)
+    return result
+  }, null)
   if (!row.doc) return null
   return (
     <form action={submit} className="mt-2">
