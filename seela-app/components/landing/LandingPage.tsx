@@ -1,28 +1,33 @@
 'use client'
 
-// Landing everlease v2 — portée du canvas Design « Refonte landing everlease »
-// (Main.dc.html). Thème : une grosse dépense devient un flux régulier.
-// Règles de vérité : financeurs anonymes, aucun délai de financement promis,
-// pas de score live ni d'open banking, chaque chiffre est un « Exemple
-// illustratif » « hors assurance et services », chaque bloc chiffré se ferme
-// par « Sous réserve d'acceptation du dossier par le financeur. ».
+// Home everlease « Aurore » — portée du canvas Design « Home everlease ·
+// exploration design » (24/11/2026). Le produit est montré sur des scènes en
+// dégradé (cobalt, accent clair, crème), la page pose le duo « l'IA lit,
+// notre équipe relit », et quatre secteurs sont mis à la une en photo.
+//
+// Règles de vérité : financeurs désignés par leur type (« Banque », « Loueur
+// spécialisé »), jamais nommés ; aucun délai de financement promis (seul
+// engagement : rappel sous 24 h ouvrées) ; chaque bloc chiffré porte « Montants
+// indicatifs, hors assurance et services. Sous réserve d'acceptation du dossier
+// par le financeur. » ; aucun témoignage ni client inventé.
 //
 // Tout est visible sans JavaScript. Après hydratation, la classe `.js` est
-// posée sur `.lp` et un IntersectionObserver (seuil 0,18, une seule fois)
-// ajoute `.in` sur chaque section `[data-reveal]` : titres révélés ligne par
-// ligne, fondus, pictogrammes et arcs tracés. prefers-reduced-motion saute
-// directement à l'état final. Aucune bibliothèque d'animation.
+// posée sur `.lp` et un IntersectionObserver ajoute `.in` sur chaque section
+// `[data-reveal]`. prefers-reduced-motion saute à l'état final.
 import React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
-import { BtnGauge, Gauge } from './Gauge'
-import SignatureBars from './SignatureBars'
-import QuoteReader from './QuoteReader'
-import DossierFlow from './DossierFlow'
+import { BtnGauge } from './Gauge'
 import ExpertModal, { type ModalKind } from './ExpertModal'
+import { fmt } from './format'
+import { IconBank, IconCheck, IconDoc, IconFactory, IconMedical, IconResto, IconShield, IconStore, IconTool, IconUpload, IconUser } from './icons'
 import { ASSETS } from './pictos'
 import { prefersReducedMotion } from './useInView'
+import { HOME_FAQ, HOME_SECTORS } from '@/lib/seo/home'
+
+const LEGAL_AMOUNTS = "Montants indicatifs, hors assurance et services. Sous réserve d'acceptation du dossier par le financeur."
 
 /* ---------------- Titres révélés ligne par ligne ---------------- */
 function Lines({ lines }: { lines: string[] }) {
@@ -35,187 +40,266 @@ function Lines({ lines }: { lines: string[] }) {
   )
 }
 
+function Check({ off }: { off?: boolean }) {
+  return (
+    <div className={`chk ${off ? 'no' : 'on'}`} aria-hidden="true">
+      {off
+        ? <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 6h6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        : <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6.5l2.6 2.5L10 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+    </div>
+  )
+}
+
+// Même devis fictif que sur la page distributeurs.
+const QUOTE_LINES = [
+  { label: 'Four mixte 10 niveaux', amount: 16900, ok: true },
+  { label: 'Chambre froide positive', amount: 11200, ok: true },
+  { label: 'Lave-vaisselle à capot', amount: 6284, ok: true },
+  { label: 'Caisse tactile et PC de gestion', amount: 2890, ok: true },
+  { label: 'Tables et chaises de salle', amount: 4000, ok: true },
+  { label: 'Installation et mise en service', amount: 1600, ok: false },
+]
+const FINANCEABLE = QUOTE_LINES.filter((l) => l.ok).reduce((sum, l) => sum + l.amount, 0)
+const QUOTE_TOTAL = QUOTE_LINES.reduce((sum, l) => sum + l.amount, 0)
+
 /* ---------------- HERO ---------------- */
 function Hero({ onOpenExpert }: { onOpenExpert: () => void }) {
   return (
-    <header id="hero" className="hero" data-reveal="now">
+    <header id="hero" className="hm-hero" data-reveal="now">
       <div className="wrap">
-        <div className="hero__grid">
-          <div>
-            <h1 className="display h1">
-              <Lines lines={['Payez vos équipements', 'au rythme de', 'votre activité.']} />
-            </h1>
-            <p className="lede hero__sub fade d1">Déposez un devis. Everlease prépare votre dossier et le présente aux financeurs adaptés à votre projet&nbsp;: banques et loueurs spécialisés.</p>
-            <div className="cta-row fade d2">
-              <Link className="btn btn--primary" href="/auth"><BtnGauge />Déposer un devis</Link>
-              <button className="btn btn--ghost" type="button" onClick={onOpenExpert}>Parler à un expert</button>
+        <div className="hm-hero__head">
+          <div className="kicker fade">Financement locatif d&apos;équipements professionnels</div>
+          <h1 className="display h1">
+            <Lines lines={['Payez vos équipements', 'au rythme de votre activité.']} />
+          </h1>
+          <p className="lede fade d1">Déposez un devis. everlease le lit ligne à ligne, notre équipe vérifie le montage, puis votre dossier est présenté aux financeurs adaptés.</p>
+          <div className="cta-row fade d2">
+            <Link className="btn btn--primary" href="/auth"><BtnGauge />Déposer un devis</Link>
+            <button className="btn btn--ghost" type="button" onClick={onOpenExpert}>Parler à un expert</button>
+          </div>
+          <div className="products fade d3">
+            <span>Location financière <i /></span>
+            <span>Crédit-bail <i /></span>
+            <span>LLD <i /></span>
+            <span>LOA <i /></span>
+            <span>Lease-back</span>
+          </div>
+        </div>
+
+        <div className="stage stage--hero hm-stage fade d2" aria-label="Aperçu d'un dossier everlease">
+          <div className="hm-stage__col">
+            <div className="hm-card float">
+              <div className="hm-card__k">Votre devis</div>
+              <div className="hm-file">
+                <span className="hm-tile"><IconDoc size={18} /></span>
+                <div><div className="hm-file__n">devis-cuisine.pdf</div><div className="hm-file__s">6 lignes · {fmt(QUOTE_TOTAL)}&nbsp;€ HT</div></div>
+              </div>
+              <span className="tag tag--ok" style={{ marginTop: 12 }}>Lecture terminée</span>
             </div>
-            <div className="products fade d3">
-              <span>Location financière <i /></span>
-              <span>Crédit-bail <i /></span>
-              <span>LLD <i /></span>
-              <span>LOA <i /></span>
-              <span>Lease-back</span>
+            <div className="hm-card float">
+              <div className="hm-file">
+                <Image className="hm-avatar" src="/landing/equipe.jpg" alt="Une conseillère everlease au téléphone" width={44} height={44} />
+                <div><div className="hm-file__n">Vérifié par notre équipe</div><div className="hm-file__s">Location financière</div><div className="hm-file__s">48 mois</div></div>
+              </div>
+              <p className="hm-quote">«&nbsp;J&apos;ai analysé votre demande et votre société. Vous êtes éligible au financement auprès de plusieurs de nos partenaires.&nbsp;»</p>
             </div>
           </div>
-          <aside className="hero__aside fade d2" aria-label="Ce qu'everlease fait">
-            <div><strong>Un seul dossier</strong>Un devis ou une facture suffit pour commencer. Vous gardez votre fournisseur et votre matériel.</div>
-            <div><strong>Lu par l&apos;IA, vérifié par un expert</strong>Le document est lu ligne à ligne, le montage est vérifié avant toute présentation.</div>
-            <div><strong>Présenté aux financeurs adaptés</strong>Banques et loueurs spécialisés étudient votre dossier. Vous comparez les réponses et vous décidez.</div>
-            <p className="legal" style={{ margin: '6px 0 0' }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-          </aside>
+
+          <div className="hm-doc float">
+            <div className="hm-doc__head">
+              <div className="doc__title">Devis n°&nbsp;2026-0417 · Cuisine de restaurant</div>
+              <div className="small muted">Lu ligne à ligne · montants HT</div>
+            </div>
+            <div className="hm-doc__rows">
+              {QUOTE_LINES.map((l) => (
+                <div className={`hm-line${l.ok ? '' : ' off'}`} key={l.label}>
+                  <Check off={!l.ok} />
+                  <span className="hm-line__l">{l.label}</span>
+                  <span className="hm-line__a">{fmt(l.amount)}&nbsp;€</span>
+                </div>
+              ))}
+            </div>
+            <div className="hm-doc__foot">
+              <span className="hm-card__k">Total finançable</span>
+              <span className="hm-doc__total">{fmt(FINANCEABLE)}&nbsp;€</span>
+            </div>
+          </div>
+
+          <div className="hm-stage__col">
+            <div className="hm-card float">
+              <div className="hm-card__k">Loyer estimé</div>
+              <div className="hm-rent"><b>{fmt(982)}&nbsp;€</b><span>/ mois</span></div>
+              <div className="hm-bars" aria-hidden="true" />
+              <div className="hm-bars__axis"><span>M01</span><span>M48</span></div>
+              <div className="hm-file__s" style={{ marginTop: 8 }}>48 loyers, hors assurance et services.</div>
+            </div>
+            <div className="hm-card float">
+              <div className="hm-card__k">Réponses des financeurs</div>
+              <div className="hm-answers">
+                <div className="hm-answer"><span className="hm-tile hm-tile--sm"><IconBank size={14} /></span><span className="hm-answer__n">Banque</span><span className="tag tag--accent">Reçue</span></div>
+                <div className="hm-answer"><span className="hm-tile hm-tile--sm"><IconTool size={14} /></span><span className="hm-answer__n">Loueur spécialisé</span><span className="tag tag--accent">Reçue</span></div>
+              </div>
+            </div>
+          </div>
         </div>
+        <p className="legal hm-stage__legal">{LEGAL_AMOUNTS}</p>
       </div>
     </header>
   )
 }
 
-/* ---------------- LE PROBLÈME ---------------- */
-function Problem() {
+/* ---------------- BANDE DE RÉASSURANCE ---------------- */
+function Strip() {
   return (
-    <section id="problem" className="sec" data-reveal>
-      <div className="wrap">
-        <div className="kicker fade">Le problème</div>
-        <h2 className="display h2" style={{ marginTop: 14, maxWidth: 900 }}>
-          <Lines lines={['Équiper son entreprise', 'ne devrait pas vider sa trésorerie.']} />
-        </h2>
-        <div className="prob">
-          <div className="fade d1">
-            <div className="n">01</div>
-            <h3>Une seule proposition sur la table.</h3>
-            <p>Celle de votre banque ou de votre fournisseur, sans point de comparaison.</p>
-          </div>
-          <div className="fade d2">
-            <div className="n">02</div>
-            <h3>Du cash immobilisé.</h3>
-            <p>20, 50 ou 100&nbsp;k€ de matériel, c&apos;est autant de moins pour les salaires, les stocks et les imprévus.</p>
-          </div>
-          <div className="fade d3">
-            <div className="n">03</div>
-            <h3>Un dossier chronophage.</h3>
-            <p>Des pièces à rassembler, des interlocuteurs à relancer, des contrats difficiles à lire.</p>
-          </div>
-        </div>
+    <section className="hm-strip" aria-label="Ce qui ne change pas">
+      <div className="wrap hm-strip__in">
+        <div><IconDoc size={18} /><div><b>Un devis suffit</b><span>Vous gardez votre fournisseur et votre matériel.</span></div></div>
+        <div><IconUser size={18} /><div><b>Notre équipe relit chaque dossier</b><span>Rien ne part chez un financeur sans relecture.</span></div></div>
+        <div><IconBank size={18} /><div><b>Des financeurs adaptés</b><span>Banques et loueurs spécialisés, selon votre projet.</span></div></div>
+        <div><IconCheck size={18} /><div><b>Vous décidez</b><span>Vous comparez les réponses reçues, sans engagement.</span></div></div>
       </div>
     </section>
   )
 }
 
-/* ---------------- DÉMONSTRATION : LECTURE DU DEVIS ---------------- */
-function Demo() {
+/* ---------------- L'IA ET L'ÉQUIPE (bloc sombre) ---------------- */
+function Duo() {
   return (
-    <section id="demo" className="sec demo" data-reveal>
-      <div className="wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+    <section className="hm-duo" data-reveal>
+      <div className="wrap hm-duo__grid">
+        <div>
+          <div className="kicker fade">La technologie et le métier</div>
+          <h2 className="display h2" style={{ marginTop: 14 }}>
+            <Lines lines={["L'IA lit chaque ligne.", 'Notre équipe relit chaque dossier.']} />
+          </h2>
+          <p className="lede fade d1" style={{ marginTop: 20, maxWidth: 460, fontSize: 17 }}>La machine fait ce qui prend du temps. L&apos;équipe fait ce qui demande du jugement. Vous avez les deux, sur le même dossier.</p>
+        </div>
+        <div className="hm-duo__cols fade d2">
           <div>
-            <div className="kicker fade">Démonstration</div>
-            <h2 className="display h2" style={{ marginTop: 14 }}>
-              <Lines lines={['Un devis suffit', 'pour commencer.']} />
-            </h2>
+            <div className="hm-duo__lbl hm-duo__lbl--ai">Ce que fait l&apos;IA</div>
+            <div className="hm-duo__row"><b>Elle lit le devis.</b><span>Chaque ligne, chaque quantité, chaque montant HT.</span></div>
+            <div className="hm-duo__row"><b>Elle trie ce qui est finançable.</b><span>Le matériel d&apos;un côté, l&apos;installation et les services de l&apos;autre.</span></div>
+            <div className="hm-duo__row"><b>Elle prépare le dossier.</b><span>Données d&apos;entreprise, pièces, montage proposé.</span></div>
           </div>
-          <span className="tag tag--accent fade d1">Exemple illustratif</span>
+          <div>
+            <div className="hm-duo__lbl">Ce que fait notre équipe</div>
+            <div className="hm-duo__row"><b>Elle vérifie le montage.</b><span>Location financière, crédit-bail, lease-back&nbsp;: le bon produit pour votre projet.</span></div>
+            <div className="hm-duo__row"><b>Elle choisit à qui présenter.</b><span>Les financeurs dont les critères correspondent à votre dossier.</span></div>
+            <div className="hm-duo__row"><b>Elle vous rappelle.</b><span>Sous 24&nbsp;h ouvrées, pour vous dire où en est votre dossier.</span></div>
+          </div>
         </div>
-        <QuoteReader />
       </div>
     </section>
   )
 }
 
-/* ---------------- COMMENT ÇA MARCHE + TRAJET DU DOSSIER ---------------- */
+/* ---------------- COMMENT ÇA MARCHE ---------------- */
 function HowItWorks() {
   return (
     <section id="comment" className="sec" data-reveal>
       <div className="wrap">
-        <div className="kicker fade">Comment ça marche</div>
-        <h2 className="display h2" style={{ marginTop: 14, maxWidth: 820 }}>
-          <Lines lines={['Trois étapes,', 'un seul dossier.']} />
-        </h2>
-        <div className="how__grid">
-          <ol className="steps" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            <li className="step fade d1">
-              <div className="num">01</div>
-              <div><h3>Vous déposez votre devis.</h3><p>Vous gardez votre fournisseur et votre matériel.</p></div>
-            </li>
-            <li className="step fade d2">
-              <div className="num">02</div>
-              <div><h3>Nous préparons le dossier.</h3><p>L&apos;IA lit les documents et un expert vérifie le montage adapté.</p></div>
-            </li>
-            <li className="step fade d3">
-              <div className="num">03</div>
-              <div><h3>Nous le présentons aux financeurs adaptés.</h3><p>Vous comparez les réponses reçues et vous décidez.</p></div>
-            </li>
-          </ol>
-          <DossierFlow />
+        <div className="hm-head">
+          <div>
+            <div className="kicker fade">Comment ça marche</div>
+            <h2 className="display h2" style={{ marginTop: 14 }}><Lines lines={['Trois étapes, un seul dossier.']} /></h2>
+          </div>
+          <p className="lede fade d1" style={{ maxWidth: 420, fontSize: 17 }}>Du devis à la réponse des financeurs, vous suivez le même dossier, au même endroit.</p>
         </div>
+
+        <ol className="hm-steps">
+          <li className="fade d1">
+            <div className="stage stage--soft hm-step__stage">
+              <div className="hm-card float">
+                <div className="hm-drop">
+                  <IconUpload size={22} />
+                  <b>Glissez un devis ou une facture</b>
+                  <span>PDF, JPG ou PNG</span>
+                </div>
+                <div className="hm-answer" style={{ marginTop: 12 }}><IconDoc size={18} /><span className="hm-answer__n">devis-cuisine.pdf<small>Lecture en cours</small></span></div>
+              </div>
+            </div>
+            <div className="hm-step__n">01</div>
+            <h3>Vous déposez votre devis.</h3>
+            <p>Un PDF ou une photo suffit. Vous gardez votre fournisseur, votre matériel et le prix que vous avez négocié.</p>
+          </li>
+          <li className="fade d2">
+            <div className="stage stage--dark hm-step__stage">
+              <div className="hm-doc float">
+                <div className="hm-doc__head"><div className="doc__title" style={{ fontSize: 18 }}>Fiche dossier</div></div>
+                <div className="hm-doc__rows">
+                  <div className="hm-line"><span className="hm-line__l">Identité et ancienneté</span><span className="tag tag--ok">Vérifiées</span></div>
+                  <div className="hm-line"><span className="hm-line__l">Devis lu ligne à ligne</span><span className="tag tag--ok">5 sur 6</span></div>
+                  <div className="hm-line"><span className="hm-line__l">Pièces réunies</span><span className="tag tag--ok">3 / 3</span></div>
+                </div>
+                <div className="hm-doc__foot hm-doc__foot--note">
+                  <Image className="hm-avatar hm-avatar--sm" src="/landing/equipe.jpg" alt="" width={36} height={36} />
+                  <div><b>Notre équipe</b><span>«&nbsp;Montage vérifié. Votre dossier est prêt à être présenté.&nbsp;»</span></div>
+                </div>
+              </div>
+            </div>
+            <div className="hm-step__n">02</div>
+            <h3>Nous préparons le dossier.</h3>
+            <p>Vous voyez ce qui est regardé, les financeurs aussi. Notre équipe relit le tout avant toute présentation.</p>
+          </li>
+          <li className="fade d3">
+            <div className="stage stage--vivid hm-step__stage">
+              <div className="hm-card float">
+                <div className="doc__title" style={{ fontSize: 18 }}>Réponses reçues</div>
+                <div className="hm-answers" style={{ marginTop: 14 }}>
+                  <div className="hm-answer hm-answer--on"><span className="hm-tile hm-tile--md"><IconBank size={16} /></span><span className="hm-answer__n">Banque<small>48 mois</small></span><span className="hm-answer__v">{fmt(982)}&nbsp;€ / mois</span></div>
+                  <div className="hm-answer"><span className="hm-tile hm-tile--md"><IconTool size={16} /></span><span className="hm-answer__n">Loueur spécialisé<small>48 mois</small></span><span className="hm-answer__v">{fmt(1004)}&nbsp;€ / mois</span></div>
+                  <div className="hm-answer"><span className="hm-tile hm-tile--md"><IconStore size={16} /></span><span className="hm-answer__n">Loueur indépendant<small>Étude en cours</small></span><span className="tag">En cours</span></div>
+                </div>
+              </div>
+            </div>
+            <div className="hm-step__n">03</div>
+            <h3>Les financeurs répondent, vous décidez.</h3>
+            <p>Votre dossier est présenté aux financeurs adaptés. Vous comparez les réponses reçues et vous choisissez.</p>
+          </li>
+        </ol>
+        <p className="legal" style={{ margin: '28px 0 0' }}>Montants indicatifs, hors assurance et services. La décision et les conditions restent celles du financeur.</p>
       </div>
     </section>
   )
 }
 
-/* ---------------- UN SCORING PROPRE ET CONTINU ---------------- */
-function Suivi() {
-  return (
-    <section id="suivi" className="sec" style={{ borderTop: '1px solid var(--line)' }} data-reveal>
-      <div className="wrap">
-        <div className="kicker fade">Un scoring propre et continu</div>
-        <h2 className="display h2" style={{ marginTop: 14, maxWidth: 820 }}>
-          <Lines lines={['Votre financement', 'suit votre situation.']} />
-        </h2>
-        <div className="suivi__grid">
-          <div>
-            <p className="lede fade d1">Chaque dossier est qualifié avec les mêmes critères, lisibles et vérifiés par un expert. Et il ne s&apos;arrête pas à la première demande&nbsp;: à chaque nouveau projet, il est réévalué sur votre situation du moment.</p>
-            <div className="pts fade d2" style={{ marginTop: 28 }}>
-              <div><b>Des critères lisibles</b><p>Identité, ancienneté, forme juridique, pièces, actif financé. Vous voyez ce qui est regardé, les financeurs aussi.</p></div>
-              <div><b>Vérifié par un expert</b><p>L&apos;IA prépare, un conseiller valide avant toute présentation. Rien ne part sans relecture.</p></div>
-              <div><b>Réévalué à chaque demande</b><p>Votre dossier évolue avec votre activité. Un nouveau projet repart de votre situation à jour, pas de celle d&apos;il y a deux ans.</p></div>
-            </div>
-            <p className="legal fade d3" style={{ margin: '18px 0 0' }}>Everlease qualifie et présente le dossier. La décision et les conditions restent celles du financeur.</p>
-          </div>
-          <div className="fiche fade d2" aria-label="Fiche dossier d'exemple">
-            <div className="fiche__head">
-              <div>
-                <div className="doc__title">Fiche dossier</div>
-                <div className="small muted">SAS fictive · Restauration · deuxième demande</div>
-              </div>
-              <span className="tag tag--accent">Exemple illustratif</span>
-            </div>
-            <div className="crit"><div><div className="k">Identité et ancienneté</div><div className="d">Registre national des entreprises</div></div><span className="v">Vérifiées</span></div>
-            <div className="crit"><div><div className="k">Forme juridique et dirigeant</div><div className="d">Statuts, représentant légal</div></div><span className="v">Vérifiés</span></div>
-            <div className="crit"><div><div className="k">Devis lu ligne à ligne</div><div className="d">5 lignes finançables sur 6, installation écartée</div></div><span className="v">41&nbsp;274 € HT</span></div>
-            <div className="crit"><div><div className="k">Pièces réunies</div><div className="d">Kbis, dernier bilan, pièce d&apos;identité</div></div><span className="v">3 / 3</span></div>
-            <div className="crit"><div><div className="k">Montage proposé</div><div className="d">Vérifié par un expert everlease</div></div><span className="v neu">Location financière · 48 mois</span></div>
-            <div className="fiche__foot">
-              <Gauge value={0.833} />
-              <div>
-                <div style={{ fontWeight: 600 }}>Prêt à présenter</div>
-                <div className="small muted" style={{ marginTop: 2 }}>Mis à jour à la demande du 12 mai. Réévalué à votre prochain projet, sur votre situation du moment.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
+/* ---------------- SECTEURS À LA UNE ---------------- */
+const SECTOR_ICONS = { resto: IconResto, medical: IconMedical, shield: IconShield, factory: IconFactory }
 
-/* ---------------- TOUT ACTIF PROFESSIONNEL ---------------- */
-function AssetLedger() {
+function Sectors() {
   return (
-    <section id="cats" className="sec" style={{ background: 'var(--surface)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }} data-reveal>
+    <section id="cats" className="sec hm-band" data-reveal>
       <div className="wrap">
-        <div className="cats__head">
+        <div className="hm-head">
           <div>
-            <div className="kicker fade">Tout actif professionnel</div>
-            <h2 className="display h2" style={{ marginTop: 14 }}>
-              <Lines lines={["Si c'est un actif professionnel,", 'parlons-en.']} />
-            </h2>
+            <div className="kicker fade">Pour ceux qui équipent leur métier</div>
+            <h2 className="display hm-h2 fade d1" style={{ marginTop: 14, maxWidth: 900 }}>Une cuisine, un atelier, un cabinet&nbsp;: des matériels différents qui méritent le bon financement.</h2>
           </div>
-          <p className="lede fade d1" style={{ fontSize: 17 }}>Neuf ou déjà acquis. Un équipement, une flotte, un agencement complet. Les catégories ci-dessous sont des repères, pas une limite.</p>
+          <Link className="hm-more fade d1" href="/secteurs">Voir tous les secteurs →</Link>
         </div>
+
+        <div className="hm-sectors fade d2">
+          {HOME_SECTORS.map((s) => {
+            const Ico = SECTOR_ICONS[s.icon]
+            return (
+              <Link className="hm-sector" href={`/secteurs/${s.slug}`} key={s.slug}>
+                <span className="hm-sector__img">
+                  <Image src={s.img} alt={s.alt} fill sizes="(max-width: 600px) 100vw, (max-width: 1080px) 50vw, 300px" style={{ objectFit: 'cover', objectPosition: s.pos }} />
+                </span>
+                <span className="hm-sector__cap">
+                  <Ico size={22} />
+                  <span className="hm-sector__n">{s.lines[0]}<br />{s.lines[1]}</span>
+                  <span className="hm-sector__go">Voir →</span>
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+
         <div className="ledger">
           {ASSETS.map((a, i) => (
             <div className="item" key={a.name}>
-              <div className="idx">{String(i + 1).padStart(2, '0')}</div>
+              <div className="idx">{String(i + 1 + HOME_SECTORS.length).padStart(2, '0')}</div>
               {a.pic}
               <div><div className="nm">{a.name}</div><div className="ex">{a.ex}</div></div>
             </div>
@@ -226,79 +310,45 @@ function AssetLedger() {
   )
 }
 
-/* ---------------- QUEL FINANCEMENT CHOISIR ---------------- */
-const COMPARE: { slug: string; name: string; desc: string; option: string; optionYes?: boolean; services: string; servicesYes?: boolean }[] = [
-  { slug: 'location-financiere', name: 'Location financière', desc: "Vous louez, sans option d'achat.", option: 'Non', services: 'Selon contrat' },
-  { slug: 'credit-bail', name: 'Crédit-bail', desc: "Vous louez avec une option d'achat en fin de contrat.", option: 'Oui', optionYes: true, services: 'Selon contrat' },
-  { slug: 'lld', name: 'LLD', desc: 'Une location longue durée, souvent avec des services.', option: 'Non', services: 'Souvent', servicesYes: true },
-  { slug: 'loa', name: 'LOA', desc: "Une location avec option d'achat.", option: 'Oui', optionYes: true, services: 'Selon contrat' },
-  { slug: 'leaseback', name: 'Lease-back', desc: 'Vous vendez un matériel déjà acheté et vous le louez pour libérer de la trésorerie.', option: 'Selon montage', services: 'Selon contrat' },
-]
-
-function CompareRows() {
-  return (
-    <section id="compare" className="sec" data-reveal>
-      <div className="wrap">
-        <div className="kicker fade">Quel financement choisir</div>
-        <h2 className="display h2" style={{ marginTop: 14, maxWidth: 820 }}>
-          <Lines lines={['Cinq façons de louer,', 'une seule à choisir.']} />
-        </h2>
-        <div className="cmp fade d1">
-          <div className="cmp__row head"><div>Produit</div><div>En une phrase</div><div>Option d&apos;achat</div><div>Services inclus</div><div /></div>
-          {COMPARE.map((c) => (
-            <Link className="cmp__row" href={`/solutions/${c.slug}`} key={c.slug}>
-              <div className="cmp__name">{c.name}</div>
-              <div className="cmp__desc">{c.desc}</div>
-              <div className={c.optionYes ? 'cmp__v yes' : 'cmp__v'}><i />{c.option}</div>
-              <div className={c.servicesYes ? 'cmp__v yes' : 'cmp__v'}><i />{c.services}</div>
-              <div className="cmp__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-            </Link>
-          ))}
-        </div>
-        <p className="legal fade d2" style={{ margin: '16px 0 0' }}>Chaque produit a ses conditions, fixées par le financeur. Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-      </div>
-    </section>
-  )
-}
-
 /* ---------------- FOURNISSEURS ET DISTRIBUTEURS ---------------- */
-function Partners() {
+function Partners({ onOpenFunder }: { onOpenFunder: () => void }) {
   return (
-    <section id="partners" className="partners" data-reveal>
+    <section id="partners" className="hm-dist" data-reveal>
       <div className="wrap">
-        <div className="partners__in">
+        <div className="stage stage--soft hm-dist__in">
           <div>
             <div className="kicker fade">Fournisseurs et distributeurs</div>
-            <h2 className="display h3 fade d1" style={{ marginTop: 12, fontSize: 'clamp(24px, 2.6vw, 34px)' }}>Vous vendez des équipements&nbsp;? Proposez une mensualité à vos clients.</h2>
-            <p className="lede fade d2" style={{ fontSize: 16, marginTop: 10, maxWidth: 640 }}>Votre client garde son devis, vous gardez votre vente&nbsp;: everlease prépare le dossier de financement et le présente aux financeurs adaptés.</p>
+            <h2 className="display hm-h2 fade d1" style={{ marginTop: 14 }}>
+              <span style={{ display: 'block' }}>Vous vendez des équipements&nbsp;?</span>
+              <span style={{ display: 'block' }}>Proposez une mensualité à vos clients.</span>
+            </h2>
+            <p className="lede fade d2" style={{ fontSize: 17, marginTop: 14, maxWidth: 560 }}>Vos commerciaux transmettent le devis, everlease monte le dossier de financement et le présente aux financeurs adaptés.</p>
           </div>
           <Link className="btn btn--ink fade d2" href="/distributeurs">Découvrir l&apos;offre distributeurs</Link>
         </div>
+        <p id="financeurs" className="hm-funders small">Vous êtes financeur&nbsp;? Recevez des dossiers prêts à instruire. <button type="button" onClick={onOpenFunder}>Échanger avec nous →</button></p>
       </div>
     </section>
   )
 }
 
-/* ---------------- POUR LES FINANCEURS (bande sombre) ---------------- */
-function FundersBand({ onOpen }: { onOpen: () => void }) {
+/* ---------------- QUESTIONS FRÉQUENTES ---------------- */
+function Questions() {
   return (
-    <section id="financeurs" className="funders" data-reveal>
+    <section id="questions" className="sec" data-reveal>
       <div className="wrap">
-        <div className="funders__grid">
+        <div className="dist-faq">
           <div>
-            <div className="kicker fade">Pour les financeurs</div>
-            <h2 className="display h2 funders__title" style={{ marginTop: 14 }}>
-              <Lines lines={['Vous êtes financeur ?', 'Recevez des dossiers prêts à instruire.']} />
-            </h2>
-            <p className="lede fade d1" style={{ marginTop: 20, maxWidth: 460, fontSize: 17 }}>Nous apportons des dossiers, pas des classements. Vous instruisez, vous décidez, à vos conditions.</p>
-            <div className="cta-row fade d2" style={{ marginTop: 28 }}>
-              <button className="btn btn--light" type="button" onClick={onOpen}>Échanger avec nous</button>
-            </div>
+            <div className="kicker fade">Questions fréquentes</div>
+            <h2 className="display h2 fade d1" style={{ marginTop: 14 }}>Ce qu&apos;on nous demande avant de déposer un devis.</h2>
           </div>
-          <div className="ready fade d2">
-            <div><span className="n">01</span><div><b>Devis ou facture lus ligne à ligne</b><span className="t">Actif, quantités, montants HT, part finançable identifiée, installation et services écartés.</span></div></div>
-            <div><span className="n">02</span><div><b>Données d&apos;entreprise vérifiées</b><span className="t">Identité, ancienneté, forme juridique, dirigeant, pièces réunies avant transmission.</span></div></div>
-            <div><span className="n">03</span><div><b>Un interlocuteur, un dossier</b><span className="t">Un expert everlease qualifie le montage et suit le client jusqu&apos;à la signature.</span></div></div>
+          <div className="dist-faq__rows fade d1">
+            {HOME_FAQ.map((f) => (
+              <div className="dist-faq__row" key={f.q}>
+                <h3>{f.q}</h3>
+                <p>{f.a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -309,21 +359,18 @@ function FundersBand({ onOpen }: { onOpen: () => void }) {
 /* ---------------- CTA FINAL ---------------- */
 function FinalCta({ onOpenExpert }: { onOpenExpert: () => void }) {
   return (
-    <section id="final" className="final" data-reveal>
+    <section id="final" className="hm-final" data-reveal>
       <div className="wrap">
-        <div className="final__in">
-          <div>
-            <h2 className="display h1" style={{ fontSize: 'clamp(36px, 5.4vw, 76px)' }}>
-              <Lines lines={['Quel est votre', 'prochain équipement ?']} />
-            </h2>
-          </div>
+        <div className="stage stage--dark hm-final__in">
+          <h2 className="display hm-final__t">
+            <Lines lines={['Quel est votre', 'prochain équipement ?']} />
+          </h2>
           <div>
             <div className="cta-row fade d1" style={{ marginTop: 0 }}>
-              <Link className="btn btn--primary" href="/auth"><BtnGauge />Déposer un devis</Link>
-              <button className="btn btn--ghost" type="button" onClick={onOpenExpert}>Parler à un expert</button>
+              <Link className="btn btn--light" href="/auth">Déposer un devis</Link>
+              <button className="btn btn--outline-light" type="button" onClick={onOpenExpert}>Parler à un expert</button>
             </div>
-            <p className="small fade d2" style={{ margin: '16px 0 0', color: 'var(--ink-2)' }}>Un conseiller vous rappelle sous 24&nbsp;h ouvrées.</p>
-            <p className="legal fade d2" style={{ margin: '6px 0 0' }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
+            <p className="small fade d2" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>Notre équipe vous rappelle sous 24&nbsp;h ouvrées. Sous réserve d&apos;acceptation du dossier par le financeur.</p>
           </div>
         </div>
       </div>
@@ -341,8 +388,7 @@ export default function LandingPage() {
 
   // `.js` doit être peint avant que le hero reçoive `.in`, sinon le titre ne
   // part pas de sa position masquée : useLayoutEffect pose `.js` sur le DOM
-  // avant le premier paint hydraté, le rAF suivant révèle le hero. La classe
-  // est ajoutée hors React (className reste « lp ») : rien à réconcilier.
+  // avant le premier paint hydraté, le rAF suivant révèle le hero.
   React.useLayoutEffect(() => {
     rootRef.current?.classList.add('js')
   }, [])
@@ -364,7 +410,7 @@ export default function LandingPage() {
           }
         }
       },
-      { threshold: 0.18 },
+      { threshold: 0.12 },
     )
     let raf = 0
     targets.forEach((t) => {
@@ -381,15 +427,12 @@ export default function LandingPage() {
     <div ref={rootRef} className="lp" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <MarketingNav />
       <Hero onOpenExpert={openExpert} />
-      <SignatureBars />
-      <Problem />
-      <Demo />
+      <Strip />
+      <Duo />
       <HowItWorks />
-      <Suivi />
-      <AssetLedger />
-      <CompareRows />
-      <Partners />
-      <FundersBand onOpen={openFunder} />
+      <Sectors />
+      <Partners onOpenFunder={openFunder} />
+      <Questions />
       <FinalCta onOpenExpert={openExpert} />
       <MarketingFooter />
       {modal && <ExpertModal kind={modal} onClose={closeModal} />}

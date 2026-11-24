@@ -11,6 +11,7 @@ const pages = [
   '/secteurs',
   '/metiers',
   '/distributeurs',
+  '/qui-sommes-nous',
   '/blog',
   '/mentions-legales',
   '/confidentialite',
@@ -94,7 +95,7 @@ test.describe('Blog', () => {
 
   test('le lien Blog de la navigation mène au hub', async ({ page }) => {
     await page.goto('/')
-    // Sous 900px la nav est repliée dans le menu burger.
+    // Sous 1060px la nav est repliée dans le menu burger.
     const burger = page.getByRole('button', { name: /menu/i })
     if (await burger.isVisible()) await burger.click()
     await page.getByRole('navigation').getByRole('link', { name: 'Blog', exact: true }).first().click()
