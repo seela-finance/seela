@@ -48,12 +48,12 @@ test.describe('Page distributeurs', () => {
   test('respecte les règles de vérité', async ({ page }) => {
     await page.goto('/distributeurs')
     const text = (await page.locator('main').innerText()).toLowerCase()
-    // Chaque bloc chiffré est un exemple, sous réserve d'acceptation.
-    expect(text).toContain('exemple illustratif')
+    // Chaque bloc chiffré est indicatif, sous réserve d'acceptation.
+    expect(text).toContain('montants indicatifs')
     expect(text).toContain('hors assurance et services')
     expect(text).toContain("sous réserve d'acceptation du dossier par le financeur")
     // Financeurs anonymes, aucune promesse de conditions ni d'intégration livrée.
-    for (const forbidden of ['grenke', 'bnp', 'leasecom', 'meilleures conditions', 'intégration native']) {
+    for (const forbidden of ['grenke', 'bnp', 'leasecom', 'meilleures conditions', 'intégration native', 'financeur a ·']) {
       expect(text).not.toContain(forbidden)
     }
   })

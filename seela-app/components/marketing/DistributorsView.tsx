@@ -5,13 +5,14 @@
 // plus d'acceptation, un dispositif sur mesure (présenté comme un service à
 // la demande, jamais comme une intégration livrée).
 //
-// Exception voulue au design system : deux blocs sombres sur cette page (le
-// constat et « Pour commencer »), décision de Louis du 17/11/2026.
+// Design « Aurore » (24/11/2026) : les visuels produit sont posés sur des
+// scènes en dégradé, le bloc « Pour commencer » est une scène sombre. Le
+// constat reste un bloc sombre à plat (décision de Louis du 17/11/2026).
 //
-// Règles de vérité : financeurs anonymes, aucun délai de financement promis,
-// chaque chiffre est un « Exemple illustratif » « hors assurance et services »,
-// chaque bloc chiffré se ferme par « Sous réserve d'acceptation du dossier par
-// le financeur. ».
+// Règles de vérité : financeurs désignés par leur type, jamais nommés ; aucun
+// délai de financement promis ; chaque bloc chiffré porte « Montants
+// indicatifs, hors assurance et services. Sous réserve d'acceptation du
+// dossier par le financeur. ».
 //
 // Tout est visible sans JavaScript. Après hydratation, la classe `.js` est
 // posée sur le `.lp` du layout marketing et un IntersectionObserver révèle
@@ -20,7 +21,7 @@ import React from 'react'
 import { BtnGauge, Gauge } from '@/components/landing/Gauge'
 import ExpertModal from '@/components/landing/ExpertModal'
 import { fmt } from '@/components/landing/format'
-import { IconCheck, IconCheckSm, IconDoc, IconLink, IconList, IconUser } from '@/components/landing/icons'
+import { IconBank, IconCheck, IconCheckSm, IconDoc, IconLink, IconList, IconTool, IconUser } from '@/components/landing/icons'
 import { prefersReducedMotion } from '@/components/landing/useInView'
 import { DISTRIBUTORS_FAQ } from '@/lib/seo/distributors'
 import { CONTACT_EMAIL } from '@/lib/seo/site'
@@ -160,7 +161,8 @@ function LessAdmin() {
               </div>
             ))}
           </div>
-          <div className="doc dist-doc fade d2" aria-label="Devis d'exemple lu ligne par ligne">
+          <div className="stage stage--hero dist-stage fade d2">
+          <div className="doc dist-doc float" aria-label="Devis d'exemple lu ligne par ligne">
             <div className="doc__head">
               <div>
                 <div className="doc__title">Devis n°&nbsp;2026-0417 · Cuisine de restaurant</div>
@@ -168,7 +170,6 @@ function LessAdmin() {
               </div>
               <div className="dist-tags">
                 <span className="tag tag--ok">Lecture terminée</span>
-                <span className="tag tag--accent">Exemple illustratif</span>
               </div>
             </div>
             {QUOTE_LINES.map((l) => (
@@ -193,9 +194,10 @@ function LessAdmin() {
               </div>
               <div>
                 <div className="rent"><span className="muted">environ</span><b>{fmt(RENT)}&nbsp;€</b><span className="muted">/ mois sur 48 mois</span></div>
-                <p className="legal">Hors assurance et services. {LEGAL}</p>
+                <p className="legal">Montants indicatifs, hors assurance et services. {LEGAL}</p>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -216,13 +218,13 @@ function MoreAcceptance() {
           <p className="lede fade d1">Un refus tardif coûte une vente et la confiance de votre commercial dans le financement. Nous traitons les deux causes&nbsp;: un dossier présenté trop tôt, et à un seul financeur.</p>
         </div>
         <div className="dist-grid dist-grid--rev">
-          <div className="fiche dist-track fade d1" aria-label="Suivi d'un dossier d'exemple">
+          <div className="stage stage--vivid dist-stage fade d1">
+          <div className="fiche dist-track float" aria-label="Suivi d'un dossier d'exemple">
             <div className="fiche__head">
               <div>
                 <div className="doc__title">Suivi du dossier</div>
-                <div className="small muted">Ce que voit votre commercial · restaurant fictif</div>
+                <div className="small muted">Ce que voit votre commercial</div>
               </div>
-              <span className="tag tag--accent">Exemple illustratif</span>
             </div>
             <div className="dist-step">
               <span className="dist-mark done" aria-hidden="true"><IconCheckSm size={12} /></span>
@@ -231,7 +233,7 @@ function MoreAcceptance() {
             </div>
             <div className="dist-step">
               <span className="dist-mark done" aria-hidden="true"><IconCheckSm size={12} /></span>
-              <div><div className="k">Dossier qualifié</div><div className="d">5 lignes finançables sur 6, pièces réunies, montage vérifié par un expert</div></div>
+              <div><div className="k">Dossier qualifié</div><div className="d">5 lignes finançables sur 6, pièces réunies, montage vérifié par notre équipe</div></div>
               <span className="tag tag--ok">Finançable</span>
             </div>
             <div className="dist-step">
@@ -239,8 +241,8 @@ function MoreAcceptance() {
               <div>
                 <div className="k">Présenté aux financeurs</div>
                 <div className="dist-fins">
-                  <div className="dist-fin"><span>Financeur A · Banque</span><span className="tag tag--accent">Réponse reçue</span></div>
-                  <div className="dist-fin"><span>Financeur B · Loueur spécialisé</span><span className="tag tag--accent">Réponse reçue</span></div>
+                  <div className="dist-fin"><span className="dist-fin__n"><IconBank size={14} />Banque</span><span className="tag tag--accent">Réponse reçue</span></div>
+                  <div className="dist-fin"><span className="dist-fin__n"><IconTool size={14} />Loueur spécialisé</span><span className="tag tag--accent">Réponse reçue</span></div>
                 </div>
               </div>
             </div>
@@ -261,6 +263,7 @@ function MoreAcceptance() {
                 <div className="small" style={{ marginTop: 2, color: 'var(--ink-2)' }}>Un point d&apos;avancement à chaque étape, sans avoir à appeler. {LEGAL}</div>
               </div>
             </div>
+          </div>
           </div>
           <div className="fade d2">
             <div className="dist-pts">
@@ -317,13 +320,13 @@ function Tailored() {
             </div>
             <p className="dist-mods__note">Rien n&apos;est imposé. Vous commencez par un devis, nous ajoutons le reste quand cela a du sens pour votre équipe.</p>
           </div>
-          <div className="dist-quote fade d2" aria-label="Exemple de devis à votre marque avec le loyer affiché">
+          <div className="stage stage--soft dist-stage fade d2">
+          <div className="dist-quote float" aria-label="Exemple de devis à votre marque avec le loyer affiché">
             <div className="dist-quote__head">
               <div className="dist-quote__id">
                 <div className="dist-logo">Votre logo</div>
                 <div><div style={{ fontSize: 15, fontWeight: 600 }}>Votre devis</div><div className="legal">n°&nbsp;2026-0417</div></div>
               </div>
-              <span className="tag tag--accent">Exemple illustratif</span>
             </div>
             <div className="dist-quote__lines">
               <div><span>Équipements de cuisine et de salle</span><span className="amt">{fmt(FINANCEABLE)}&nbsp;€</span></div>
@@ -335,7 +338,8 @@ function Tailored() {
               <div className="v"><b>{fmt(RENT)}&nbsp;€</b><span>HT / mois sur 48 mois</span></div>
               <div className="s">Pour les équipements. L&apos;installation reste réglée au comptant.</div>
             </div>
-            <p className="legal">Hors assurance et services. {LEGAL}</p>
+            <p className="legal">Montants indicatifs, hors assurance et services. {LEGAL}</p>
+          </div>
           </div>
         </div>
       </div>
@@ -375,7 +379,7 @@ function Questions({ onOpen }: { onOpen: () => void }) {
 /* ---------------- POUR COMMENCER (bloc sombre) ---------------- */
 function Start({ onOpen }: { onOpen: () => void }) {
   return (
-    <section id="contact" className="funders dist-sec" data-reveal>
+    <section id="contact" className="funders funders--stage dist-sec" data-reveal>
       <div className="wrap">
         <div className="funders__grid">
           <div>
@@ -388,7 +392,7 @@ function Start({ onOpen }: { onOpen: () => void }) {
               <button className="btn btn--light" type="button" onClick={onOpen}>Présenter votre circuit de vente</button>
               <a className="btn btn--outline-light" href={QUOTE_MAILTO}>Envoyer un devis test</a>
             </div>
-            <p className="small fade d2" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>Un conseiller vous rappelle sous 24&nbsp;h ouvrées.</p>
+            <p className="small fade d2" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>Notre équipe vous rappelle sous 24&nbsp;h ouvrées.</p>
           </div>
           <div className="fade d2">
             <div className="ready">
