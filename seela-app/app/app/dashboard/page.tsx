@@ -6,6 +6,9 @@ import { REQUESTS_TABLE_HEADERS } from '@/components/requests-table-headers'
 import TopActions from '@/components/TopActions'
 import { RS } from '@/lib/status'
 import { loadAccount } from '@/lib/account'
+import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
+import { loadCompanyPieces } from '@/lib/pieces-store'
+import { pieceProgress } from '@/lib/pieces'
 
 function fmt(n: number | null) {
   if (n == null) return '—'
@@ -32,7 +35,12 @@ export default async function DashboardPage() {
 
   const allRequests = requests ?? []
   const firstName = account?.firstName?.trim() || null
-  const showProfileBanner = account?.company?.onboarding_completed === true && !account.company.financial_docs_uploaded
+  // Pièces du dossier (lib/pieces.ts) : la bannière compte ce qui manque, et renvoie vers « Mon compte »
+  let pieces = { done: 0, total: 0 }
+  if (account?.company && isServiceRoleConfigured()) {
+    pieces = pieceProgress(account.company, await loadCompanyPieces(createAdminClient(), account.company.id), 'dossier')
+  }
+  const showProfileBanner = account?.company?.onboarding_completed === true && pieces.done < pieces.total
 
   const activeRequests = allRequests.filter(r => r.status === RS.active)
   const totalEncours = activeRequests.reduce((s: number, r: { total_amount: number | null }) => s + (r.total_amount ?? 0), 0)
@@ -60,15 +68,15 @@ export default async function DashboardPage() {
         >
           <p className="text-sm" style={{ color: 'var(--ink)' }}>
             <span className="font-medium">
-              Complétez votre dossier
+              Pièces du dossier : {pieces.done}/{pieces.total} validée{pieces.done > 1 ? 's' : ''}
             </span>
-            {' '}· Ajoutez vos bilans pour que votre conseiller le présente aux financeurs
+            {' '}· Votre conseiller les vérifie avant de présenter votre dossier aux financeurs
           </p>
           <a
-            href="/app/onboarding"
+            href="/app/compte"
             className="ev-btn ev-btn--sm ev-btn--primary shrink-0 ml-4"
           >
-            Compléter mon profil
+            Déposer mes pièces
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

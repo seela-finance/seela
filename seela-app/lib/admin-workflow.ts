@@ -5,6 +5,7 @@ import { OS, RS, canTransitionOffer, canTransitionRequest, type OfferStatus, typ
 import { requestLabel } from '@/lib/request-label'
 import {
   emailClientEverleaseValidated,
+  emailClientContractPieces,
   emailClientLeaserConfirmed,
   emailClientLeaserRefused,
   emailClientRequestRefused,
@@ -218,6 +219,10 @@ export async function recordLeaserDecision(deps: WorkflowDeps, offerId: string, 
   await sendLogged(deps, request.id, decision === 'confirmed'
     ? emailClientLeaserConfirmed({ ...common, monthlyPayment: offer.monthly_payment, durationMonths: offer.duration_months })
     : emailClientLeaserRefused(common))
+  // Mise en place du contrat : pièce d'identité et RIB, déposés dans « Mon compte » (docs/pieces-et-compte.md)
+  if (decision === 'confirmed') {
+    await sendLogged(deps, request.id, emailClientContractPieces({ userEmail: common.userEmail, companyName: common.companyName, requestRef: common.requestRef }))
+  }
 }
 
 /** Relance possible sur un dossier sans offre, ou resté `submitted` après un matching en échec. */

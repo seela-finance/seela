@@ -9,6 +9,8 @@ import { addRequestNote, recordLeaserDecision, refuseRequest, rerunMatching, val
 import { TransitionError, transitionRequest } from '@/lib/transitions'
 import { parseStartDate } from '@/lib/partner-workflow'
 import { RS } from '@/lib/status'
+import { missingForTransmission, pieceLabels } from '@/lib/pieces'
+import { loadCompanyPieces } from '@/lib/pieces-store'
 import { isUuid } from '@/lib/admin-request-detail'
 import { addManualOffer, parseCounterOffer, parseManualOffer, proposeCounterOffer } from '@/lib/admin-offers'
 import { CreditAnalysisError, runCreditAnalysis } from '@/lib/credit-analyst'
@@ -66,8 +68,26 @@ export async function validateOfferAction(_: ActionState, form: FormData): Promi
   const admin = await memberWith('decide_requests')
   if (!admin) return DENIED
   const offerId = field(form, 'offerId')
-  return run(field(form, 'requestId'), () => validateAndTransmit(workflowDeps(admin), offerId, field(form, 'note')),
-    'Offre validée et transmise au leaser.')
+  const requestId = field(form, 'requestId')
+  return run(requestId, async () => {
+    // Pièces requises (lib/pieces.ts) : sans elles, le dossier ne part qu'avec une dérogation motivée
+    if (isUuid(requestId) && isServiceRoleConfigured()) {
+      const db = createAdminClient()
+      const { data: req } = await db.from('financing_requests').select('company_id, companies ( creation_year )').eq('id', requestId).maybeSingle()
+      const row = req as unknown as { company_id: string | null; companies: { creation_year: number | null } | null } | null
+      if (row?.company_id) {
+        const missing = missingForTransmission(row.companies ?? { creation_year: null }, await loadCompanyPieces(db, row.company_id))
+        if (missing.length) {
+          const forceNote = field(form, 'forceNote').trim()
+          if (form.get('force') !== '1' || forceNote.length < 3) {
+            throw new WorkflowError(`Pièces manquantes : ${pieceLabels(missing)}. Cochez « Transmettre quand même » et indiquez un motif pour passer outre.`)
+          }
+          await logAdminEvent(admin, { action: 'Transmission malgré des pièces manquantes', requestId, after: { pieces: missing }, note: forceNote })
+        }
+      }
+    }
+    await validateAndTransmit(workflowDeps(admin), offerId, field(form, 'note'))
+  }, 'Offre validée et transmise au leaser.')
 }
 
 export async function leaserDecisionAction(_: ActionState, form: FormData): Promise<ActionState> {

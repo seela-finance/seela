@@ -15,6 +15,8 @@ type Props = {
   requestId: string
   // Ce que la fiche autorise selon les statuts (calculé côté serveur avec lib/status.ts)
   canValidate: boolean
+  /** Libellés des pièces requises non validées : la transmission demande alors une dérogation motivée */
+  missingPieces?: string
   awaitingLeaser: boolean
   canRefuse: boolean
   canRerun: boolean
@@ -43,7 +45,7 @@ function Button({ pending, children, tone = 'dark' }: { pending: boolean; childr
   )
 }
 
-export default function RequestActions({ requestId, canValidate, awaitingLeaser, canRefuse, canRerun, offer, leaserPreview }: Props) {
+export default function RequestActions({ requestId, canValidate, missingPieces, awaitingLeaser, canRefuse, canRerun, offer, leaserPreview }: Props) {
   const [rerunState, rerun, rerunning] = useActionState(rerunMatchingAction, null)
   const [validateState, validate, validating] = useActionState(validateOfferAction, null)
   const [decisionState, decide, deciding] = useActionState(leaserDecisionAction, null)
@@ -80,8 +82,16 @@ export default function RequestActions({ requestId, canValidate, awaitingLeaser,
             </details>
           ) : null}
           <textarea name="note" rows={3} placeholder="Mot pour le leaser (facultatif, ajouté à l'email)" className={input} />
+          {missingPieces && (
+            <div className="ev-alert ev-alert--warning space-y-2">
+              <p className="text-sm font-medium">Pièces manquantes : {missingPieces}</p>
+              <p className="text-xs">Le dossier part sans elles seulement avec une dérogation motivée (journalisée).</p>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="force" value="1" /> Transmettre quand même</label>
+              <textarea name="forceNote" rows={2} placeholder="Motif de la dérogation (ex. : pièces envoyées au financeur par email)" className={input} />
+            </div>
+          )}
           <div className="flex items-center gap-3">
-            <Button pending={validating}>Valider et transmettre</Button>
+            <Button pending={validating}>{missingPieces ? 'Transmettre quand même' : 'Valider et transmettre'}</Button>
           </div>
           <ErrorFeedback state={validateState} />
         </form>

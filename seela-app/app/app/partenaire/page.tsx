@@ -85,6 +85,12 @@ export default async function PartenairePage({ searchParams }: { searchParams: P
                   </p>
                   {line.durationMonths != null && <p className="ev-mono text-xs" style={{ color: 'var(--ink-3)' }}>{line.durationMonths} mois</p>}
                 </div>
+                <div className="sm:w-24">
+                  <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Pièces</p>
+                  <p className="ev-mono text-sm" style={{ color: line.pieces && line.pieces.done < line.pieces.total ? 'var(--warning)' : 'var(--ink)' }}>
+                    {line.pieces ? `${line.pieces.done}/${line.pieces.total}` : '—'}
+                  </p>
+                </div>
                 <div className="sm:w-32">
                   <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Fin du contrat</p>
                   <p className="ev-mono text-sm" style={{ color: 'var(--ink)' }}>{line.contractEnd ? DATE(line.contractEnd) : '—'}</p>

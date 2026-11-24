@@ -29,6 +29,10 @@ cleanup('suppression des comptes de test', async () => {
   for (const user of targets) {
     const { data: files } = await db.storage.from('documents').list(user.id)
     if (files?.length) await db.storage.from('documents').remove(files.map(f => `${user.id}/${f.name}`))
+    for (const sub of ['pieces', 'bilans']) {
+      const { data: subFiles } = await db.storage.from('documents').list(`${user.id}/${sub}`)
+      if (subFiles?.length) await db.storage.from('documents').remove(subFiles.map(f => `${user.id}/${sub}/${f.name}`))
+    }
 
     const { data: contact } = await db.from('contacts').select('company_id').eq('user_id', user.id).maybeSingle()
     for (const [table, column] of [
