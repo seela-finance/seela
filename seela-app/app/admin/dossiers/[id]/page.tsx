@@ -22,6 +22,9 @@ import { canAddManualOffer, canCounterOffer } from '@/lib/admin-offers'
 import RequestNote from '@/components/admin/RequestNote'
 import StartContractForm from '@/components/admin/StartContractForm'
 import PiecesSection from '@/components/admin/PiecesSection'
+import ContractRequestsCard from '@/components/admin/ContractRequestsCard'
+import { OPEN_STATUSES } from '@/lib/contract-requests'
+import { loadContractRequests } from '@/lib/contract-requests-store'
 import { missingForTransmission, pieceLabels } from '@/lib/pieces'
 import { loadCompanyPieces } from '@/lib/pieces-store'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
@@ -119,6 +122,9 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const pieceCompany = { creation_year: (companyRow as { creation_year?: number | null } | null)?.creation_year ?? null }
   const missingPieces = request.company_id ? missingForTransmission(pieceCompany, await loadCompanyPieces(db, request.company_id)) : []
   const contractPhase = request.status === RS.leaser_confirmed || request.status === RS.active
+  // Demandes du client sur son contrat (docs/contrat-client.md)
+  const contractRequests = contractPhase ? await loadContractRequests(db, id) : []
+  const openRequests = contractRequests.filter(r => OPEN_STATUSES.some(s => s === r.status)).length
   // Dossier apporté par un distributeur partenaire (parcours distributeur)
   // Source d'acquisition de la société (attribution des leads) : lecture à part, une colonne absente n'empêche pas d'ouvrir la fiche
   const { data: sourceRow } = request.company_id
@@ -387,6 +393,12 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           </Section>
 
           {/* Pièces : contrôle avant transmission, puis identité et RIB pour le contrat */}
+          {contractPhase && (
+            <Section title="Demandes du client" right={openRequests ? <span className="ev-tag ev-tag--accent">{openRequests} ouverte{openRequests > 1 ? 's' : ''}</span> : null}>
+              <ContractRequestsCard rows={contractRequests} canEdit={can(admin.role, 'add_notes')} />
+            </Section>
+          )}
+
           {request.company_id && (
             <Section title="Pièces du dossier" right={missingPieces.length ? <span className="ev-tag ev-tag--warning">{missingPieces.length} manquante{missingPieces.length > 1 ? 's' : ''}</span> : <span className="ev-tag ev-tag--ok">Complètes</span>}>
               <PiecesSection db={db} companyId={request.company_id} company={pieceCompany} withContract={contractPhase} canEdit={decide} />

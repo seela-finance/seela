@@ -10,12 +10,14 @@ import { SparkleGlyph, IconArrowRight, IconCheckSm } from '@/components/landing/
 import { CONTACT_EMAIL } from '@/lib/seo/site'
 import { getSolution } from '@/lib/seo/solutions'
 import { getSector, type Sector } from '@/lib/seo/sectors'
+import { getMetiersForSector } from '@/lib/seo/metiers'
 import Breadcrumbs from './Breadcrumbs'
 import ComparisonTable from './ComparisonTable'
 import ImageSlot from './ImageSlot'
 
 export default function SectorView({ sector }: { sector: Sector }) {
   const related = sector.related.map(getSector).filter(Boolean) as Sector[]
+  const metiers = getMetiersForSector(sector.slug)
 
   return (
     <main>
@@ -164,6 +166,19 @@ export default function SectorView({ sector }: { sector: Sector }) {
       {/* Related + CTA */}
       <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="lp-wrap">
+          {metiers.length > 0 && (
+            <div className="mk-related" style={{ marginBottom: 28 }}>
+              <div className="mk-related__label">Métiers de ce secteur</div>
+              <div className="mk-related__row">
+                {metiers.map((m) => (
+                  <Link key={m.slug} href={`/metiers/${m.slug}`} className="card mk-related__card">
+                    <span style={{ fontWeight: 600 }}>{m.nav}</span>
+                    <IconArrowRight size={14} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mk-related">
             <div className="mk-related__label">Autres secteurs</div>
             <div className="mk-related__row">
