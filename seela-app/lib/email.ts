@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { SENSITIVE_RETENTION_DAYS } from '@/lib/pieces'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -373,6 +374,78 @@ export function emailClientPartnerInvitation({
   </div>
   <p style="margin-bottom:24px"><a href="${esc(link)}" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Voir mon dossier et choisir mon offre</a><br><span style="font-size:12px;color:#6B6F76">Lien personnel, valable 30 jours, réservé à ${esc(clientEmail)}. Aucune carte ni RIB demandé.</span></p>
   <p style="font-size:13px;color:#6B6F76">Une question ? Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>. Réf. ${esc(requestRef)}.</p>
+  <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+</div>`,
+  }
+}
+
+// ─── Pièces du dossier (docs/pieces-et-compte.md) ──────────────────────────
+
+/** Adresses de l'équipe pour les notifications internes (même réglage que le formulaire expert). */
+export const TEAM_EMAILS = (process.env.LEADS_EMAIL ?? 'broutin.louis@gmail.com,aurelien.audelin@gmail.com').split(',').map(s => s.trim()).filter(Boolean)
+
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.everlease.fr').replace(/\/+$/, '')
+
+/** Un client a déposé une pièce : l'équipe la contrôle depuis la fiche société. Envoyé même hors production. */
+export function emailTeamPieceDeposited({ companyName, pieceLabel, companyId }: { companyName: string; pieceLabel: string; companyId: string }) {
+  return {
+    to: TEAM_EMAILS,
+    alwaysSend: true,
+    subject: `[everlease] Pièce à contrôler — ${oneLine(companyName)} · ${oneLine(pieceLabel)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Pièce à contrôler</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <p style="font-size:13px;margin:0 0 20px"><strong>${esc(pieceLabel)}</strong> vient d'être déposée. À valider ou refuser depuis la fiche société.</p>
+  <p style="margin-bottom:24px"><a href="${APP_URL}/admin/crm/societes/${esc(companyId)}" style="display:inline-block;padding:10px 20px;background:#141517;color:#fff;border-radius:999px;text-decoration:none;font-size:13px;font-weight:500">Ouvrir la fiche société</a></p>
+</div>`,
+  }
+}
+
+/** Pièce refusée par l'équipe : le client voit le motif et redépose. */
+export function emailClientPieceRefused({ userEmail, companyName, pieceLabel, note }: { userEmail: string; companyName: string; pieceLabel: string; note: string }) {
+  return {
+    to: userEmail,
+    subject: `[everlease] Une pièce de votre dossier est à redéposer — ${oneLine(pieceLabel)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Une pièce est à redéposer</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0 0 8px">Votre conseiller n'a pas pu retenir <strong>${esc(pieceLabel)}</strong> :</p>
+    <p style="font-size:13px;margin:0;white-space:pre-line;border-left:3px solid #141517;padding-left:12px">${esc(note)}</p>
+  </div>
+  <p style="margin-bottom:24px"><a href="${APP_URL}/app/compte" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Redéposer la pièce</a></p>
+  <p style="font-size:13px;color:#6B6F76">Une question ? Écrivez-nous à <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
+  <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
+  <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
+</div>`,
+  }
+}
+
+/** Le financeur a accepté : il reste la pièce d'identité et le RIB pour mettre le contrat en place. */
+export function emailClientContractPieces({ userEmail, companyName, requestRef }: { userEmail: string; companyName: string; requestRef: string }) {
+  return {
+    to: userEmail,
+    subject: `[everlease] Dernière étape avant votre contrat — ${oneLine(requestRef)}`,
+    html: `
+<div style="font-family:Inter,system-ui,sans-serif;max-width:580px;margin:0 auto;color:#141517">
+  <div style="padding:32px 0 16px">
+    <p style="font-size:20px;font-weight:600;margin:0">Dernière étape avant votre contrat</p>
+    <p style="color:#6B6F76;margin:4px 0 0">${esc(companyName)}</p>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #DCDEE1;border-radius:16px;padding:20px;margin-bottom:24px">
+    <p style="font-size:13px;margin:0 0 8px">Le financeur a accepté votre dossier. Pour établir le contrat, il lui faut :</p>
+    <ul style="font-size:13px;margin:0;padding-left:18px"><li>la pièce d'identité du dirigeant (recto verso) ;</li><li>un RIB pour le prélèvement des loyers.</li></ul>
+    <p style="font-size:12px;color:#6B6F76;margin:12px 0 0">Ces documents sont effacés de nos serveurs ${SENSITIVE_RETENTION_DAYS} jours après la mise en place du contrat.</p>
+  </div>
+  <p style="margin-bottom:24px"><a href="${APP_URL}/app/compte" style="display:inline-block;padding:12px 22px;background:#1F3BFF;color:#fff;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500">Déposer mes pièces</a></p>
+  <p style="font-size:13px;color:#6B6F76">Réf. ${esc(requestRef)}. Une question ? <a href="mailto:contact@everlease.fr" style="color:#1F3BFF">contact@everlease.fr</a>.</p>
   <hr style="border:none;border-top:1px solid #DCDEE1;margin:24px 0">
   <p style="font-size:11px;color:#6B6F76">everlease — Plateforme de financement locatif · contact@everlease.fr</p>
 </div>`,

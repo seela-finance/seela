@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { loadAccount, onboardingDone } from '@/lib/account'
-import { adoptInvitedCompany, completeOnboarding, invitedCompany, markFinancialDocsUploaded, registerSignupLead, saveOnboardingCompany, saveOnboardingContact, type InvitedCompany } from './actions'
+import { adoptInvitedCompany, completeOnboarding, invitedCompany, registerSignupLead, saveOnboardingCompany, saveOnboardingContact, type InvitedCompany } from './actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,26 +20,12 @@ interface CompanyResult {
   address: string
 }
 
-interface ScoreData {
-  score: number
-  grade: string
-  details: {
-    anciennete: number
-    forme_juridique: number
-    chiffre_affaires: number
-    resultat: number
-    effectif: number
-    naf: number
-    score_partial: boolean
-  }
-}
-
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 function StepIndicator({ step }: { step: number }) {
   return (
     <div className="flex items-center w-full max-w-xs mx-auto mb-8">
-      {[1, 2, 3, 4].map((n, i) => (
+      {[1, 2, 3].map((n, i) => (
         <div key={n} className="flex items-center" style={{ flex: i < 3 ? '1' : 'none' }}>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all"
@@ -544,322 +530,6 @@ function Step3Contact({
   )
 }
 
-// ─── Step 4: Score everlease ──────────────────────────────────────────────────────
-
-const GRADE_COLORS: Record<string, string> = {
-  A: 'var(--ok)',
-  'B+': 'var(--ok)',
-  B: 'var(--warning)',
-  'C+': 'var(--warning)',
-  C: 'var(--danger)',
-}
-
-const GRADE_POSITION: Record<string, number> = {
-  C: 10,
-  'C+': 30,
-  B: 50,
-  'B+': 70,
-  A: 90,
-}
-
-function ScoreCircle({ grade, score }: { grade: string; score: number }) {
-  const color = GRADE_COLORS[grade] ?? 'var(--ink-3)'
-  return (
-    <div className="flex flex-col items-center mb-4">
-      <div
-        className="w-36 h-36 rounded-full flex items-center justify-center mb-3"
-        style={{ border: '3px solid var(--line)', background: 'var(--surface)' }}
-      >
-        <span className="ev-display" style={{ fontSize: 48, color, lineHeight: 1 }}>
-          {grade}
-        </span>
-      </div>
-      <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
-        Profil everlease · établi à partir de vos données légales, indicatif
-      </p>
-    </div>
-  )
-}
-
-function ScoreBar({ score }: { score: number }) {
-  const pos = Math.max(2, Math.min(98, score))
-  return (
-    <div className="mt-4 mb-1">
-      <div className="relative h-2 rounded-full overflow-visible" style={{ background: 'var(--line)' }}>
-        <div
-          className="absolute left-0 top-0 h-full rounded-full transition-all"
-          style={{ width: `${pos}%`, background: 'var(--accent)' }}
-        />
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-all"
-          style={{
-            left: `${pos}%`,
-            transform: 'translate(-50%, -50%)',
-            background: '#fff',
-            borderColor: 'var(--ink)',
-          }}
-        />
-      </div>
-      <div className="flex justify-between mt-3">
-        {['D', 'C', 'B', 'A', 'A+'].map(g => (
-          <span key={g} className="text-xs" style={{ color: 'var(--ink-3)' }}>{g}</span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function UnlockItem({ label, locked, badge }: { label: string; locked?: boolean; badge?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2.5">
-      <div className="flex items-center gap-2.5">
-        <div
-          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-          style={{
-            background: locked ? 'var(--raised)' : 'var(--ok-soft)',
-            border: locked ? '1px solid var(--line)' : '1px solid var(--ok-soft)',
-          }}
-        >
-          {!locked && (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 5l2.5 2.5 4-4" stroke="var(--ok)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </div>
-        <span className="text-sm" style={{ color: locked ? 'var(--ink-3)' : 'var(--ink)' }}>{label}</span>
-      </div>
-      {badge && (
-        <span className="ev-tag ml-2">
-          {badge}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function Step4Score({
-  onNext,
-  onSkip,
-  alreadyCompleted,
-}: {
-  onNext: () => void
-  onSkip: () => void
-  alreadyCompleted?: boolean
-}) {
-  const supabase = createClient()
-  const [loading, setLoading] = useState(true)
-  const [score, setScore] = useState<ScoreData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  // Bilan upload state
-  const [uploading, setUploading] = useState(false)
-  const [bilansUploaded, setBilansUploaded] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    async function compute() {
-      try {
-        const res = await fetch('/api/score-seela', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        setScore(data)
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erreur de calcul')
-      } finally {
-        setLoading(false)
-      }
-    }
-    compute()
-  }, [])
-
-  async function handleBilanUpload(files: FileList | null) {
-    if (!files || files.length === 0) return
-    setUploading(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Non authentifié')
-
-      for (const file of Array.from(files)) {
-        if (file.type !== 'application/pdf') continue
-        // Nom assaini : Supabase refuse les accents, et `#` / espaces cassent l'URL publique
-        const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]+/g, '-')
-        const path = `${user.id}/bilans/${Date.now()}-${safeName}`
-        const { error: uploadErr } = await supabase.storage.from('documents').upload(path, file)
-        if (uploadErr) throw uploadErr
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-
-        // Analyze bilan
-        try {
-          const analyzeRes = await fetch('/api/analyze-bilan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ documentUrl: publicUrl, mimeType: 'application/pdf' }),
-          })
-          if (analyzeRes.ok) {
-            const financialData = await analyzeRes.json()
-            // Recompute score with extracted data
-            const scoreRes = await fetch('/api/score-seela', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ financialOverride: financialData }),
-            })
-            if (scoreRes.ok) {
-              const newScore = await scoreRes.json()
-              setScore(newScore)
-            }
-          }
-        } catch {
-          // Analysis failed — score stays the same
-        }
-      }
-
-      await markFinancialDocsUploaded()
-      setBilansUploaded(true)
-    } catch (e) {
-      console.error('Bilan upload error:', e)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const grade = score?.grade ?? 'B'
-  const scoreVal = score?.score ?? 0
-  const gradeColor = GRADE_COLORS[grade] ?? 'var(--ink-3)'
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
-        <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Calcul de votre score everlease…</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-sm mb-4" style={{ color: 'var(--danger)' }}>{error}</p>
-        <button onClick={onSkip} className="text-sm underline" style={{ color: 'var(--ink-3)' }}>
-          Continuer sans score
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <h1
-        className="ev-display mb-1"
-        style={{ fontSize: 26, color: 'var(--ink)' }}
-      >
-        Votre profil everlease
-      </h1>
-      <p className="text-sm mb-6" style={{ color: 'var(--ink-3)' }}>
-        Basé sur les données officielles de votre entreprise.
-      </p>
-
-      {/* Score card */}
-      <div className="ev-card p-6 mb-5">
-        <ScoreCircle grade={grade} score={scoreVal} />
-        <ScoreBar score={scoreVal} />
-      </div>
-
-      {/* What your score unlocks */}
-      <div className="mb-5">
-        <p className="ev-kicker mb-3">
-          Ce que votre profil permet
-        </p>
-        <div className="ev-card overflow-hidden">
-          <div className="px-4 divide-y divide-[var(--line)]">
-            <UnlockItem label="Dossier pré-rempli à partir de vos données légales" />
-            <UnlockItem label="Dossier présenté à des financeurs adaptés à votre profil" />
-            <UnlockItem label="Bilans joints au dossier pour le financeur" locked={!bilansUploaded} badge={bilansUploaded ? undefined : 'Bilans à importer'} />
-          </div>
-        </div>
-      </div>
-
-      {/* Upload bilans */}
-      {!bilansUploaded && (
-        <div className="ev-card ev-card--dashed flex items-start gap-4 p-4 mb-6">
-          <div
-            className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: 'var(--raised)', border: '1px solid var(--line)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="var(--ink-3)" strokeWidth="1.2" strokeLinejoin="round" />
-              <path d="M10 2v4h4" stroke="var(--ink-3)" strokeWidth="1.2" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm mb-2" style={{ color: 'var(--ink)', lineHeight: 1.5 }}>
-              Uploadez vos <strong>2 derniers bilans</strong> pour compléter votre dossier avant sa présentation aux financeurs
-            </p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf"
-              multiple
-              className="hidden"
-              onChange={e => handleBilanUpload(e.target.files)}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="ev-btn ev-btn--ghost ev-btn--sm"
-            >
-              {uploading ? (
-                <>
-                  <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[var(--ink)] animate-spin" style={{ borderColor: 'var(--line)', borderTopColor: 'var(--ink)' }} />
-                  Import en cours…
-                </>
-              ) : (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 10V3M4 6l3-3 3 3M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Importer mes bilans
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {bilansUploaded && (
-        <div className="ev-alert ev-alert--ok flex items-center gap-2 mb-6">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7l3.5 3.5L12 4" stroke="var(--ok)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <p className="text-sm font-medium" style={{ color: 'var(--ok)' }}>
-            Bilans importés — dossier mis à jour
-          </p>
-        </div>
-      )}
-
-      {/* CTA */}
-      <button
-        onClick={onNext}
-        className="ev-btn ev-btn--primary ev-btn--lg ev-btn--full mb-3"
-      >
-        {alreadyCompleted ? 'Retour au tableau de bord' : 'Accéder à everlease'}
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
-      {!alreadyCompleted && (
-        <button
-          onClick={onSkip}
-          className="w-full text-center text-sm transition-opacity hover:opacity-70"
-          style={{ color: 'var(--ink-3)' }}
-        >
-          Je complèterai mon profil plus tard
-        </button>
-      )}
-    </div>
-  )
-}
-
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
@@ -867,8 +537,7 @@ export default function OnboardingPage() {
   const supabase = createClient()
 
   const [initialized, setInitialized] = useState(false)
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
-  const [alreadyCompleted, setAlreadyCompleted] = useState(false)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [userEmail, setUserEmail] = useState('')
   const [country, setCountry] = useState('FR')
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -883,11 +552,8 @@ export default function OnboardingPage() {
 
       void registerSignupLead()
       setLocked(await invitedCompany())
-      if (onboardingDone(await loadAccount(supabase, user.id))) {
-        // Allow revisiting step 4 for bilan upload
-        setAlreadyCompleted(true)
-        setStep(4)
-      }
+      // Inscription déjà terminée : les pièces et le score vivent dans « Mon compte »
+      if (onboardingDone(await loadAccount(supabase, user.id))) { router.replace('/app/compte'); return }
 
       setInitialized(true)
     }
@@ -913,16 +579,13 @@ export default function OnboardingPage() {
     const res = await saveOnboardingContact(data)
     if (!res.ok) { setSaveError(res.message); return }
     setSaveError(null)
-    setStep(4)
-  }
-
-  async function handleComplete() {
-    const res = await completeOnboarding()
-    if (!res.ok) { setSaveError(res.message); return }
+    // Score everlease calculé depuis les données légales, sans bloquer l'arrivée sur le tableau de bord
+    fetch('/api/score-seela', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }).catch(() => null)
+    const done = await completeOnboarding()
+    if (!done.ok) { setSaveError(done.message); return }
     router.push('/app/dashboard')
+    router.refresh()
   }
-
-  const handleSkip = handleComplete
 
   if (!initialized) {
     return (
@@ -951,9 +614,9 @@ export default function OnboardingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
         <div className="w-full max-w-[480px]">
           {/* Back button */}
-          {step > 1 && !alreadyCompleted && (
+          {step > 1 && (
             <button
-              onClick={() => setStep(s => (s - 1) as 1 | 2 | 3 | 4)}
+              onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
               className="ev-btn ev-btn--ghost ev-btn--sm mb-6"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -971,13 +634,6 @@ export default function OnboardingPage() {
           {step === 1 && <Step1Country onNext={handleStep1} />}
           {step === 2 && <Step2Company onBack={() => setStep(1)} onNext={handleStep2} locked={locked} />}
           {step === 3 && <Step3Contact userEmail={userEmail} onBack={() => setStep(2)} onNext={handleStep3} />}
-          {step === 4 && (
-            <Step4Score
-              onNext={handleComplete}
-              onSkip={handleSkip}
-              alreadyCompleted={alreadyCompleted}
-            />
-          )}
         </div>
       </div>
     </div>

@@ -79,6 +79,7 @@ export default function MarketingNav() {
               )}
             </div>
             <Link href="/#comment">Comment ça marche</Link>
+            <Link href="/blog">Blog</Link>
           </div>
 
           <div className="nav__cta">
@@ -111,6 +112,7 @@ export default function MarketingNav() {
             <Link href="/solutions" onClick={closeMenu}>Solutions</Link>
             <Link href="/secteurs" onClick={closeMenu}>Secteurs</Link>
             <Link href="/#comment" onClick={closeMenu}>Comment ça marche</Link>
+            <Link href="/blog" onClick={closeMenu}>Blog</Link>
             {!userEmail && <Link href="/auth" onClick={closeMenu}>Se connecter</Link>}
             <Link className="btn btn--ghost" href="/distributeurs" onClick={closeMenu}><IconStore size={14} />Distributeurs</Link>
             {userEmail ? (

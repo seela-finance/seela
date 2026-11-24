@@ -12,6 +12,7 @@ import { eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { DealStageSelect, NewDealButton } from '@/components/admin/crm/CrmForms'
 import LemlistCard from '@/components/admin/crm/LemlistCard'
 import PartnerCard from '@/components/admin/partner/PartnerCard'
+import PiecesSection from '@/components/admin/PiecesSection'
 import { can } from '@/lib/admin-roles'
 import { LeadStatusControl } from '@/components/admin/crm/PrepipeForms'
 import { LEAD_SIGNAL_LABEL } from '@/lib/crm-prepipe'
@@ -184,6 +185,17 @@ export default async function CrmCompanyPage({ params }: { params: Promise<{ id:
           {c.partner_enabled != null && (
             <PartnerCard companyId={c.id} enabled={!!c.partner_enabled} canEdit={can(admin.role, 'decide_requests')} />
           )}
+          {/* Pièces du dossier (docs/pieces-et-compte.md) : déposées par le client dans « Mon compte », contrôlées ici */}
+          <section className="ev-card overflow-hidden">
+            <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--line)' }}><h2 className="ev-kicker">Pièces du dossier</h2></div>
+            <PiecesSection
+              db={db}
+              companyId={c.id}
+              company={{ creation_year: c.creation_year }}
+              withContract={requests.some(r => r.status === 'leaser_confirmed' || r.status === 'active')}
+              canEdit={can(admin.role, 'decide_requests')}
+            />
+          </section>
         </div>
 
         <div className="flex flex-col gap-4 min-w-0" style={{ flex: '2 1 420px' }}>
