@@ -36,10 +36,10 @@ test('fiche contrat : échéancier, demande du client, réponse de l’équipe, 
   const { data: clientContact } = await db.from('contacts').select('company_id').eq('user_id', run.users.client.id).single()
   const { data: partnerContact } = await db.from('contacts').select('id, company_id').eq('user_id', run.users.partner.id).single()
 
-  // Contrat actif démarré il y a trois mois, apporté par le partenaire : le client en est propriétaire
+  // Contrat actif démarré il y a trois mois (client direct : un contrat actif de plus fausserait les compteurs du flow partenaire)
   const { data: req, error } = await db.from('financing_requests').insert({
     user_id: run.users.client.id, company_id: clientContact!.company_id, status: 'active', total_amount: 12000, duration_months: 36, document_type: 'devis',
-    contract_start_date: firstOfMonthAgo(3), partner_company_id: partnerContact!.company_id, partner_contact_id: partnerContact!.id, client_joined_at: new Date().toISOString(),
+    contract_start_date: firstOfMonthAgo(3),
   }).select('id').single()
   if (error) throw new Error(error.message)
   await db.from('line_items').insert({ request_id: req!.id, description: 'Four mixte', quantity: 1, unit_price: 12000, total_price: 12000, category: 'Industrie', selected: true })
@@ -105,11 +105,16 @@ test('fiche contrat : échéancier, demande du client, réponse de l’équipe, 
     const card = admin.getByRole('listitem').filter({ hasText: 'Report d’échéance' })
     await card.getByRole('button', { name: 'Clore' }).click()
     await expect(admin.getByText('Demande close.')).toBeVisible()
-    await expect(card.getByText('Close')).toBeVisible()
+    await expect(card.getByText('Close', { exact: true })).toBeVisible()
   })
 
   await test.step('le partenaire voit la nature et l’état d’une demande ouverte, jamais le message', async () => {
-    await db.from('contract_requests').insert({ request_id: req!.id, company_id: clientContact!.company_id, kind: 'materiel', status: 'recue', message: 'Message confidentiel du client', created_by: run.users.client.id })
+    // Dossier apporté par le partenaire, accepté par le financeur : une demande de matériel est ouverte
+    const { data: brought } = await db.from('financing_requests').insert({
+      user_id: run.users.client.id, company_id: clientContact!.company_id, status: 'leaser_confirmed', total_amount: 3000, duration_months: 36, document_type: 'devis',
+      partner_company_id: partnerContact!.company_id, partner_contact_id: partnerContact!.id, client_joined_at: new Date().toISOString(),
+    }).select('id').single()
+    await db.from('contract_requests').insert({ request_id: brought!.id, company_id: clientContact!.company_id, kind: 'materiel', status: 'recue', message: 'Message confidentiel du client', created_by: run.users.client.id })
     const partner = await pageAs(browser, 'partner')
     await partner.goto('/app/partenaire')
     await expect(partner.getByText('Demande du client : Ajout ou remplacement de matériel · reçue')).toBeVisible()
