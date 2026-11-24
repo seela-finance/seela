@@ -62,19 +62,40 @@ Tout agent qui développe `seela-app/` en autonomie (routine planifiée, session
 
 ---
 
-## Design system
+## Design system (v2 « Aurore » — obligatoire)
 
-Le style visuel de référence vit désormais dans le code : `seela-app/app/landing.css` (landing) et `seela-app/app/globals.css` (reste de l'app).
+**Toute interface everlease suit le design system v2, dans sa version « Aurore » du 24/11/2026**, quelle que soit la session ou la page (landing, pages marketing, auth, app authentifiée, emails, admin). Référence publiée : https://claude.ai/artifact/CkUMXuWmPNWd2GGzo8FefH (lire `project/README.md` puis `project/tokens.json` ; cartes dans `project/components/*/README.md`). Avant de coder une UI, lire ces fichiers ; en cas de doute entre le code existant et le design system, le design system gagne, et on migre le code. La home (`components/landing/LandingPage.tsx`) est l'exemple de référence d'Aurore.
 
-Tokens principaux :
-- Background général : `#FAFAF9` (warm off-white)
-- Couleur principale : `#1A1A18` (near black)
-- Couleur muted/secondaire : `#9A9A93` (warm gray)
-- Font : Inter (system-ui en fallback)
-- Logo : "seela" en lowercase, font-weight 600
-- Style général : minimaliste, professionnel, épuré — zéro fioriture
+Tokens (branchés dans `seela-app/app/landing.css` sous `.lp` ; `globals.css` porte les mêmes valeurs) :
+- Surfaces : papier froid `#F2F3F4` (page), surface `#FFFFFF`, raised `#E9EBED`, filets `#DCDEE1` (line) / `#C3C6CB` (line-strong, contrôles)
+- Encres : `#141517` (ink, titres et corps), `#45484D` (ink-2, secondaire), `#6B6F76` (ink-3, kickers, mentions)
+- Cobalt `#1F3BFF` (hover `#1630D9`, soft `#E9ECFF`, ink `#1226B0`, light `#7D8CFF` sur sombre) : réservé à l'action (bouton primaire, lien actif, case cochée, focus), à l'aiguille de la jauge et aux scènes en dégradé. Jamais en aplat de fond de section, jamais sur le logo.
+- Sombre `#0F1012` (filets `#2A2C31`, texte secondaire `#A7ABB3`)
+- Sémantiques : ok `#0E7C5B` / `#E3F3EC`, danger `#B42318`, warning `#8A4B00` / `#FFF4E5` (réservé au tag « À compléter » ; la crème `#FFF4E5` sert aussi aux dégradés)
+- Polices (chargées via `next/font` dans `app/layout.tsx`) : **Bricolage Grotesque 600** pour les titres (`--font-bricolage`, tracking −0.025em, interligne 1.02), **Inter** 400/500/600 pour le texte, l'interface et le wordmark (`--font-inter`), **JetBrains Mono** 500/600 pour les montants, kickers, index et axes (`--font-jetbrains-mono`, chiffres tabulaires)
+- Rayons : 6px (champs, tags, cases), 10px (nœuds, boutons icône), 16px (cartes, modale), 20 à 28px (scènes), pilule (boutons)
+- Mouvement : 160 ms (survol, focus), 320 ms (états), 720 ms (révélations), courbe `cubic-bezier(.2,.7,.2,1)`, aucun rebond ; seuls `transform`, `opacity` et `stroke-dashoffset` s'animent ; `prefers-reduced-motion` saute à l'état final
+- Boutons : pilule 48px (40px sm) avec une petite jauge 16px à gauche dont l'arc se remplit au survol ; libellés à l'infinitif en sentence case
+- Logo : la voûte (path `MARK_D`, viewBox `16 56 88 44`) + « everlease » en minuscules, Inter 600 −0.03em. Noir (`#141517`) ou papier, jamais en cobalt, jamais redessiné.
 
-Les pages internes existantes (`seela-app/app/app/`) sont la référence visuelle pour toute nouvelle page authentifiée.
+Ce qu'Aurore ajoute à la v2 (décisions de Louis du 24/11/2026) :
+- **Scènes en dégradé** (`.stage`, tokens `--g-hero`, `--g-soft`, `--g-dark`, `--g-vivid`) : un panneau arrondi qui porte un visuel produit ou un appel à l'action. Les dégradés n'utilisent que la palette validée (cobalt, accent clair, accent doux, crème `#FFF4E5`, sombre). Jamais de dégradé en fond de section entière ni sur du texte courant.
+- **Le produit se montre** : les visuels sont des cartes d'interface (devis lu, fiche dossier, réponses) posées sur une scène, pas des illustrations.
+- **Ombres** : aucune, sauf la modale et les cartes posées sur une scène (`.float`, tokens `--shadow-float`).
+- **Photos** : autorisées pour montrer des métiers, en noir et blanc, dans un cadre arrondi. Pas d'illustration figurative, pas d'emoji.
+- **Blocs sombres** : un bloc sombre à plat pour un message fort, une scène sombre pour l'appel à l'action final. Deux au plus par page.
+- **Ton** : « notre équipe » plutôt que « l'expert » ; le duo « l'IA lit, notre équipe relit ».
+- Les listes restent des rangées à filets, pas des cartes.
+
+Règles de vérité (contenu, toutes pages) :
+- Financeurs désignés par leur **type** (« Banque », « Loueur spécialisé », « Loueur indépendant ») avec un pictogramme : ni logo, ni nom, ni nombre de partenaires, ni marque fictive.
+- Aucun délai de financement promis (seul engagement : rappel sous 24 h ouvrées).
+- Pas de score live, d'open banking ni d'intégrations affichés.
+- **Rien d'inventé qui se présente comme une preuve** : pas de témoignage, de client, d'avis, de logo ni de chiffre fictif. Ce qui n'est pas connu reste « À compléter » ou est présenté comme un exemple.
+- Chaque bloc chiffré porte « Montants indicatifs, hors assurance et services. Sous réserve d'acceptation du dossier par le financeur. » Les pages de contenu (secteurs, métiers, blog) gardent l'étiquette « Exemple illustratif » sur leurs exemples.
+- Jamais « les meilleures conditions » ni d'affirmation sur l'hébergement ou la sécurité au-delà de « Aucune carte ni RIB demandé ».
+
+Les CSS de la landing (`app/landing.css`, scope `.lp`) et de l'app (`app/globals.css`) restent séparés, mais portent les mêmes tokens. Toute nouvelle page authentifiée suit `globals.css` et les cartes composants du design system (Button, Tag, Kicker, Gauge, Card, Field, Choice, Modal, DarkBand, Stage).
 
 ---
 

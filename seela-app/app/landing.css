@@ -825,6 +825,30 @@
   .lp .hm-doc__head,.lp .hm-doc__rows,.lp .hm-doc__foot{padding-left:16px;padding-right:16px}
 }
 
+/* ----- Aurore sur les pages marketing (Solutions, Secteurs, Métiers, pages
+   money, blog, distributeurs) : appel à l'action final en scène sombre,
+   exemples chiffrés posés sur une scène claire, photos en noir et blanc. ----- */
+.lp .mk-cta-center{margin-top:56px;padding:clamp(36px,5vw,72px) 24px;border-radius:28px;background:var(--g-dark);color:var(--dark-text);text-align:center}
+.lp .mk-cta-center .lp-h2{font-size:clamp(28px,3.6vw,46px);line-height:1.04}
+.lp .mk-cta-center .lp-lede,.lp .mk-cta-center .mk-legal{color:var(--dark-muted)}
+.lp .mk-cta-center .btn--accent,.lp .mk-cta-center .btn--primary{background:var(--dark-text);color:var(--ink)}
+.lp .mk-cta-center .btn--accent:hover,.lp .mk-cta-center .btn--primary:hover{background:#fff;color:var(--ink)}
+.lp .mk-cta-center .btn--secondary,.lp .mk-cta-center .btn--ghost{background:transparent;border-color:var(--dark-outline);color:var(--dark-text)}
+.lp .mk-cta-center .btn--secondary:hover,.lp .mk-cta-center .btn--ghost:hover{background:transparent;border-color:var(--dark-outline-hover);color:#fff}
+.lp .mk-examples{padding:28px;border-radius:28px;background:var(--g-soft)}
+.lp .mk-examples .mk-example{box-shadow:var(--shadow-float)}
+.lp .mk-img{filter:grayscale(1) contrast(1.08)}
+.lp .dist-stage{padding:32px;border-radius:24px}
+.lp .dist-stage > .float{box-shadow:var(--shadow-float-lg)}
+.lp .dist-fin__n{display:inline-flex;align-items:center;gap:8px}
+.lp .funders.funders--stage{background:transparent;color:var(--ink);padding:0 0 var(--sp-9)}
+.lp .funders--stage .funders__grid{background:var(--g-dark);color:var(--dark-text);border-radius:28px;padding:clamp(32px,5vw,72px)}
+@media (max-width:900px){
+  .lp .dist-stage{padding:16px;border-radius:20px}
+  .lp .mk-examples{padding:16px;border-radius:20px}
+  .lp .funders.funders--stage{padding:0 0 64px}
+}
+
 /* ----- nav : trois liens à gauche, « Se connecter » + deux boutons à
    droite. Version resserrée sous 1220px (le bouton encre mène déjà à /auth,
    le lien « Se connecter » s'efface), burger sous 1060px (six liens depuis l'ajout de Métiers). ----- */

@@ -83,8 +83,9 @@ export default function SolutionsHub() {
           </div>
         </section>
 
-        <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
-          <div className="lp-wrap" style={{ textAlign: 'center', maxWidth: 560 }}>
+        <section className="lp-section--tight">
+          <div className="lp-wrap">
+          <div className="mk-cta-center" style={{ marginTop: 0 }}>
             <h2 className="lp-h2">Pas sûr du bon financement ?</h2>
             <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 460 }}>
               Déposez un devis : Everlease analyse votre besoin et prépare votre dossier pour des financeurs adaptés.
@@ -92,6 +93,7 @@ export default function SolutionsHub() {
             <div className="lp-cta-row" style={{ marginTop: 28 }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
             </div>
+          </div>
           </div>
         </section>
       </main>
