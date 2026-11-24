@@ -21,6 +21,9 @@ import { AddOfferForm, CounterOfferForm } from '@/components/admin/OfferForms'
 import { canAddManualOffer, canCounterOffer } from '@/lib/admin-offers'
 import RequestNote from '@/components/admin/RequestNote'
 import StartContractForm from '@/components/admin/StartContractForm'
+import PiecesSection from '@/components/admin/PiecesSection'
+import { missingForTransmission, pieceLabels } from '@/lib/pieces'
+import { loadCompanyPieces } from '@/lib/pieces-store'
 import { AlertBanner, Badge, Breadcrumb, Field, Section, eur, fmtDate, fmtDateTime } from '@/components/admin/ui'
 import { fetchRegistry } from '@/lib/company-registry'
 import { companyAlert } from '@/lib/admin-company'
@@ -109,6 +112,13 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const canRefuse = decide && canTransitionRequest(request.status, RS.refused, 'admin')
   const canRerun = decide && canRerunMatching(request.status)
   const canStartContract = decide && request.status === RS.leaser_confirmed
+  // Pièces du dossier (lib/pieces.ts) : ce qui manque avant la transmission, et la section de contrôle
+  const { data: companyRow } = request.company_id
+    ? await db.from('companies').select('creation_year').eq('id', request.company_id).maybeSingle()
+    : { data: null }
+  const pieceCompany = { creation_year: (companyRow as { creation_year?: number | null } | null)?.creation_year ?? null }
+  const missingPieces = request.company_id ? missingForTransmission(pieceCompany, await loadCompanyPieces(db, request.company_id)) : []
+  const contractPhase = request.status === RS.leaser_confirmed || request.status === RS.active
   // Dossier apporté par un distributeur partenaire (parcours distributeur)
   // Source d'acquisition de la société (attribution des leads) : lecture à part, une colonne absente n'empêche pas d'ouvrir la fiche
   const { data: sourceRow } = request.company_id
@@ -376,11 +386,19 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
             <RequestNote requestId={request.id} />
           </Section>
 
+          {/* Pièces : contrôle avant transmission, puis identité et RIB pour le contrat */}
+          {request.company_id && (
+            <Section title="Pièces du dossier" right={missingPieces.length ? <span className="ev-tag ev-tag--warning">{missingPieces.length} manquante{missingPieces.length > 1 ? 's' : ''}</span> : <span className="ev-tag ev-tag--ok">Complètes</span>}>
+              <PiecesSection db={db} companyId={request.company_id} company={pieceCompany} withContract={contractPhase} canEdit={decide} />
+            </Section>
+          )}
+
           {/* Actions : valider et transmettre, réponse du leaser, relance du matching, refus */}
           <Section title="Actions">
             <RequestActions
               requestId={request.id}
               canValidate={canValidate}
+              missingPieces={missingPieces.length ? pieceLabels(missingPieces) : undefined}
               awaitingLeaser={awaitingLeaser}
               canRefuse={canRefuse}
               canRerun={canRerun}

@@ -92,6 +92,16 @@ setup('comptes et leaser de test sur staging', async ({ browser }) => {
     if (error) throw new Error(`${table} (partenaire) : ${error.message}`)
   }
 
+  // Pièces du dossier validées pour le client du run : le parcours principal transmet au financeur sans dérogation
+  const { data: clientContact } = await db.from('contacts').select('company_id').eq('user_id', users.client.id).single()
+  for (const kind of ['kbis', 'liasse', 'situation']) {
+    const { error } = await db.from('company_documents').insert({
+      company_id: clientContact!.company_id, kind, status: 'validee', path: `${users.client.id}/pieces/seed-${kind}.pdf`,
+      file_name: `seed-${kind}.pdf`, mime_type: 'application/pdf', size_bytes: 1, uploaded_by: users.client.id, reviewed_by: users.admin.id, reviewed_at: new Date().toISOString(),
+    })
+    if (error) throw new Error(`Pièce ${kind} : ${error.message}`)
+  }
+
   mkdirSync(AUTH_DIR, { recursive: true })
   const context: RunContext = {
     runId, companyName, users,

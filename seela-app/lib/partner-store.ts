@@ -2,6 +2,8 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { fetchRegistry } from '@/lib/company-registry'
 import type { Invitation, PartnerContext, PartnerRequestRow, PartnerStore } from '@/lib/partner-workflow'
+import { pieceProgress, type PieceDoc } from '@/lib/pieces'
+import { PIECE_COLUMNS } from '@/lib/pieces-store'
 
 /** Implémentation Supabase (service role) du parcours distributeur ; propriétaire et partenaire vérifiés par lib/partner-workflow.ts. */
 export function supabasePartnerStore(db: SupabaseClient): PartnerStore {
@@ -109,7 +111,7 @@ async function joinClientCompany(db: SupabaseClient, requestId: string, userId: 
 }
 
 export const PARTNER_REQUEST_COLUMNS =
-  'id, status, total_amount, duration_months, created_at, client_joined_at, contract_start_date, companies ( name ), offers ( monthly_payment, duration_months, status, selected )'
+  'id, status, total_amount, duration_months, created_at, client_joined_at, contract_start_date, company_id, companies ( name, creation_year ), offers ( monthly_payment, duration_months, status, selected )'
 
 /** Dossiers apportés par la société partenaire, du plus récent au plus ancien. */
 export async function loadPartnerRequests(db: SupabaseClient, partnerCompanyId: string): Promise<PartnerRequestRow[]> {
@@ -119,5 +121,14 @@ export async function loadPartnerRequests(db: SupabaseClient, partnerCompanyId: 
     .neq('status', 'draft')
     .order('created_at', { ascending: false })
   if (error) throw new Error(`Dossiers partenaire : lecture impossible (${error.message})`)
-  return (data ?? []) as unknown as PartnerRequestRow[]
+  const rows = (data ?? []) as unknown as (PartnerRequestRow & { company_id: string | null })[]
+  // Pièces des clients (à part : avant la migration, la table n'existe pas et le suivi reste lisible)
+  const companyIds = [...new Set(rows.map(r => r.company_id).filter((id): id is string => !!id))]
+  if (companyIds.length) {
+    const { data: docs } = await db.from('company_documents').select(`company_id, ${PIECE_COLUMNS}`).in('company_id', companyIds)
+    const byCompany = new Map<string, PieceDoc[]>()
+    for (const d of (docs ?? []) as unknown as (PieceDoc & { company_id: string })[]) byCompany.set(d.company_id, [...(byCompany.get(d.company_id) ?? []), d])
+    for (const r of rows) if (r.company_id && r.companies) r.pieces = pieceProgress({ creation_year: r.companies.creation_year ?? null }, byCompany.get(r.company_id) ?? [], 'dossier')
+  }
+  return rows
 }

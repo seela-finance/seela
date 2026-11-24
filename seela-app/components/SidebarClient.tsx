@@ -96,6 +96,20 @@ const NAV_MAIN = [
   },
 ]
 
+const NAV_ACCOUNT = {
+  href: '/app/compte',
+  activeOn: '/app/compte',
+  label: 'Mon compte',
+  badge: false,
+  plus: false,
+  icon: (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  ),
+}
+
 export default function SidebarClient({ email, companyName, offresCount, contratsCount, partner = false }: Props) {
   const pathname = usePathname()
   const router = useRouter()
@@ -126,7 +140,7 @@ export default function SidebarClient({ email, companyName, offresCount, contrat
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 flex flex-col overflow-y-auto">
-        {(partner ? [NAV_PARTNER, NAV_PARTNER_NEW] : NAV_MAIN).map((item) => {
+        {(partner ? [NAV_PARTNER, NAV_PARTNER_NEW, NAV_ACCOUNT] : [...NAV_MAIN, NAV_ACCOUNT]).map((item) => {
           const active = pathname.startsWith(item.activeOn)
           return (
             <Link
