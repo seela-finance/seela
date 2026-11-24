@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import LandingPage from '@/components/landing/LandingPage'
+import { JsonLd, faqSchema } from '@/lib/seo/jsonld'
+import { HOME_FAQ } from '@/lib/seo/home'
 import './landing.css'
 
 export const metadata: Metadata = {
@@ -11,5 +13,10 @@ export const metadata: Metadata = {
 // The nav (MarketingNav) fetches the session client-side, so the landing needs
 // no server-side cookie read and can stay static.
 export default function Home() {
-  return <LandingPage />
+  return (
+    <>
+      <JsonLd data={faqSchema(HOME_FAQ)} />
+      <LandingPage />
+    </>
+  )
 }
