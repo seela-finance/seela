@@ -57,6 +57,33 @@ export function serviceSchema(opts: {
   }
 }
 
+export function blogPostingSchema(opts: {
+  title: string
+  description: string
+  path: string
+  datePublished: string
+  dateModified: string
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: opts.title,
+    description: opts.description,
+    url: absoluteUrl(opts.path),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': absoluteUrl(opts.path) },
+    datePublished: opts.datePublished,
+    dateModified: opts.dateModified,
+    inLanguage: 'fr-FR',
+    author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { '@type': 'ImageObject', url: absoluteUrl('/everlease-icon.png') },
+    },
+  }
+}
+
 export function breadcrumbSchema(items: { name: string; path: string }[]) {
   return {
     '@context': 'https://schema.org',

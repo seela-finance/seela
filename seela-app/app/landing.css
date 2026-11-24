@@ -928,3 +928,38 @@
 .lp .mk-related__card { transition: border-color var(--d-fast) var(--ease), transform var(--d-fast) var(--ease), color var(--d-fast) var(--ease); }
 .lp .mk-related__card:hover { border-color: var(--line-strong); }
 .lp .mk-nav__trigger, .lp .mk-dropdown__item, .lp .mk-crumbs__link, .lp .mk-footer__link, .lp .mk-table__collink { transition-duration: var(--d-fast); transition-timing-function: var(--ease); }
+
+/* ---------- Blog / articles (mk-article*, mk-blog*) — design system v2 ----------
+   Prose lisible, sommaire latéral collant, liens en cobalt (seule action),
+   aucune ombre, filets pour séparer. Réutilise .mk-table et .mk-hubgrid. */
+.lp .mk-article__meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 22px; }
+.lp .mk-article__metaitem { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+.lp .mk-article__layout { display: flex; align-items: flex-start; gap: 48px; }
+.lp .mk-article__toc { flex: 0 0 210px; position: sticky; top: 96px; }
+.lp .mk-article__toclabel { font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+.lp .mk-article__toc nav { display: flex; flex-direction: column; gap: 9px; border-left: 1px solid var(--line); padding-left: 16px; }
+.lp .mk-article__toclink { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); transition: color var(--d-fast) var(--ease); }
+.lp .mk-article__toclink:hover { color: var(--accent); }
+.lp .mk-article__body { flex: 1 1 auto; min-width: 0; max-width: 760px; }
+.lp .mk-article__h2 { font-family: var(--font-display); font-size: 25px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); margin: 40px 0 14px; scroll-margin-top: 96px; }
+.lp .mk-article__h2:first-child { margin-top: 0; }
+.lp .mk-article__h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; color: var(--ink); margin: 28px 0 10px; }
+.lp .mk-article__p { font-size: 16.5px; line-height: 1.7; color: var(--ink-2); margin: 0 0 16px; }
+.lp .mk-article__ul { margin: 0 0 18px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.lp .mk-article__ul li { position: relative; padding-left: 22px; font-size: 16.5px; line-height: 1.6; color: var(--ink-2); }
+.lp .mk-article__ul li::before { content: ""; position: absolute; left: 4px; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+.lp .mk-article__link { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--accent-soft); transition: text-decoration-color var(--d-fast) var(--ease); }
+.lp .mk-article__link:hover { text-decoration-color: var(--accent); }
+.lp .mk-article__callout { padding: 20px 22px; margin: 22px 0; background: var(--paper); border-color: var(--line); }
+.lp .mk-article__calltitle { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 8px; }
+.lp .mk-article__callbody { font-size: 15.5px; line-height: 1.6; color: var(--ink); margin: 0; }
+.lp .mk-article__tablecap { caption-side: top; text-align: left; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); padding-bottom: 10px; }
+.lp .mk-article__body .mk-table__wrap { margin: 22px 0; }
+.lp .mk-solsec__eq { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin: 0 0 8px; }
+.lp .mk-blog__kicker { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+.lp .mk-blog__read { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-family: var(--font-mono); font-weight: 500; color: var(--ink-3); }
+
+@media (max-width: 920px) {
+  .lp .mk-article__toc { display: none; }
+  .lp .mk-article__body { max-width: none; }
+}
