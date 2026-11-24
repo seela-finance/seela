@@ -98,6 +98,7 @@ export default async function PartenairePage({ searchParams }: { searchParams: P
                 <div className="sm:w-56 flex flex-col items-start gap-1.5">
                   <span className={tagClass(line)}><span className="ev-tag__dot" />{line.statusLabel}</span>
                   {line.awaitingClient && <ResendInvitation requestId={line.id} />}
+                  {line.openRequests && <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Demande du client : {line.openRequests}</p>}
                 </div>
               </div>
             ))}

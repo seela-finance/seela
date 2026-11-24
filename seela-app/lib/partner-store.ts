@@ -4,6 +4,8 @@ import { fetchRegistry } from '@/lib/company-registry'
 import type { Invitation, PartnerContext, PartnerRequestRow, PartnerStore } from '@/lib/partner-workflow'
 import { pieceProgress, type PieceDoc } from '@/lib/pieces'
 import { PIECE_COLUMNS } from '@/lib/pieces-store'
+import { partnerSummary } from '@/lib/contract-requests'
+import { loadContractRequestsFor } from '@/lib/contract-requests-store'
 
 /** Implémentation Supabase (service role) du parcours distributeur ; propriétaire et partenaire vérifiés par lib/partner-workflow.ts. */
 export function supabasePartnerStore(db: SupabaseClient): PartnerStore {
@@ -130,5 +132,8 @@ export async function loadPartnerRequests(db: SupabaseClient, partnerCompanyId: 
     for (const d of (docs ?? []) as unknown as (PieceDoc & { company_id: string })[]) byCompany.set(d.company_id, [...(byCompany.get(d.company_id) ?? []), d])
     for (const r of rows) if (r.company_id && r.companies) r.pieces = pieceProgress({ creation_year: r.companies.creation_year ?? null }, byCompany.get(r.company_id) ?? [], 'dossier')
   }
+  // Demandes ouvertes des clients sur leurs contrats : nature et état, pas le contenu (docs/contrat-client.md)
+  const byRequest = await loadContractRequestsFor(db, rows.map(r => r.id))
+  for (const r of rows) r.openRequests = partnerSummary(byRequest.get(r.id) ?? [])
   return rows
 }

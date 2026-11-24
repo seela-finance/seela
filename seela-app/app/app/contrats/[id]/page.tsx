@@ -6,6 +6,10 @@ import TopActions from '@/components/TopActions'
 import { RS, requestDestination, requestStatusInfo, requestTimeline } from '@/lib/status'
 import { CLIENT_OFFER_COLUMNS, formatRate } from '@/lib/offers'
 import { signedDocumentUrl } from '@/lib/documents'
+import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
+import { availableKinds, buildSchedule } from '@/lib/contract-requests'
+import { loadContractRequests } from '@/lib/contract-requests-store'
+import ContractRequests from '@/components/ContractRequests'
 
 
 function fmt(n: number | null) {
@@ -61,7 +65,12 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
   const totalCost = monthly != null && duration != null ? monthly * duration : null
   const timeline = requestTimeline(request.status)
   const isActive = request.status === RS.active
-
+  const contractStart = (request as { contract_start_date?: string | null }).contract_start_date ?? null
+  // Échéancier indicatif (lib/contract-requests.ts) : dès que l'équipe a saisi la date de démarrage
+  const schedule = isActive ? buildSchedule(contractStart, duration, monthly) : null
+  // Demandes du client sur ce contrat (docs/contrat-client.md), lues avec le service role après le contrôle de propriété ci-dessus
+  const contractRequests = isServiceRoleConfigured() ? await loadContractRequests(createAdminClient(), id) : []
+  const kinds = availableKinds(request.status)
 
   // Bucket privé : lien temporaire, valable le temps de la consultation
   const documentHref = await signedDocumentUrl(supabase, request.document_url, user.id, 3600)
@@ -150,55 +159,91 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
 
           {/* Two-column layout */}
           <div className="flex flex-col lg:flex-row gap-6 items-start">
-            {/* LEFT — Échéancier */}
-            <div className="flex-1 min-w-0">
-              <section className="ev-card overflow-hidden">
-                <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--line)' }}>
-                  <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                    {isActive ? 'Contrat démarré' : 'Contrat en préparation'}
-                  </h2>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
-                    {isActive
-                      ? `Votre échéancier détaillé vous est transmis par ${leaserName}. Il apparaîtra bientôt ici.`
-                      : 'Votre échéancier apparaîtra ici dès le démarrage du contrat.'}
+            {/* LEFT — Échéancier et demandes */}
+            <div className="flex-1 min-w-0 space-y-4">
+              {schedule ? (
+                <section className="ev-card overflow-hidden">
+                  <div className="px-5 py-4 border-b flex flex-wrap items-end justify-between gap-3" style={{ borderColor: 'var(--line)' }}>
+                    <div>
+                      <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Échéancier</h2>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                        {schedule.remaining} échéance{schedule.remaining > 1 ? 's' : ''} restante{schedule.remaining > 1 ? 's' : ''} sur {schedule.lines.length} · fin le {fmtShort(schedule.end)}
+                      </p>
+                    </div>
+                    {schedule.next && (
+                      <div className="text-right">
+                        <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Prochaine échéance</p>
+                        <p className="ev-mono text-sm font-semibold" style={{ color: 'var(--ink)' }}>{fmt(schedule.next.amount)} · {fmtShort(schedule.next.date)}</p>
+                      </div>
+                    )}
+                  </div>
+                  <ol className="divide-y divide-[var(--line)] max-h-[420px] overflow-y-auto">
+                    {schedule.lines.map(line => (
+                      <li key={line.index} className="px-5 py-2 flex items-center gap-3 text-sm" style={{ opacity: line.state === 'passee' ? 0.55 : 1 }}>
+                        <span className="ev-mono text-xs w-8 shrink-0" style={{ color: 'var(--ink-3)' }}>{String(line.index).padStart(2, '0')}</span>
+                        <span className="flex-1" style={{ color: 'var(--ink)' }}>{fmtShort(line.date)}</span>
+                        <span className="ev-mono" style={{ color: 'var(--ink)' }}>{fmt(line.amount)}</span>
+                        <span className="w-24 text-right text-xs" style={{ color: line.state === 'prochaine' ? 'var(--accent)' : 'var(--ink-3)' }}>
+                          {line.state === 'passee' ? 'Réglée' : line.state === 'prochaine' ? 'Prochaine' : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="px-5 py-3 text-xs border-t" style={{ color: 'var(--ink-3)', borderColor: 'var(--line)', lineHeight: 1.6 }}>
+                    Échéancier indicatif, hors assurance et services, établi à partir du loyer et de la date de démarrage. L’échéancier contractuel est celui du financeur.
                   </p>
-                </div>
-                <ol className="px-5 py-4 space-y-3">
-                  {timeline.map((step) => (
-                    <li key={step.label} className="flex items-center gap-3">
-                      <span
-                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                        style={{
-                          background: step.state === 'done' ? 'var(--ink)' : 'var(--surface)',
-                          border: step.state === 'done' ? 'none' : `1.5px solid ${step.state === 'current' ? 'var(--accent)' : 'var(--line-strong)'}`,
-                        }}
-                      >
-                        {step.state === 'done' && (
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                </section>
+              ) : (
+                <section className="ev-card overflow-hidden">
+                  <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--line)' }}>
+                    <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                      {isActive ? 'Contrat démarré' : 'Contrat en préparation'}
+                    </h2>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                      {isActive
+                        ? 'Votre échéancier apparaîtra ici dès que la date de démarrage sera confirmée.'
+                        : 'Votre échéancier apparaîtra ici dès le démarrage du contrat.'}
+                    </p>
+                  </div>
+                  <ol className="px-5 py-4 space-y-3">
+                    {timeline.map((step) => (
+                      <li key={step.label} className="flex items-center gap-3">
+                        <span
+                          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                          style={{
+                            background: step.state === 'done' ? 'var(--ink)' : 'var(--surface)',
+                            border: step.state === 'done' ? 'none' : `1.5px solid ${step.state === 'current' ? 'var(--accent)' : 'var(--line-strong)'}`,
+                          }}
+                        >
+                          {step.state === 'done' && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                          {step.state === 'current' && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />}
+                        </span>
+                        <span
+                          className="text-sm"
+                          style={{
+                            color: step.state === 'todo' ? 'var(--ink-3)' : 'var(--ink)',
+                            fontWeight: step.state === 'current' ? 500 : 400,
+                          }}
+                        >
+                          {step.label}
+                        </span>
+                        {step.state === 'current' && (
+                          <span className="text-xs" style={{ color: 'var(--accent)' }}>En cours</span>
                         )}
-                        {step.state === 'current' && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />}
-                      </span>
-                      <span
-                        className="text-sm"
-                        style={{
-                          color: step.state === 'todo' ? 'var(--ink-3)' : 'var(--ink)',
-                          fontWeight: step.state === 'current' ? 500 : 400,
-                        }}
-                      >
-                        {step.label}
-                      </span>
-                      {step.state === 'current' && (
-                        <span className="text-xs" style={{ color: 'var(--accent)' }}>En cours</span>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </section>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+
+              <ContractRequests requestId={id} kinds={kinds} rows={contractRequests} />
             </div>
 
-            {/* RIGHT — Documents, Détails, Actions */}
+            {/* RIGHT — Documents, Détails */}
             <div className="w-full lg:w-72 lg:shrink-0 space-y-4">
 
               {/* Documents */}
@@ -263,64 +308,13 @@ export default async function ContratPage({ params }: { params: Promise<{ id: st
                     { label: 'Taux nominal', value: rate },
                     { label: 'Coût total', value: totalCost != null ? fmt(totalCost) : null },
                     { label: 'Fournisseur', value: request.supplier_name as string | null },
+                    { label: 'Démarrage', value: contractStart ? fmtShort(contractStart) : null },
+                    { label: 'Fin prévue', value: schedule?.end ? fmtShort(schedule.end) : null },
                   ].filter(row => row.value).map(row => (
                     <div key={row.label} className="px-4 py-2.5 flex items-center justify-between">
                       <span className="text-xs" style={{ color: 'var(--ink-3)' }}>{row.label}</span>
                       <span className="ev-mono text-xs font-medium" style={{ color: 'var(--ink)' }}>{row.value}</span>
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Actions */}
-              <section className="ev-card overflow-hidden">
-                <div className="px-4 py-3.5 border-b" style={{ borderColor: 'var(--line)' }}>
-                  <h2 className="ev-kicker">Actions</h2>
-                </div>
-                <div className="divide-y divide-[var(--line)]">
-                  {[
-                    {
-                      label: 'Contacter everlease',
-                      href: contactHref,
-                      icon: (
-                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                          <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-                          <path d="M1 4l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                        </svg>
-                      ),
-                    },
-                    {
-                      label: "Demander un report d'échéance",
-                      href: `mailto:contact@everlease.fr?subject=Report%20d%27%C3%A9ch%C3%A9ance%20${ref}`,
-                      activeOnly: true,
-                      icon: (
-                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                          <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-                          <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                        </svg>
-                      ),
-                    },
-                    {
-                      label: 'Demander une résiliation anticipée',
-                      href: `mailto:contact@everlease.fr?subject=R%C3%A9siliation%20anticip%C3%A9e%20${ref}`,
-                      icon: (
-                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                        </svg>
-                      ),
-                      danger: true,
-                      activeOnly: true,
-                    },
-                  ].filter(action => isActive || !action.activeOnly).map(action => (
-                    <a
-                      key={action.label}
-                      href={action.href}
-                      className="px-4 py-3 flex items-center gap-2.5 text-sm transition-colors hover:bg-[var(--paper)]"
-                      style={{ color: action.danger ? 'var(--danger)' : 'var(--ink)' }}
-                    >
-                      <span style={{ color: action.danger ? 'var(--danger)' : 'var(--ink-3)' }}>{action.icon}</span>
-                      {action.label}
-                    </a>
                   ))}
                 </div>
               </section>
