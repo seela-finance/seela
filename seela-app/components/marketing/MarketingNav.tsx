@@ -3,7 +3,7 @@
 // Navigation commune (landing, Solutions, Secteurs, Distributeurs), style du
 // canvas v2. À gauche, près de la marque : les liens de contenu. À droite :
 // « Se connecter », le bouton contour « Distributeurs » (second public) et le
-// bouton encre. Burger sous 960px.
+// bouton encre. Burger sous 1060px.
 // Les liens Solutions et Secteurs gardent un menu déroulant au survol pour
 // le maillage SEO ; les liens sont de vrais <Link> (crawlables).
 import React from 'react'
