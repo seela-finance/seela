@@ -13,9 +13,10 @@ import { BtnGauge } from '@/components/landing/Gauge'
 import { IconArrowRight, IconStore, IconUser } from '@/components/landing/icons'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import { SECTORS } from '@/lib/seo/sectors'
+import { METIERS } from '@/lib/seo/metiers'
 import { createClient } from '@/lib/supabase/client'
 
-type MenuKey = 'solutions' | 'secteurs'
+type MenuKey = 'solutions' | 'secteurs' | 'metiers'
 
 export default function MarketingNav() {
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -78,6 +79,21 @@ export default function MarketingNav() {
                 </div>
               )}
             </div>
+            <div className="mk-nav__item" onMouseEnter={() => enter('metiers')} onMouseLeave={leave} onFocus={() => enter('metiers')} onBlur={leave}>
+              <Link href="/metiers" aria-expanded={open === 'metiers'}>Métiers</Link>
+              {open === 'metiers' && (
+                <div className="mk-dropdown" role="menu">
+                  <Link className="mk-dropdown__lead" href="/metiers" role="menuitem">
+                    Tous les métiers <IconArrowRight size={13} />
+                  </Link>
+                  {METIERS.map((m) => (
+                    <Link key={m.slug} className="mk-dropdown__item" href={`/metiers/${m.slug}`} role="menuitem">
+                      {m.nav}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link href="/#comment">Comment ça marche</Link>
             <Link href="/blog">Blog</Link>
           </div>
@@ -111,6 +127,7 @@ export default function MarketingNav() {
           <div className="mnav">
             <Link href="/solutions" onClick={closeMenu}>Solutions</Link>
             <Link href="/secteurs" onClick={closeMenu}>Secteurs</Link>
+            <Link href="/metiers" onClick={closeMenu}>Métiers</Link>
             <Link href="/#comment" onClick={closeMenu}>Comment ça marche</Link>
             <Link href="/blog" onClick={closeMenu}>Blog</Link>
             {!userEmail && <Link href="/auth" onClick={closeMenu}>Se connecter</Link>}
