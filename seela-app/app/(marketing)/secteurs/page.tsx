@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/marketing/Breadcrumbs'
 import { JsonLd, breadcrumbSchema } from '@/lib/seo/jsonld'
 import { absoluteUrl } from '@/lib/seo/site'
 import { SECTORS } from '@/lib/seo/sectors'
+import CallbackSection from '@/components/marketing/CallbackSection'
 
 export const metadata: Metadata = {
   title: "Financement d'équipement par secteur d'activité",
@@ -72,15 +73,13 @@ export default function SecteursHub() {
 
         <section className="lp-section--tight">
           <div className="lp-wrap">
-          <div className="mk-cta-center" style={{ marginTop: 0 }}>
-            <h2 className="lp-h2">Votre secteur n&apos;est pas listé ?</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 460 }}>
-              Si c&apos;est un actif physique professionnel, ça se finance. Déposez un devis pour vérifier votre éligibilité.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-            </div>
-          </div>
+          <CallbackSection
+            title="Votre secteur n'est pas listé ?"
+            lede="Si c'est un actif physique professionnel, ça se finance. Déposez un devis pour vérifier votre éligibilité."
+            cta="Estimer mon financement"
+            origine={"Page Secteurs"}
+            flush
+          />
           </div>
         </section>
       </main>

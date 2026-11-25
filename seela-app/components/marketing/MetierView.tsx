@@ -4,12 +4,12 @@
 // links UP to its parent sector so the maillage stays coherent.
 import Link from 'next/link'
 import { SparkleGlyph, IconArrowRight } from '@/components/landing/icons'
-import { CONTACT_EMAIL } from '@/lib/seo/site'
 import { getSolution } from '@/lib/seo/solutions'
 import { getSector } from '@/lib/seo/sectors'
 import { getMetier, type Metier } from '@/lib/seo/metiers'
 import Breadcrumbs from './Breadcrumbs'
 import ComparisonTable from './ComparisonTable'
+import CallbackSection from './CallbackSection'
 
 export default function MetierView({ metier }: { metier: Metier }) {
   const parent = getSector(metier.parentSectorSlug)
@@ -32,7 +32,7 @@ export default function MetierView({ metier }: { metier: Metier }) {
             <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{metier.tagline}</p>
             <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'flex-start' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
+              <a className="btn btn--secondary btn--lg" href="#rappel">Parler à un expert</a>
             </div>
           </div>
         </div>
@@ -175,16 +175,12 @@ export default function MetierView({ metier }: { metier: Metier }) {
               </div>
             </div>
           )}
-          <div className="mk-cta-center">
-            <h2 className="lp-h2">Équipez votre activité dès aujourd&apos;hui.</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
-              Déposez un devis : everlease prépare votre dossier et le présente à des financeurs adaptés à votre métier.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
-            </div>
-            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-          </div>
+          <CallbackSection
+            title="Équipez votre activité dès aujourd'hui."
+            lede="Déposez un devis : everlease prépare votre dossier et le présente à des financeurs adaptés à votre métier."
+            cta="Financer un équipement"
+            origine={`Page métier · ${metier.nav}`}
+          />
         </div>
       </section>
     </main>

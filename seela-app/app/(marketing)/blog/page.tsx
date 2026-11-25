@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/marketing/Breadcrumbs'
 import { JsonLd, breadcrumbSchema } from '@/lib/seo/jsonld'
 import { absoluteUrl } from '@/lib/seo/site'
 import { PILLARS, articlesByPillar, publishedArticles } from '@/lib/seo/blog'
+import CallbackSection from '@/components/marketing/CallbackSection'
 
 export const metadata: Metadata = {
   title: 'Blog — Guides du financement locatif professionnel',
@@ -87,15 +88,13 @@ export default function BlogHub() {
 
         <section className="lp-section--tight">
           <div className="lp-wrap">
-          <div className="mk-cta-center" style={{ marginTop: 0 }}>
-            <h2 className="lp-h2">Prêt à financer votre équipement ?</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 460 }}>
-              Déposez un devis : un seul dossier, présenté à des financeurs adaptés à votre projet.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28 }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-            </div>
-          </div>
+          <CallbackSection
+            title="Prêt à financer votre équipement ?"
+            lede="Déposez un devis : un seul dossier, présenté à des financeurs adaptés à votre projet."
+            cta="Estimer mon financement"
+            origine={"Blog"}
+            flush
+          />
           </div>
         </section>
       </main>
