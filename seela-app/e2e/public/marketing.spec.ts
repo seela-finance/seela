@@ -93,12 +93,10 @@ test.describe('Blog', () => {
     expect(res?.status()).toBe(404)
   })
 
-  test('le lien Blog de la navigation mène au hub', async ({ page }) => {
+  test('le lien Blog du pied de page mène au hub', async ({ page }) => {
     await page.goto('/')
-    // Sous 1060px la nav est repliée dans le menu burger.
-    const burger = page.getByRole('button', { name: /menu/i })
-    if (await burger.isVisible()) await burger.click()
-    await page.getByRole('navigation').getByRole('link', { name: 'Blog', exact: true }).first().click()
+    // La nav ne garde que Solutions et Secteurs : le blog est dans le pied de page.
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Blog', exact: true }).click()
     await expect(page).toHaveURL(/\/blog$/)
   })
 })
@@ -126,6 +124,57 @@ test.describe('Métiers & pages money', () => {
   test('métier inconnu → 404', async ({ page }) => {
     const res = await page.goto('/metiers/metier-qui-nexiste-pas')
     expect(res?.status()).toBe(404)
+  })
+})
+
+test.describe('Formulaire de rappel dans la page', () => {
+  // Une page par gabarit : solution, secteur, métier, page money, article, hub.
+  const withForm = [
+    `/solutions/${SOLUTIONS[0].slug}`,
+    `/secteurs/${SECTORS[0].slug}`,
+    `/metiers/${METIERS[0].slug}`,
+    `/${PILLARS[0].slug}`,
+    `/blog/${publishedArticles()[0].slug}`,
+    '/solutions',
+    '/secteurs',
+  ]
+
+  for (const path of withForm) {
+    test(`${path} : un formulaire remplace le lien mailto`, async ({ page }) => {
+      await page.goto(path)
+      await expect(page.locator('main a[href^="mailto:"]')).toHaveCount(0)
+      await expect(page.locator('#rappel').getByRole('form', { name: 'Être rappelé par notre équipe' })).toBeVisible()
+    })
+  }
+
+  test('« Parler à un expert » mène au formulaire, qui s’envoie sans quitter la page', async ({ page }) => {
+    // L'envoi est intercepté : aucun email ni lead réel pendant les tests.
+    let payload: Record<string, unknown> | null = null
+    await page.route('**/api/contact-expert', async (route) => {
+      payload = route.request().postDataJSON()
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) })
+    })
+    const path = `/solutions/${SOLUTIONS[0].slug}`
+    await page.goto(path)
+    await page.getByRole('link', { name: 'Parler à un expert' }).first().click()
+    await expect(page).toHaveURL(new RegExp(`${path}#rappel$`))
+
+    const form = page.locator('#rappel')
+    // Envoi vide : les erreurs s'affichent, rien ne part.
+    await form.getByRole('button', { name: 'Être rappelé' }).click()
+    await expect(form.getByRole('alert')).toContainText('Certains champs sont à corriger')
+    expect(payload).toBeNull()
+
+    await form.getByLabel('Entreprise').fill('Société de test E2E')
+    await form.getByLabel('Prénom').fill('Camille')
+    await form.getByLabel('Nom', { exact: true }).fill('Test')
+    await form.getByLabel('E-mail professionnel').fill('camille@example.test')
+    await form.getByLabel('Téléphone').fill('0612345678')
+    await form.getByRole('button', { name: 'Être rappelé' }).click()
+
+    await expect(form.getByRole('status')).toContainText("Merci, c'est noté.")
+    await expect(page).toHaveURL(new RegExp(`${path}#rappel$`))
+    expect(payload).toMatchObject({ entreprise: 'Société de test E2E', telephone: '0612345678', origine: `Page solution · ${SOLUTIONS[0].name}` })
   })
 })
 

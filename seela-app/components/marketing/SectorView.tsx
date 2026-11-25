@@ -7,13 +7,13 @@
 // but stay LEFT-aligned so all blocks line up on the same left edge.
 import Link from 'next/link'
 import { SparkleGlyph, IconArrowRight, IconCheckSm } from '@/components/landing/icons'
-import { CONTACT_EMAIL } from '@/lib/seo/site'
 import { getSolution } from '@/lib/seo/solutions'
 import { getSector, type Sector } from '@/lib/seo/sectors'
 import { getMetiersForSector } from '@/lib/seo/metiers'
 import Breadcrumbs from './Breadcrumbs'
 import ComparisonTable from './ComparisonTable'
 import ImageSlot from './ImageSlot'
+import CallbackSection from './CallbackSection'
 
 export default function SectorView({ sector }: { sector: Sector }) {
   const related = sector.related.map(getSector).filter(Boolean) as Sector[]
@@ -35,7 +35,7 @@ export default function SectorView({ sector }: { sector: Sector }) {
             <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{sector.tagline}</p>
             <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'flex-start' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
+              <a className="btn btn--secondary btn--lg" href="#rappel">Parler à un expert</a>
             </div>
           </div>
           <div className="mk-hero__media">
@@ -190,16 +190,12 @@ export default function SectorView({ sector }: { sector: Sector }) {
               ))}
             </div>
           </div>
-          <div className="mk-cta-center">
-            <h2 className="lp-h2">Équipez votre activité dès aujourd&apos;hui.</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 480 }}>
-              Déposez un devis : Everlease prépare votre dossier et le présente à des financeurs adaptés à votre activité.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
-            </div>
-            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-          </div>
+          <CallbackSection
+            title="Équipez votre activité dès aujourd'hui."
+            lede="Déposez un devis : Everlease prépare votre dossier et le présente à des financeurs adaptés à votre activité."
+            cta="Financer un équipement"
+            origine={`Page secteur · ${sector.nav}`}
+          />
         </div>
       </section>
     </main>

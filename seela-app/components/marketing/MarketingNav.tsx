@@ -3,7 +3,8 @@
 // Navigation commune (landing, Solutions, Secteurs, Distributeurs), style du
 // canvas v2. À gauche, près de la marque : les liens de contenu. À droite :
 // « Se connecter », le bouton contour « Distributeurs » (second public) et le
-// bouton encre. Burger sous 1060px.
+// bouton encre. Burger sous 800px. Métiers, « Comment ça marche » et Blog sont
+// dans le pied de page.
 // Les liens Solutions et Secteurs gardent un menu déroulant au survol pour
 // le maillage SEO ; les liens sont de vrais <Link> (crawlables).
 import React from 'react'
@@ -13,10 +14,9 @@ import { BtnGauge } from '@/components/landing/Gauge'
 import { IconArrowRight, IconStore, IconUser } from '@/components/landing/icons'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import { SECTORS } from '@/lib/seo/sectors'
-import { METIERS } from '@/lib/seo/metiers'
 import { createClient } from '@/lib/supabase/client'
 
-type MenuKey = 'solutions' | 'secteurs' | 'metiers'
+type MenuKey = 'solutions' | 'secteurs'
 
 export default function MarketingNav() {
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -79,23 +79,6 @@ export default function MarketingNav() {
                 </div>
               )}
             </div>
-            <div className="mk-nav__item" onMouseEnter={() => enter('metiers')} onMouseLeave={leave} onFocus={() => enter('metiers')} onBlur={leave}>
-              <Link href="/metiers" aria-expanded={open === 'metiers'}>Métiers</Link>
-              {open === 'metiers' && (
-                <div className="mk-dropdown" role="menu">
-                  <Link className="mk-dropdown__lead" href="/metiers" role="menuitem">
-                    Tous les métiers <IconArrowRight size={13} />
-                  </Link>
-                  {METIERS.map((m) => (
-                    <Link key={m.slug} className="mk-dropdown__item" href={`/metiers/${m.slug}`} role="menuitem">
-                      {m.nav}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            <Link href="/#comment">Comment ça marche</Link>
-            <Link href="/blog">Blog</Link>
           </div>
 
           <div className="nav__cta">
@@ -127,9 +110,6 @@ export default function MarketingNav() {
           <div className="mnav">
             <Link href="/solutions" onClick={closeMenu}>Solutions</Link>
             <Link href="/secteurs" onClick={closeMenu}>Secteurs</Link>
-            <Link href="/metiers" onClick={closeMenu}>Métiers</Link>
-            <Link href="/#comment" onClick={closeMenu}>Comment ça marche</Link>
-            <Link href="/blog" onClick={closeMenu}>Blog</Link>
             {!userEmail && <Link href="/auth" onClick={closeMenu}>Se connecter</Link>}
             <Link className="btn btn--ghost" href="/distributeurs" onClick={closeMenu}><IconStore size={14} />Distributeurs</Link>
             {userEmail ? (

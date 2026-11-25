@@ -7,13 +7,13 @@
 // lives under `.mk-article*` / `.mk-blog*` in app/landing.css.
 import Link from 'next/link'
 import { SparkleGlyph, IconArrowRight, IconCalendar, IconClock } from '@/components/landing/icons'
-import { CONTACT_EMAIL } from '@/lib/seo/site'
 import type { Article } from '@/lib/seo/blog'
 import { getArticle } from '@/lib/seo/blog'
 import { getSolution } from '@/lib/seo/solutions'
 import { getSector } from '@/lib/seo/sectors'
 import Breadcrumbs from './Breadcrumbs'
 import ProseBlocks, { headingId } from './ProseBlocks'
+import CallbackSection from './CallbackSection'
 
 export default function ArticleView({ article }: { article: Article }) {
   const tocItems = article.body
@@ -140,17 +140,12 @@ export default function ArticleView({ article }: { article: Article }) {
       {/* CTA */}
       <section className="lp-section--tight" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="lp-wrap">
-          <div className="mk-cta-center">
-            <h2 className="lp-h2">Un projet d’équipement à financer ?</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 500 }}>
-              Déposez votre devis : everlease prépare un seul dossier et le présente à des financeurs adaptés à votre projet. Un conseiller vous rappelle sous 24 h ouvrées.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
-            </div>
-            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-          </div>
+          <CallbackSection
+            title="Un projet d’équipement à financer ?"
+            lede="Déposez votre devis : everlease prépare un seul dossier et le présente à des financeurs adaptés à votre projet."
+            cta="Estimer mon financement"
+            origine={`Article · ${article.nav}`}
+          />
         </div>
       </section>
     </main>

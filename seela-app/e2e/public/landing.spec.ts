@@ -15,6 +15,12 @@ test.describe('Landing', () => {
     await expect(nav.locator('.nav__cta a[href="/distributeurs"]')).toHaveCount(1)
     await expect(nav.locator('.nav__links a[href="/distributeurs"]')).toHaveCount(0)
     await expect(nav.locator('a[href="/#financeurs"]')).toHaveCount(0)
+    // À gauche, deux entrées seulement : Solutions et Secteurs.
+    await expect(nav.locator('.nav__links > *')).toHaveCount(2)
+    for (const href of ['/metiers', '/blog', '/#comment']) {
+      await expect(nav.locator(`.nav__links a[href="${href}"]`)).toHaveCount(0)
+      await expect(page.getByRole('contentinfo').locator(`a[href="${href}"]`)).toHaveCount(1)
+    }
   })
 
   test('met quatre secteurs à la une et mène à « Qui sommes-nous »', async ({ page }) => {
