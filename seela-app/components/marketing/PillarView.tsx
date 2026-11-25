@@ -4,11 +4,11 @@
 // is the point: these pages consolidate and distribute authority across the silo.
 import Link from 'next/link'
 import { SparkleGlyph, IconArrowRight } from '@/components/landing/icons'
-import { CONTACT_EMAIL } from '@/lib/seo/site'
 import type { Pillar } from '@/lib/seo/pillars'
 import { SOLUTIONS } from '@/lib/seo/solutions'
 import Breadcrumbs from './Breadcrumbs'
 import ProseBlocks from './ProseBlocks'
+import CallbackSection from './CallbackSection'
 
 export default function PillarView({ pillar }: { pillar: Pillar }) {
   return (
@@ -23,7 +23,7 @@ export default function PillarView({ pillar }: { pillar: Pillar }) {
             <p className="lp-lede" style={{ fontSize: 18, marginTop: 18 }}>{pillar.standfirst}</p>
             <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'flex-start' }}>
               <Link className="btn btn--accent btn--lg" href="/auth">Estimer mon financement <IconArrowRight /></Link>
-              <a className="btn btn--secondary btn--lg" href={`mailto:${CONTACT_EMAIL}`}>Parler à un expert</a>
+              <a className="btn btn--secondary btn--lg" href="#rappel">Parler à un expert</a>
             </div>
           </div>
         </div>
@@ -131,16 +131,12 @@ export default function PillarView({ pillar }: { pillar: Pillar }) {
               </div>
             </div>
           )}
-          <div className="mk-cta-center">
-            <h2 className="lp-h2">Estimez votre financement en quelques minutes.</h2>
-            <p className="lp-lede" style={{ margin: '14px auto 0', maxWidth: 500 }}>
-              Déposez votre devis : everlease prépare un seul dossier et le présente à des financeurs adaptés. Un conseiller vous rappelle sous 24 h ouvrées.
-            </p>
-            <div className="lp-cta-row" style={{ marginTop: 28, justifyContent: 'center' }}>
-              <Link className="btn btn--accent btn--lg" href="/auth">Financer un équipement <IconArrowRight /></Link>
-            </div>
-            <p className="mk-legal" style={{ marginTop: 18 }}>Sous réserve d&apos;acceptation du dossier par le financeur.</p>
-          </div>
+          <CallbackSection
+            title="Estimez votre financement en quelques minutes."
+            lede="Déposez votre devis : everlease prépare un seul dossier et le présente à des financeurs adaptés."
+            cta="Financer un équipement"
+            origine={`Page · ${pillar.h1}`}
+          />
         </div>
       </section>
     </main>
