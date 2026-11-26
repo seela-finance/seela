@@ -45,6 +45,33 @@ test.describe('Page distributeurs', () => {
     await expect(dialog).toContainText('Fournisseurs et distributeurs')
   })
 
+  test('« Tester avec un devis » mène à un formulaire dans la page, sans mailto', async ({ page }) => {
+    // L'envoi est intercepté : aucun email ni lead réel pendant les tests.
+    let payload: Record<string, unknown> | null = null
+    await page.route('**/api/contact-expert', async (route) => {
+      payload = route.request().postDataJSON()
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) })
+    })
+    await page.goto('/distributeurs')
+    await expect(page.locator('main a[href^="mailto:"]')).toHaveCount(0)
+    await page.getByRole('link', { name: 'Tester avec un devis' }).click()
+    await expect(page).toHaveURL(/\/distributeurs#devis-test$/)
+
+    const form = page.locator('#devis-test')
+    await expect(form.getByRole('heading', { name: 'Tester avec un devis' })).toBeVisible()
+    await form.getByLabel('Entreprise').fill('Distributeur de test E2E')
+    await form.getByLabel('Prénom').fill('Camille')
+    await form.getByLabel('Nom', { exact: true }).fill('Test')
+    await form.getByLabel('E-mail professionnel').fill('camille@example.test')
+    await form.getByLabel('Téléphone').fill('0612345678')
+    await form.getByRole('button', { name: 'Être rappelé' }).click()
+
+    await expect(form.getByRole('status')).toContainText("Merci, c'est noté.")
+    // Parcours distributeur : pas de renvoi vers le dépôt de devis client.
+    await expect(form.getByRole('link', { name: 'Déposer un devis maintenant' })).toHaveCount(0)
+    expect(payload).toMatchObject({ entreprise: 'Distributeur de test E2E', devis: 'oui', origine: 'Fournisseurs et distributeurs · Devis test' })
+  })
+
   test('respecte les règles de vérité', async ({ page }) => {
     await page.goto('/distributeurs')
     const text = (await page.locator('main').innerText()).toLowerCase()
