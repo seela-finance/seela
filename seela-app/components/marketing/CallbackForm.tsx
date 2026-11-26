@@ -1,7 +1,7 @@
 'use client'
 
 // Formulaire de rappel intégré à la page (Solutions, Secteurs, Métiers, pages
-// money, blog). Remplace l'ancien lien mailto « Parler à un expert » : cinq
+// money, blog, et « Tester avec un devis » sur /distributeurs). Remplace l'ancien lien mailto « Parler à un expert » : cinq
 // champs, envoyés à l'API de lead existante (/api/contact-expert), qui prévient
 // l'équipe et crée le lead dans le CRM. `origine` dit de quelle page vient la
 // demande. Le rôle n'est pas demandé ici : l'API l'exige, on l'envoie « Non
@@ -26,7 +26,29 @@ function validate(f: Fields): Partial<Record<FieldKey, string>> {
   return e
 }
 
-export default function CallbackForm({ origine }: { origine: string }) {
+export default function CallbackForm({
+  origine,
+  anchor = 'rappel',
+  title = 'Parler à un expert',
+  sub = <>Laissez vos coordonnées, notre équipe vous rappelle sous 24&nbsp;h ouvrées.</>,
+  devis = null,
+  reassurance = 'Aucune carte ni RIB demandé.',
+  sentSub = <>Notre équipe vous rappelle sous 24&nbsp;h ouvrées au numéro indiqué. Si vous avez déjà un devis, gardez-le sous la main.</>,
+  depositLink = true,
+}: {
+  origine: string
+  /** Ancre du formulaire, cible des boutons de la page. */
+  anchor?: string
+  title?: string
+  sub?: React.ReactNode
+  /** Ce que l'on sait du devis : « oui » quand le formulaire sert à en tester un. */
+  devis?: 'oui' | null
+  /** Première phrase de la mention sous le bouton. */
+  reassurance?: string
+  sentSub?: React.ReactNode
+  /** Après l'envoi, proposer de déposer un devis dans l'application (parcours client). */
+  depositLink?: boolean
+}) {
   const [f, setF] = React.useState<Fields>(EMPTY)
   const [submitted, setSubmitted] = React.useState(false)
   const [sending, setSending] = React.useState(false)
@@ -53,7 +75,7 @@ export default function CallbackForm({ origine }: { origine: string }) {
           prenom: f.first.trim(),
           nom: f.last.trim(),
           role: 'Non précisé',
-          devis: null,
+          devis,
           email: f.email.trim(),
           telephone: f.phone.trim(),
           origine,
@@ -71,23 +93,25 @@ export default function CallbackForm({ origine }: { origine: string }) {
 
   if (sent) {
     return (
-      <div id="rappel" className="mk-form sent">
+      <div id={anchor} className="mk-form sent">
         <div role="status">
         <div className="ok-mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
         <h3>Merci, c&apos;est noté.</h3>
-        <p className="mk-form__sub">Notre équipe vous rappelle sous 24&nbsp;h ouvrées au numéro indiqué. Si vous avez déjà un devis, gardez-le sous la main.</p>
+        <p className="mk-form__sub">{sentSub}</p>
         </div>
-        <div className="cta-row" style={{ marginTop: 20 }}>
-          <Link className="btn btn--primary" href="/auth"><BtnGauge />Déposer un devis maintenant</Link>
-        </div>
+        {depositLink && (
+          <div className="cta-row" style={{ marginTop: 20 }}>
+            <Link className="btn btn--primary" href="/auth"><BtnGauge />Déposer un devis maintenant</Link>
+          </div>
+        )}
       </div>
     )
   }
 
   return (
-    <div id="rappel" className="mk-form">
-      <h3>Parler à un expert</h3>
-      <p className="mk-form__sub">Laissez vos coordonnées, notre équipe vous rappelle sous 24&nbsp;h ouvrées.</p>
+    <div id={anchor} className="mk-form">
+      <h3>{title}</h3>
+      <p className="mk-form__sub">{sub}</p>
       <form className="form" onSubmit={submit} noValidate aria-label="Être rappelé par notre équipe">
         <div className={cls('company', ' full')}>
           <label htmlFor="cb-company">Entreprise</label>
@@ -121,7 +145,7 @@ export default function CallbackForm({ origine }: { origine: string }) {
             <BtnGauge />
             {sending ? 'Envoi en cours…' : 'Être rappelé'}
           </button>
-          <p className="legal" style={{ margin: 0 }}>Aucune carte ni RIB demandé. Vos coordonnées servent uniquement à vous rappeler. <Link href="/confidentialite" style={{ textDecoration: 'underline' }}>Confidentialité</Link>.</p>
+          <p className="legal" style={{ margin: 0 }}>{reassurance} Vos coordonnées servent uniquement à vous rappeler. <Link href="/confidentialite" style={{ textDecoration: 'underline' }}>Confidentialité</Link>.</p>
         </div>
       </form>
     </div>

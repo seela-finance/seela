@@ -24,9 +24,7 @@ import { fmt } from '@/components/landing/format'
 import { IconBank, IconCheck, IconCheckSm, IconDoc, IconLink, IconList, IconTool, IconUser } from '@/components/landing/icons'
 import { prefersReducedMotion } from '@/components/landing/useInView'
 import { DISTRIBUTORS_FAQ } from '@/lib/seo/distributors'
-import { CONTACT_EMAIL } from '@/lib/seo/site'
-
-const QUOTE_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Devis test distributeur')}`
+import CallbackForm from './CallbackForm'
 
 function Lines({ lines }: { lines: string[] }) {
   return (
@@ -54,7 +52,7 @@ function Hero({ onOpen }: { onOpen: () => void }) {
             <p className="lede hero__sub fade d1">Everlease lit le devis, prépare le dossier et le présente aux financeurs adaptés. Vos clients paient en loyers, vous êtes réglé à la livraison.</p>
             <div className="cta-row fade d2">
               <button className="btn btn--primary" type="button" onClick={onOpen}><BtnGauge />Présenter votre circuit de vente</button>
-              <a className="btn btn--ghost" href={QUOTE_MAILTO}>Envoyer un devis test</a>
+              <a className="btn btn--ghost" href="#devis-test">Tester avec un devis</a>
             </div>
             <ul className="dist-trust fade d3">
               <li><IconCheck size={14} />Sans exclusivité</li>
@@ -377,30 +375,41 @@ function Questions({ onOpen }: { onOpen: () => void }) {
 }
 
 /* ---------------- POUR COMMENCER (bloc sombre) ---------------- */
+// À gauche, le message, les trois étapes et le bouton vers la modale ; à
+// droite, le formulaire « Tester avec un devis » (ancre #devis-test, cible du
+// bouton du hero), qui remplace l'ancien lien mailto.
 function Start({ onOpen }: { onOpen: () => void }) {
   return (
     <section id="contact" className="funders funders--stage dist-sec" data-reveal>
       <div className="wrap">
-        <div className="funders__grid">
+        <div className="funders__grid dist-start">
           <div>
             <div className="kicker fade">Pour commencer</div>
             <h2 className="display h2 funders__title" style={{ marginTop: 14 }}>
-              <Lines lines={['Trente minutes pour regarder', 'votre circuit de vente.']} />
+              <Lines lines={['Trente minutes', 'pour regarder', 'votre circuit de vente.']} />
             </h2>
             <p className="lede fade d1" style={{ marginTop: 20, maxWidth: 460, fontSize: 17 }}>Aucun contrat à signer pour essayer&nbsp;: le premier dossier fait office de test.</p>
-            <div className="cta-row fade d2">
-              <button className="btn btn--light" type="button" onClick={onOpen}>Présenter votre circuit de vente</button>
-              <a className="btn btn--outline-light" href={QUOTE_MAILTO}>Envoyer un devis test</a>
-            </div>
-            <p className="small fade d2" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>Notre équipe vous rappelle sous 24&nbsp;h ouvrées.</p>
-          </div>
-          <div className="fade d2">
-            <div className="ready">
+            <div className="ready fade d2" style={{ marginTop: 28 }}>
               <div><span className="n">01</span><div><b>Nous regardons votre circuit de vente.</b><span className="t">Vos gammes, vos outils, la façon dont vos commerciaux vendent aujourd&apos;hui.</span></div></div>
               <div><span className="n">02</span><div><b>Vous nous transmettez un premier devis.</b><span className="t">Nous vous disons ce qui est finançable, puis nous rappelons votre client.</span></div></div>
               <div><span className="n">03</span><div><b>Nous adaptons le dispositif.</b><span className="t">Offres par gamme, loyers sur vos devis, outils&nbsp;: dans l&apos;ordre qui a du sens pour votre équipe.</span></div></div>
             </div>
-            <p className="legal" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>{LEGAL}</p>
+            <div className="cta-row fade d2">
+              <button className="btn btn--light" type="button" onClick={onOpen}>Présenter votre circuit de vente</button>
+            </div>
+            <p className="legal fade d2" style={{ margin: '16px 0 0', color: 'var(--dark-muted)' }}>{LEGAL}</p>
+          </div>
+          <div className="fade d2">
+            <CallbackForm
+              anchor="devis-test"
+              origine="Fournisseurs et distributeurs · Devis test"
+              devis="oui"
+              title="Tester avec un devis"
+              sub={<>Laissez vos coordonnées&nbsp;: notre équipe vous rappelle sous 24&nbsp;h ouvrées, récupère votre devis et vous dit ce qui est finançable.</>}
+              reassurance="Sans exclusivité, sans engagement."
+              sentSub={<>Notre équipe vous rappelle sous 24&nbsp;h ouvrées au numéro indiqué. Gardez votre devis sous la main.</>}
+              depositLink={false}
+            />
           </div>
         </div>
       </div>
